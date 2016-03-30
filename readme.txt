@@ -27,3 +27,10 @@ wee_config --reconfigure
 4) start weewx
 
 sudo /etc/init.d/weewx start
+
+
+Hardware
+
+Tested with the Realtek RTL2838UHIDIR.  Should work with any software-defined
+radio that is compatible with the rtl-sdr software.  Uses the modules in
+rtl_433 to recognize packets.
