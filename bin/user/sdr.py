@@ -37,11 +37,23 @@ def logerr(msg):
     logmsg(syslog.LOG_ERR, msg)
 
 
+class SDRConfigurationEditor(weewx.drivers.AbstractConfEditor):
+    @property
+    def default_stanza(self):
+        return """
+[SDR]
+    # This section is for the software-defined radio driver.
+
+    # The driver to use:
+    driver = user.sdr
+"""
+
+
 class SDRDriver(weewx.drivers.AbstractDevice):
 
     def __init__(self, **stn_dict):
         loginf('driver version is %s' % DRIVER_VERSION)
-        self._obs_map = stn_dict.get('map', None)
+        self._obs_map = stn_dict.get('sensor_map', None)
         self._queue = Queue.Queue()
         self._capture_thread = threading.Thread(target=self.capture)
         self._capture_thread.setDaemon(True)
@@ -82,15 +94,3 @@ class SDRDriver(weewx.drivers.AbstractDevice):
             if k in pkt:
                 packet[obs_map[k]] = pkt[k]
         return packet
-
-
-class SDRConfigurationEditor(weewx.drivers.AbstractConfEditor):
-    @property
-    def default_stanza(self):
-        return """
-[SDR]
-    # This section is for the software-defined radio driver.
-
-    # The driver to use:
-    driver = user.sdr
-"""

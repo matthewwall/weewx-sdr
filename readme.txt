@@ -1,7 +1,11 @@
 weewx-sdr
 
 This is a driver for weewx that captures data from software-defined radio.
-
+It works with open source rtl sdr software that in turn works with
+inexpensive, broad spectrum radio receivers such as the Realtek RTL2838UHIDIR.
+These devices cost about 20$US and are capable of receiving radio signals from
+weather stations, energy monitors, doorbells, and many other devices that use
+unlicensed spectrum such as 433MHz, 838MHz, and 900MHz frequencies.
 
 Installation
 
