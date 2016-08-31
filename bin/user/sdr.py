@@ -6,7 +6,9 @@ a queue.
 """
 
 from __future__ import with_statement
+from calendar import timegm
 import Queue
+import re
 import subprocess
 import syslog
 import threading
@@ -95,6 +97,149 @@ class ProcManager():
         self._process = None
 
 
+class Parser:
+    TS_PATTERN = re.compile('(\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d) :*(.*)')
+
+    @staticmethod
+    def get_timestamp(lines):
+        ts = key = None
+        if lines and len(lines) > 0:
+            try:
+                m = Parser.TS_PATTERN.search(lines[0])
+                if m:
+                    utc = time.strptime(m.group(1), "%Y-%m-%d %H:%M:%S")
+                    ts = timegm(utc)
+                    key = m.group(2).strip()
+            except Exception, e:
+                logerr("parse time failed for '%s': %s" % (lines[0], e))
+        return ts, key
+
+    @staticmethod
+    def parse_lines(lines, labels=None):
+        packet = dict()
+        for line in lines:
+            try:
+                (name, value) = [x.strip() for x in line.split(':')]
+                if name in labels:
+                    packet[labels[name]] = value
+            except Exception, e:
+                logerr("parse failed for line '%s': %s" % (line, e))
+        return packet
+
+
+class FineOffsetWH1080(Parser):
+    IDENTIFIER = "Fine Offset WH1080 weather station"
+    LABELS = {'Msg type': 'msg_type',
+              'StationID': 'station_id',
+              'Temperature': 'temperature',
+              'Humidity': 'humidity',
+              'Wind string': 'wind_dir_ord',
+              'Wind degrees': 'wind_dir',
+              'Wind avg speed': 'wind_speed',
+              'Wind gust': 'wind_gust',
+              'Total rainfall': 'total_rain',
+              'Battery': 'battery'}
+    @staticmethod
+    def parse(lines):
+        return Parser.parse_lines(lines[1:], FineOffsetWH1080.LABELS)
+
+
+class AcuriteTower:
+    # 2016-08-30 23:57:20 Acurite tower sensor 0x37FC Ch A: 26.7 C 80.1 F 16 % RH
+
+    IDENTIFIER = "Acurite tower sensor"
+    PATTERN = re.compile('0x([0-9a-fA-F]+) Ch ([A-C]): ([\d.]+) C ([\d.]+) F ([\d]+) % RH')
+    @staticmethod
+    def parse(lines):
+        packet = dict()
+        m = AcuriteTower.PATTERN.search(lines[0])
+        if m:
+            packet['sensor_id'] = m.group(1)
+            packet['channel'] = m.group(2)
+            packet['temperature'] = m.group(3)
+            packet['temperature_F'] = m.group(4)
+            packet['humidity'] = m.group(5)
+        else:
+            logdbg("unrecognized data: '%s'" % lines[0])
+        return packet
+
+
+class Acurite5n1:
+    # 2016-08-31 16:41:39 Acurite 5n1 sensor 0x0BFA Ch C, Msg 31, Wind 15 kmph / 9.3 mph 270.0^ W (3), rain gauge 0.00 in
+    # 2016-08-30 23:57:25 Acurite 5n1 sensor 0x0BFA Ch C, Msg 38, Wind 2 kmph / 1.2 mph, 21.3 C 70.3 F 70 % RH
+
+    IDENTIFIER = "Acurite 5n1 sensor"
+    PATTERN = re.compile('0x([0-9a-fA-F]+) Ch ([A-C]), (.*)')
+    RAIN = re.compile('Total rain fall since last reset: ([\d.]+)')
+    MSG = re.compile('Msg (\d+), (.*)')
+    MSG31 = re.compile('Wind ([\d.]+) kmph / ([\d.]+) mph ([\d.]+)')
+    MSG38 = re.compile('Wind ([\d.]+) kmph / ([\d.]+) mph, ([\d.]+) C ([\d.]+) F ([\d.]+) % RH')
+
+    @staticmethod
+    def parse(lines):
+        packet = dict()
+        m = Acurite5n1.PATTERN.search(lines[0])
+        if m:
+            packet['sensor_id'] = m.group(1)
+            packet['channel'] = m.group(2)
+            payload = m.group(3)
+            m = Acurite5n1.MSG.search(payload)
+            if m:
+                packet['msg_type'] = m.group(1)
+                payload = m.group(2)
+                if packet['msg_type'] == '31':
+                    m = Acurite5n1.MSG31.search(payload)
+                    if m:
+                        packet['wind_speed'] = m.group(1)
+                        packet['wind_speed_mph'] = m.group(2)
+                        packet['wind_dir'] = m.group(3)
+                elif packet['msg_type'] == '38':
+                    m = Acurite5n1.MSG38.search(payload)
+                    if m:
+                        packet['wind_speed'] = m.group(1)
+                        packet['wind_speed_mph'] = m.group(2)
+                        packet['temperature'] = m.group(3)
+                        packet['temperature_F'] = m.group(4)
+                        packet['humidity'] = m.group(5)
+                else:
+                    logerr("unknown message type %s in line '%s'" %
+                           (packet['msg_type'], lines[0]))
+            else:
+                m = Acurite5n1.RAIN.search(payload)
+                if m:
+                    packet['rain_total'] = m.group(1)
+                else:
+                    logerr("unknown message format: '%s'" % lines[0])
+        else:
+            logdbg("unrecognized data: '%s'" % lines[0])
+        return packet
+
+
+class HidekiTS04:
+    IDENTIFIER = "HIDEKI TS04 sensor"
+    LABELS = {'Rolling Code': 'rolling_code',
+              'Channel': 'channel',
+              'Battery': 'battery',
+              'Temperature': 'temperature',
+              'Humidity': 'humidity'}
+    @staticmethod
+    def parse(lines):
+        return Parser.parse_lines(lines[1:], HidekiTS04.LABELS)
+
+
+class OSTHGR810:
+    IDENTIFIER = "Weather Sensor THGR810"
+    LABELS = {'House Code': 'house_code',
+              'Channel': 'channel',
+              'Battery': 'battery',
+              'Celcius': 'temperature',
+              'Fahrenheit': 'temperature_F',
+              'Humidity': 'humidity'}
+    @staticmethod
+    def parse(lines):
+        return Parser.parse_lines(lines[1:], OSTHGR810.LABELS)
+
+
 class SDRConfigurationEditor(weewx.drivers.AbstractConfEditor):
     @property
     def default_stanza(self):
@@ -108,6 +253,12 @@ class SDRConfigurationEditor(weewx.drivers.AbstractConfEditor):
 
 
 class SDRDriver(weewx.drivers.AbstractDevice):
+
+    PARSERS = [FineOffsetWH1080,
+               AcuriteTower,
+               Acurite5n1,
+               HidekiTS04,
+               OSTHGR810]
 
     def __init__(self, **stn_dict):
         loginf('driver version is %s' % DRIVER_VERSION)
@@ -132,11 +283,21 @@ class SDRDriver(weewx.drivers.AbstractDevice):
             logdbg('mapped packet: %s' % packet)
             yield packet
 
-    def parse(self, data):
-        packet = dict()
-        return packet
+    @staticmethod
+    def parse(data):
+        ts, key = Parser.get_timestamp(data)
+        if key:
+            for parser in SDRDriver.PARSERS:
+                if key.startswith(parser.IDENTIFIER):
+                    data = parser.parse(data)
+                    if data:
+                        data['dateTime'] = ts
+                        data['sensor_type'] = parser.IDENTIFIER
+                        return data
+        return dict()
 
-    def map_to_fields(self, pkt, obs_map):
+    @staticmethod
+    def map_to_fields(pkt, obs_map=None):
         if obs_map is None:
             return pkt
         packet = dict()
@@ -171,10 +332,17 @@ if __name__ == '__main__':
     mgr = ProcManager()
     mgr.startup('rtl_433')
     for out, err in mgr.process():
-        if out:
-            for line in out:
-                print line.strip()
-        if err:
-            for line in err:
-                print "error: ", line.strip()
-        time.sleep(0.1)
+        raw_packet = SDRDriver.parse(out)
+        if raw_packet:
+            if options.debug:
+                print 'raw packet: %s' % raw_packet
+            map_packet = SDRDriver.map_to_fields(raw_packet)
+            if map_packet:
+                print 'mapped packet: %s' % map_packet
+            elif out:
+                for line in out:
+                    print line.strip()
+#        if err:
+#            for line in err:
+#                print "error: ", line.strip()
+#        time.sleep(0.1)
