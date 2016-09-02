@@ -98,7 +98,7 @@ class ProcManager():
 
 
 class Parser:
-    TS_PATTERN = re.compile('(\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d) :*(.*)')
+    TS_PATTERN = re.compile('(\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d)[\s]+:*(.*)')
 
     @staticmethod
     def get_timestamp(lines):
@@ -216,6 +216,13 @@ class Acurite5n1:
 
 
 class HidekiTS04:
+    # 2016-08-31 17:41:30 :   HIDEKI TS04 sensor
+    # Rolling Code: 9
+    # Channel: 1
+    # Battery: OK
+    # Temperature: 27.30 C
+    # Humidity: 60 %
+
     IDENTIFIER = "HIDEKI TS04 sensor"
     LABELS = {'Rolling Code': 'rolling_code',
               'Channel': 'channel',
@@ -224,6 +231,7 @@ class HidekiTS04:
               'Humidity': 'humidity'}
     @staticmethod
     def parse(lines):
+        print "hideki: %s" % lines
         return Parser.parse_lines(lines[1:], HidekiTS04.LABELS)
 
 
@@ -237,6 +245,7 @@ class OSTHGR810:
               'Humidity': 'humidity'}
     @staticmethod
     def parse(lines):
+        print "os: %s" % lines
         return Parser.parse_lines(lines[1:], OSTHGR810.LABELS)
 
 
@@ -290,10 +299,10 @@ class SDRDriver(weewx.drivers.AbstractDevice):
             for parser in SDRDriver.PARSERS:
                 if key.startswith(parser.IDENTIFIER):
                     data = parser.parse(data)
-                    if data:
-                        data['dateTime'] = ts
-                        data['sensor_type'] = parser.IDENTIFIER
-                        return data
+                    data['dateTime'] = ts
+                    data['sensor_type'] = parser.IDENTIFIER
+                    return data
+        logdbg("unhandle message format: %s" % data)
         return dict()
 
     @staticmethod
@@ -345,4 +354,4 @@ if __name__ == '__main__':
 #        if err:
 #            for line in err:
 #                print "error: ", line.strip()
-#        time.sleep(0.1)
+        time.sleep(0.1)
