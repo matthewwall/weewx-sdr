@@ -17,7 +17,7 @@ import time
 import weewx.drivers
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.1'
+DRIVER_VERSION = '0.2'
 
 def loader(config_dict, _):
     return SDRDriver(**config_dict[DRIVER_NAME])
@@ -118,6 +118,8 @@ class Parser:
     def parse_lines(lines, labels=None):
         packet = dict()
         for line in lines:
+            if line.count(':') > 1:
+                continue
             try:
                 (name, value) = [x.strip() for x in line.split(':')]
                 if name in labels:
@@ -141,7 +143,7 @@ class FineOffsetWH1080(Parser):
               'Battery': 'battery'}
     @staticmethod
     def parse(lines):
-        return Parser.parse_lines(lines[1:], FineOffsetWH1080.LABELS)
+        return Parser.parse_lines(lines, FineOffsetWH1080.LABELS)
 
 
 class AcuriteTower:
@@ -231,11 +233,18 @@ class HidekiTS04:
               'Humidity': 'humidity'}
     @staticmethod
     def parse(lines):
-        print "hideki: %s" % lines
-        return Parser.parse_lines(lines[1:], HidekiTS04.LABELS)
+        return Parser.parse_lines(lines, HidekiTS04.LABELS)
 
 
 class OSTHGR810:
+    # 2016-09-01 22:05:47 :Weather Sensor THGR810
+    # House Code: 122
+    # Channel: 1
+    # Battery: OK
+    # Celcius: 26.70 C
+    # Fahrenheit: 80.06 F
+    # Humidity: 58 %
+
     IDENTIFIER = "Weather Sensor THGR810"
     LABELS = {'House Code': 'house_code',
               'Channel': 'channel',
@@ -245,8 +254,19 @@ class OSTHGR810:
               'Humidity': 'humidity'}
     @staticmethod
     def parse(lines):
-        print "os: %s" % lines
-        return Parser.parse_lines(lines[1:], OSTHGR810.LABELS)
+        return Parser.parse_lines(lines, OSTHGR810.LABELS)
+
+
+class LaCrosse:
+    IDENTIFIER = "LaCrosse WS"
+    LABELS = {'Temperature': 'temperature',
+              'Humidity': 'humidity',
+              'Rainfall': 'rain_total',
+              'Wind speed': 'wind_speed',
+              'Direction': 'wind_dir'}
+    @staticmethod
+    def parse(lines):
+        return Parser.parse_lines(lines, LaCrosse.LABELS)
 
 
 class SDRConfigurationEditor(weewx.drivers.AbstractConfEditor):
@@ -267,7 +287,8 @@ class SDRDriver(weewx.drivers.AbstractDevice):
                AcuriteTower,
                Acurite5n1,
                HidekiTS04,
-               OSTHGR810]
+               OSTHGR810,
+               LaCrosse]
 
     def __init__(self, **stn_dict):
         loginf('driver version is %s' % DRIVER_VERSION)
@@ -341,6 +362,13 @@ if __name__ == '__main__':
     mgr = ProcManager()
     mgr.startup('rtl_433')
     for out, err in mgr.process():
+        if options.debug:
+            if out:
+                for line in out:
+                    print "out:", line.strip()
+#            if err:
+#                for line in err:
+#                    print "err: ", line.strip()
         raw_packet = SDRDriver.parse(out)
         if raw_packet:
             if options.debug:
@@ -348,10 +376,8 @@ if __name__ == '__main__':
             map_packet = SDRDriver.map_to_fields(raw_packet)
             if map_packet:
                 print 'mapped packet: %s' % map_packet
-            elif out:
+        else:
+            if out:
                 for line in out:
-                    print line.strip()
-#        if err:
-#            for line in err:
-#                print "error: ", line.strip()
+                    print "unparsed out:", line.strip()
         time.sleep(0.1)
