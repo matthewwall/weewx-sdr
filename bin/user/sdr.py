@@ -517,15 +517,13 @@ if __name__ == '__main__':
     mgr.startup('rtl_433')
     for lines in mgr.process():
         if options.debug:
-            for line in lines:
-                print "out:", line.strip()
+            print "out:", lines
         packet = Packet.create(lines)
         if packet:
             if options.debug:
-                print 'raw packet: %s' % packet
+                print 'parsed: %s' % packet
             packet = SDRDriver.map_to_fields(packet)
             print 'packet: %s' % packet
         else:
-            for line in lines:
-                print "unparsed:", line.strip()
+            print "unparsed:", lines
         time.sleep(0.1)
