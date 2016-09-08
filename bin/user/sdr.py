@@ -54,17 +54,17 @@ class AsyncReader(threading.Thread):
             self._queue.put(line)
 
     def eof(self):
-        return not self.is_alive() and self._queue.empty()
+#        return not self.is_alive() and self._queue.empty()
+        return not self.is_alive()
 
 
 class ProcManager():
+    TS = re.compile('^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d[\s]+')
 
     def __init__(self):
         self._process = None
         self.stdout_queue = Queue.Queue()
         self.stdout_reader = None
-        self.stderr_queue = Queue.Queue()
-        self.stderr_reader = None
 
     def startup(self, cmd):
         loginf("startup process '%s'" % cmd)
@@ -74,27 +74,25 @@ class ProcManager():
         self.stdout_reader = AsyncReader(
             self._process.stdout, self.stdout_queue, 'stdout-thread')
         self.stdout_reader.start()
-        self.stderr_reader = AsyncReader(
-            self._process.stderr, self.stderr_queue, 'stderr-thread')
-        self.stderr_reader.start()
 
     def process(self):
-        out = err = []
-        while not self.stdout_reader.eof() or not self.stderr_reader.eof():
-            while not self.stdout_queue.empty():
-                out.append(self.stdout_queue.get())
-            while not self.stderr_queue.empty():
-                err.append(self.stderr_queue.get())
-            if out or err:
-                yield out, err
-                out = err = []
+        lines = []
+        while not self.stdout_reader.eof():
+            try:
+                line = self.stdout_queue.get(True, 10)
+                m = ProcManager.TS.search(line)
+                if m and lines:
+                    yield lines
+                    lines = []
+                lines.append(line)
+            except Queue.Empty:
+                yield lines
+                lines = []
 
     def shutdown(self):
         loginf('shutdown process')
         self.stdout_reader.join(10.0)
-        self.stderr_reader.join(10.0)
         self._process.stdout.close()
-        self._process.stderr.close()
         self._process = None
 
 
@@ -139,14 +137,11 @@ class Packet:
         # if there is a lamba dict, use it to conver the value
         # label, pattern, lambda
         packet = dict()
-        for line in lines:
-            logdbg("line: %s" % line)
+        for line in lines[1:]:
             if line.count(':') == 1:
                 try:
                     (name, value) = [x.strip() for x in line.split(':')]
                     if name in parseinfo:
-                        if parseinfo[name][0]:
-                            name = parseinfo[name][0]
                         if parseinfo[name][1]:
                             m = parseinfo[name][1].search(value)
                             if m:
@@ -155,6 +150,8 @@ class Packet:
                                 logdbg("regex failed for %s:'%s'" % (name, value))
                         if parseinfo[name][2]:
                             value = parseinfo[name][2](value)
+                        if parseinfo[name][0]:
+                            name = parseinfo[name][0]
                     packet[name] = value
                 except Exception, e:
                     logerr("parse failed for line '%s': %s" % (line, e))
@@ -302,11 +299,12 @@ class HidekiTS04Packet(Packet):
 
     IDENTIFIER = "HIDEKI TS04 sensor"
     PARSEINFO = {
-        'Rolling Code': ['rolling_code', None, lambda x : int(x) ],
-        'Channel': ['channel', None, lambda x : int(x) ],
-        'Battery': ['battery', None, lambda x : 0 if x == 'OK' else 1 ],
-        'Temperature': ['temperature', re.compile('([\d.]+) C'), None],
-        'Humidity': ['humidity', re.compile('([\d.]+) %'), None]
+        'Rolling Code': ['rolling_code', None, lambda x : int(x)],
+        'Channel': ['channel', None, lambda x : int(x)],
+        'Battery': ['battery', None, lambda x : 0 if x == 'OK' else 1],
+        'Temperature':
+            ['temperature', re.compile('([\d.]+) C'), lambda x : float(x)],
+        'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x : float(x)]
         }
     @staticmethod
     def parse(ts, payload, lines):
@@ -332,30 +330,47 @@ class OSTHGR810Packet(Packet):
         'House Code': ['house_code', None, lambda x : int(x) ],
         'Channel': ['channel', None, lambda x : int(x) ],
         'Battery': ['battery', None, lambda x : 0 if x == 'OK' else 1],
-        'Celcius': ['temperature', re.compile('([\d.]+) C'), lambda x : float(x)],
-        'Fahrenheit': ['temperature_F', re.compile('([\d.]+) F'), lambda x : float(x)],
-        'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x : int(x)]
+        'Celcius':
+            ['temperature', re.compile('([\d.]+) C'), lambda x : float(x)],
+        'Fahrenheit':
+            ['temperature_F', re.compile('([\d.]+) F'), lambda x : float(x)],
+        'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x : float(x)]
         }
     @staticmethod
     def parse(ts, payload, lines):
         pkt = dict()
         pkt['dateTime'] = ts
-        pkt['sensor_type'] = HidekiTS04Packet.IDENTIFIER
+        pkt['sensor_type'] = OSTHGR810Packet.IDENTIFIER
         pkt['usUnits'] = weewx.METRIC
         pkt.update(Packet.parse_lines(lines, OSTHGR810Packet.PARSEINFO))
         return pkt
 
 
 class LaCrossePacket(Packet):
-    # 2016-09-04 16:59:06 :LaCrosse WS :9 :202
+    # 2016-09-08 00:43:52 :LaCrosse WS :9 :202
+    # Temperature: 21.0 C
+    # 2016-09-08 00:43:53 :LaCrosse WS :9 :202
+    # Humidity: 92
+    # 2016-09-08 00:43:53 :LaCrosse WS :9 :202
+    # Wind speed: 0.0 m/s
+    # Direction: 67.500
 
     IDENTIFIER = "LaCrosse WS"
+    PARSEINFO = {
+        'Wind speed':
+            ['wind_speed', re.compile('([\d.]+) m/s'), lambda x : float(x)],
+        'Direction': ['wind_dir', None, lambda x : float(x)],
+        'Temperature':
+            ['temperature', re.compile('([\d.]+) C'), lambda x : float(x)],
+        'Humidity': ['humidity', None, lambda x : int(x)]
+        }
     @staticmethod
     def parse(ts, payload, lines):
         pkt = dict()
         pkt['dateTime'] = ts
-        pkt['sensor_type'] = HidekiTS04Packet.IDENTIFIER
+        pkt['sensor_type'] = LaCrossePacket.IDENTIFIER
         pkt['usUnits'] = weewx.METRIC
+        pkt.update(Packet.parse_lines(lines, LaCrossePacket.PARSEINFO))
         return pkt
 
 
@@ -393,10 +408,9 @@ class SDRDriver(weewx.drivers.AbstractDevice):
         return 'SDR'
 
     def genLoopPackets(self):
-        for out, err in self._mgr.process():
-            logdbg('raw out: %s' % out)
-            logdbg('raw err: %s' % err)
-            packet = Packet.create(out)
+        for lines in self._mgr.process():
+            logdbg('raw out: %s' % lines)
+            packet = Packet.create(lines)
             if packet:
                 packet = self.map_to_fields(packet, self._obs_map)
                 yield packet
@@ -436,7 +450,6 @@ if __name__ == '__main__':
     if options.debug:
         syslog.setlogmask(syslog.LOG_UPTO(syslog.LOG_DEBUG))
 
-#    Packet.KNOWN_PACKETS = [FineOffsetWH1080Packet]
     Packet.KNOWN_PACKETS = [FineOffsetWH1080Packet,
                             AcuriteTowerPacket,
                             Acurite5n1Packet,
@@ -445,18 +458,16 @@ if __name__ == '__main__':
                             LaCrossePacket]
     mgr = ProcManager()
     mgr.startup('rtl_433')
-    for out, err in mgr.process():
+    for lines in mgr.process():
         if options.debug:
-            if out:
-                for line in out:
-                    print "out:", line.strip()
-        packet = Packet.create(out)
+            for line in lines:
+                print "out:", line.strip()
+        packet = Packet.create(lines)
         if packet:
             print 'raw packet: %s' % packet
             packet = SDRDriver.map_to_fields(packet)
             print 'db packet: %s' % packet
         else:
-            if out:
-                for line in out:
-                    print "unparsed:", line.strip()
+            for line in lines:
+                print "unparsed:", line.strip()
         time.sleep(0.1)
