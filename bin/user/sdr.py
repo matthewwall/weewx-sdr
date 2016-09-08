@@ -19,6 +19,8 @@ import weewx.drivers
 DRIVER_NAME = 'SDR'
 DRIVER_VERSION = '0.2'
 
+LOG_UNKNOWN_SENSORS = 0
+
 def loader(config_dict, _):
     return SDRDriver(**config_dict[DRIVER_NAME])
 
@@ -106,6 +108,7 @@ class Packet:
         logdbg("lines=%s" % lines)
         if lines:
             ts, payload = Packet.get_timestamp(lines[0])
+            logdbg("ts=%s payload=%s" % (ts, payload))
             if ts and payload:
                 for parser in Packet.KNOWN_PACKETS:
                     if payload.find(parser.IDENTIFIER) >= 0:
@@ -125,7 +128,6 @@ class Packet:
                 utc = time.strptime(m.group(1), "%Y-%m-%d %H:%M:%S")
                 ts = timegm(utc)
                 payload = m.group(2).strip()
-                logdbg("ts=%s payload=%s" % (ts, payload))
         except Exception, e:
             logerr("parse timestamp failed for '%s': %s" % (line, e))
         return ts, payload
@@ -273,6 +275,9 @@ class FOWH1080Packet(Packet):
     # Total rainfall: 144.3
     # Battery: OK
 
+    # FIXME: verify that wind speed is kph
+    # FIXME: verify that rain total is cm
+
     IDENTIFIER = "Fine Offset WH1080 weather station"
     PARSEINFO = {
 #        'Msg type': ['msg_type', None, None],
@@ -285,7 +290,7 @@ class FOWH1080Packet(Packet):
         'Wind degrees': ['wind_dir', None, lambda x : int(x)],
         'Wind avg speed': ['wind_speed', None, lambda x : float(x)],
         'Wind gust': ['wind_gust', None, lambda x : float(x)],
-        'Total rainfall': ['total_rain', None, lambda x : float(x)],
+        'Total rainfall': ['rain_total', None, lambda x : float(x)],
         'Battery': ['battery', None, lambda x : 0 if x == 'OK' else 1]
         }
     @staticmethod
@@ -385,7 +390,7 @@ class LaCrossePacket(Packet):
     def parse(ts, payload, lines):
         pkt = dict()
         pkt['dateTime'] = ts
-        pkt['usUnits'] = weewx.METRIC
+        pkt['usUnits'] = weewx.METRICWX
         pkt.update(Packet.parse_lines(lines, LaCrossePacket.PARSEINFO))
         sensor_id = ''
         parts = payload.split(':')
@@ -404,6 +409,27 @@ class SDRConfigurationEditor(weewx.drivers.AbstractConfEditor):
 
     # The driver to use
     driver = user.sdr
+
+    # The sensor map associates observations with database fields.  Each map
+    # element consists of a tuple on the left and a database field name on the
+    # right.  The tuple on the left consists of:
+    #
+    #   <observation_name>.<sensor_identifier>.<packet_type>
+    #
+    # The sensor_identifier is hardware-specific.  For example, Acurite sensors
+    # have a 4 character hexadecimal identifier, whereas fine offset sensor
+    # clusters have a 4 digit identifier.
+    #
+# map data from any fine offset sensor cluster to database field names
+#    [[sensor_map]]
+#        wind_gust.*.FOWH1080Packet = windGust
+#        battery.*.FOWH1080Packet = outBatteryStatus
+#        total_rain.*.FOWH1080Packet = rain
+#        wind_speed.*.FOWH1080Packet = windSpeed
+#        wind_dir.*.FOWH1080Packet = windDir
+#        humidity.*.FOWH1080Packet = outHumidity
+#        temperature.*.FOWH1080Packet = outTemp
+
 """
 
 
@@ -411,8 +437,11 @@ class SDRDriver(weewx.drivers.AbstractDevice):
 
     def __init__(self, **stn_dict):
         loginf('driver version is %s' % DRIVER_VERSION)
+        global LOG_UNKNOWN_SENSORS
+        LOG_UNKNOWN_SENSORS = int(stn_dict.get('log_unknown_sensors', 0))
         self._obs_map = stn_dict.get('sensor_map', None)
         self._cmd = stn_dict.get('cmd', 'rtl_433')
+        self._last_pkt = None # avoid duplicate sequential packets
         Packet.KNOWN_PACKETS = [FOWH1080Packet,
                                 AcuriteTowerPacket,
                                 Acurite5n1Packet,
@@ -433,18 +462,26 @@ class SDRDriver(weewx.drivers.AbstractDevice):
             packet = Packet.create(lines)
             if packet:
                 packet = self.map_to_fields(packet, self._obs_map)
-                yield packet
+                if packet and packet != self._last_pkt:
+                    logdbg("packet=%s" % packet)
+                    self._last_pkt = packet
+                    yield packet
+            elif LOG_UNKNOWN_SENSORS:
+                loginf("unparsed: %s" % lines)
 
     @staticmethod
     def map_to_fields(pkt, obs_map=None):
         if obs_map is None:
             return pkt
         packet = dict()
-        for k in pkt:
-            if k in ['dateTime', 'usUnits']:
-                packet[k] = pkt[k]
-            elif k in obs_map:
+        keys_a = set(pkt.keys())
+        keys_b = set(obs_map.keys())
+        keys = keys_a & keys_b
+        if keys:
+            for k in keys:
                 packet[obs_map[k]] = pkt[k]
+            for k in ['dateTime', 'usUnits']:
+                packet[k] = pkt[k]
         return packet
 
 
