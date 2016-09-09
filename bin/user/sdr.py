@@ -467,7 +467,6 @@ class SDRDriver(weewx.drivers.AbstractDevice):
             OSTHGR810Packet,
             LaCrossePacket]
         self._mgr = ProcManager()
-        self._mgr.startup(self._cmd)
 
     def closePort(self):
         self._mgr.shutdown()
@@ -476,6 +475,7 @@ class SDRDriver(weewx.drivers.AbstractDevice):
         return 'SDR'
 
     def genLoopPackets(self):
+        self._mgr.startup(self._cmd)
         while self._mgr.running():
             for lines in self._mgr.process():
                 packet = Packet.create(lines)
