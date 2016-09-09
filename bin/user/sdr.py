@@ -57,8 +57,7 @@ class AsyncReader(threading.Thread):
             self._queue.put(line)
 
     def eof(self):
-#        return not self.is_alive() and self._queue.empty()
-        return not self.is_alive()
+        return not self.is_alive() and self._queue.empty()
 
 
 class ProcManager():
@@ -68,6 +67,8 @@ class ProcManager():
         self._process = None
         self.stdout_queue = Queue.Queue()
         self.stdout_reader = None
+        self.stderr_queue = Queue.Queue()
+        self.stderr_reader = None
 
     def startup(self, cmd):
         loginf("startup process '%s'" % cmd)
@@ -77,10 +78,22 @@ class ProcManager():
         self.stdout_reader = AsyncReader(
             self._process.stdout, self.stdout_queue, 'stdout-thread')
         self.stdout_reader.start()
+        self.stderr_reader = AsyncReader(
+            self._process.stderr, self.stderr_queue, 'stderr-thread')
+        self.stderr_reader.start()
+
+    def running(self):
+        return self.stdout_reader.is_alive()
+
+    def get_stderr(self):
+        lines = []
+        while not self.stderr_queue.empty():
+            lines.append(self.stderr_queue.get())
+        return lines
 
     def process(self):
         lines = []
-        while not self.stdout_reader.eof():
+        while self.running():
             try:
                 line = self.stdout_queue.get(True, 10)
                 m = ProcManager.TS.search(line)
@@ -463,21 +476,26 @@ class SDRDriver(weewx.drivers.AbstractDevice):
         return 'SDR'
 
     def genLoopPackets(self):
-        for lines in self._mgr.process():
-            packet = Packet.create(lines)
-            if packet:
-                packet = self.map_to_fields(packet, self._obs_map)
+        while self._mgr.running():
+            for lines in self._mgr.process():
+                packet = Packet.create(lines)
                 if packet:
-                    if packet != self._last_pkt:
-                        logdbg("packet=%s" % packet)
-                        self._last_pkt = packet
-                        yield packet
-                    else:
-                        logdbg("ignoring duplicate packet %s" % packet)
-                elif self._log_unmapped:
-                    loginf("unmapped: %s" % lines)
-            elif self._log_unknown:
-                loginf("unparsed: %s" % lines)
+                    packet = self.map_to_fields(packet, self._obs_map)
+                    if packet:
+                        if packet != self._last_pkt:
+                            logdbg("packet=%s" % packet)
+                            self._last_pkt = packet
+                            yield packet
+                        else:
+                            logdbg("ignoring duplicate packet %s" % packet)
+                    elif self._log_unmapped:
+                        loginf("unmapped: %s" % lines)
+                elif self._log_unknown:
+                    loginf("unparsed: %s" % lines)
+            self._mgr.get_stderr() # flush the stderr queue
+        else:
+            logerr("err: %s" % self._mgr.get_stderr())
+            raise weewx.WeeWxIOError("rtl_433 process is not running")
 
     @staticmethod
     def map_to_fields(pkt, obs_map=None):
