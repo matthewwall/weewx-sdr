@@ -5,6 +5,8 @@ Collect data from stl-sdr.  Run rtl_433 on a thread and push the output onto
 a queue.
 """
 
+# FIXME: make packet parsers dynamically loadable
+
 from __future__ import with_statement
 from calendar import timegm
 import Queue
@@ -15,11 +17,10 @@ import threading
 import time
 
 import weewx.drivers
+from weeutil.weeutil import tobool
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.2'
-
-LOG_UNKNOWN_SENSORS = 0
+DRIVER_VERSION = '0.3'
 
 def loader(config_dict, _):
     return SDRDriver(**config_dict[DRIVER_NAME])
@@ -115,8 +116,8 @@ class Packet:
                         pkt = parser.parse(ts, payload, lines)
                         logdbg("pkt=%s" % pkt)
                         return pkt
-            logdbg("unhandled message format: ts=%s payload=%s" %
-                   (ts, payload))
+                logdbg("unhandled message format: ts=%s payload=%s" %
+                       (ts, payload))
         return None
 
     @staticmethod
@@ -135,10 +136,10 @@ class Packet:
     @staticmethod
     def parse_lines(lines, parseinfo={}):
         # parse each line, splitting on colon for name:value
-        # if there is a label dict, use it to transform the name
-        # if there is a pattern dict, use it to match the value
-        # if there is a lamba dict, use it to conver the value
-        # label, pattern, lambda
+        # tuble is label, pattern, lambda
+        # if there is a label, use it to transform the name
+        # if there is a pattern, use it to match the value
+        # if there is a lamba, use it to conver the value
         packet = dict()
         for line in lines[1:]:
             if line.count(':') == 1:
@@ -150,7 +151,8 @@ class Packet:
                             if m:
                                 value = m.group(1)
                             else:
-                                logdbg("regex failed for %s:'%s'" % (name, value))
+                                logdbg("regex failed for %s:'%s'" %
+                                       (name, value))
                         if parseinfo[name][2]:
                             value = parseinfo[name][2](value)
                         if parseinfo[name][0]:
@@ -199,7 +201,7 @@ class AcuriteTowerPacket(Packet):
             pkt = Packet.add_identifiers(
                 pkt, sensor_id, AcuriteTowerPacket.__name__)
         else:
-            logdbg("unrecognized data: '%s'" % lines[0])
+            loginf("AcuriteTowerPacket: unrecognized data: '%s'" % lines[0])
         return pkt
 
 
@@ -247,8 +249,8 @@ class Acurite5n1Packet(Packet):
                         pkt = Packet.add_identifiers(
                             pkt, sensor_id, Acurite5n1Packet.__name__)
                 else:
-                    logerr("unknown message type %s in line '%s'" %
-                           (msg_type, lines[0]))
+                    loginf("Acurite5n1Packet: unknown message type %s"
+                           " in line '%s'" % (msg_type, lines[0]))
             else:
                 m = Acurite5n1Packet.RAIN.search(payload)
                 if m:
@@ -256,9 +258,10 @@ class Acurite5n1Packet(Packet):
                     pkt = Packet.add_identifiers(
                         pkt, sensor_id, Acurite5n1Packet.__name__)
                 else:
-                    logerr("unknown message format: '%s'" % lines[0])
+                    loginf("Acurite5n1Packet: unknown message format: '%s'" %
+                           lines[0])
         else:
-            logdbg("unrecognized data: '%s'" % lines[0])
+            loginf("Acurite5n1Packet: unrecognized data: '%s'" % lines[0])
         return pkt
 
 
@@ -300,8 +303,7 @@ class FOWH1080Packet(Packet):
         pkt['usUnits'] = weewx.METRIC
         pkt.update(Packet.parse_lines(lines, FOWH1080Packet.PARSEINFO))
         station_id = pkt.pop('station_id', '0000')
-        pkt = Packet.add_identifiers(
-            pkt, station_id, FOWH1080Packet.__name__)
+        pkt = Packet.add_identifiers(pkt, station_id, FOWH1080Packet.__name__)
         return pkt
 
 
@@ -437,17 +439,20 @@ class SDRDriver(weewx.drivers.AbstractDevice):
 
     def __init__(self, **stn_dict):
         loginf('driver version is %s' % DRIVER_VERSION)
-        global LOG_UNKNOWN_SENSORS
-        LOG_UNKNOWN_SENSORS = int(stn_dict.get('log_unknown_sensors', 0))
+        self._log_unknown = tobool(stn_dict.get('log_unknown_sensors', False))
+        self._log_unmapped = tobool(stn_dict.get('log_unmapped_sensors', False))
         self._obs_map = stn_dict.get('sensor_map', None)
+        loginf('sensor map is %s' % self._obs_map)
         self._cmd = stn_dict.get('cmd', 'rtl_433')
         self._last_pkt = None # avoid duplicate sequential packets
-        Packet.KNOWN_PACKETS = [FOWH1080Packet,
-                                AcuriteTowerPacket,
-                                Acurite5n1Packet,
-                                HidekiTS04Packet,
-                                OSTHGR810Packet,
-                                LaCrossePacket]
+        # FIXME: make this list dynamically loadable
+        Packet.KNOWN_PACKETS = [
+            FOWH1080Packet,
+            AcuriteTowerPacket,
+            Acurite5n1Packet,
+            HidekiTS04Packet,
+            OSTHGR810Packet,
+            LaCrossePacket]
         self._mgr = ProcManager()
         self._mgr.startup(self._cmd)
 
@@ -462,11 +467,16 @@ class SDRDriver(weewx.drivers.AbstractDevice):
             packet = Packet.create(lines)
             if packet:
                 packet = self.map_to_fields(packet, self._obs_map)
-                if packet and packet != self._last_pkt:
-                    logdbg("packet=%s" % packet)
-                    self._last_pkt = packet
-                    yield packet
-            elif LOG_UNKNOWN_SENSORS:
+                if packet:
+                    if packet != self._last_pkt:
+                        logdbg("packet=%s" % packet)
+                        self._last_pkt = packet
+                        yield packet
+                    else:
+                        logdbg("ignoring duplicate packet %s" % packet)
+                elif self._log_unmapped:
+                    loginf("unmapped: %s" % lines)
+            elif self._log_unknown:
                 loginf("unparsed: %s" % lines)
 
     @staticmethod
