@@ -23,6 +23,8 @@ from weeutil.weeutil import tobool
 DRIVER_NAME = 'SDR'
 DRIVER_VERSION = '0.4'
 
+DEFAULT_CMD = 'rtl_433 -q -U'
+
 def loader(config_dict, _):
     return SDRDriver(**config_dict[DRIVER_NAME])
 
@@ -504,7 +506,7 @@ class SDRDriver(weewx.drivers.AbstractDevice):
         # -q - suppress non-data messages
         # -U - print timestamps in UTC
         # -F json - emit data in json format (not all drivers support this)
-        self._cmd = stn_dict.get('cmd', 'rtl_433 -q -U')
+        self._cmd = stn_dict.get('cmd', DEFAULT_CMD)
         self._path = stn_dict.get('path', None)
         self._ld_library_path = stn_dict.get('ld_library_path', None)
         self._last_pkt = None # avoid duplicate sequential packets
@@ -558,7 +560,9 @@ class SDRDriver(weewx.drivers.AbstractDevice):
 if __name__ == '__main__':
     import optparse
 
-    usage = """%prog [options] [--debug] [--help] [--cmd=rtl_433]"""
+    usage = """%prog [options] [--debug] [--help]
+                     [--cmd='rtl_433 -q -U'] 
+                     [--path=PATH] [--ld_library_path=LD_LIBRARY_PATH]"""
 
     syslog.openlog('sdr', syslog.LOG_PID | syslog.LOG_CONS)
     syslog.setlogmask(syslog.LOG_UPTO(syslog.LOG_INFO))
@@ -567,7 +571,7 @@ if __name__ == '__main__':
                       help='display driver version')
     parser.add_option('--debug', dest='debug', action='store_true',
                       help='display diagnostic information while running')
-    parser.add_option('--cmd', dest='cmd', default='rtl_433',
+    parser.add_option('--cmd', dest='cmd', default=DEFAULT_CMD,
                       help='rtl_433 command')
     parser.add_option('--path', dest='path',
                       help='value for PATH')
@@ -583,13 +587,6 @@ if __name__ == '__main__':
     if options.debug:
         syslog.setlogmask(syslog.LOG_UPTO(syslog.LOG_DEBUG))
 
-    Packet.KNOWN_PACKETS = [FOWH1080Packet,
-                            AcuriteTowerPacket,
-                            Acurite5n1Packet,
-                            HidekiTS04Packet,
-                            OSTHGR810Packet,
-                            OSTHR228NPacket,
-                            LaCrossePacket]
     mgr = ProcManager()
     mgr.startup(options.cmd, path=options.path, ld_library_path=options.ld_library_path)
     for lines in mgr.process():
