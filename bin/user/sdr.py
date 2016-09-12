@@ -10,6 +10,7 @@ a queue.
 from __future__ import with_statement
 from calendar import timegm
 import Queue
+import os
 import re
 import subprocess
 import syslog
@@ -70,9 +71,15 @@ class ProcManager():
         self.stderr_queue = Queue.Queue()
         self.stderr_reader = None
 
-    def startup(self, cmd):
+    def startup(self, cmd, path=None, ld_library_path=None):
         loginf("startup process '%s'" % cmd)
-        self._process = subprocess.Popen(cmd,
+        env = os.environ.copy()
+        if path:
+            env['PATH'] = path + ':' + env['PATH']
+        if ld_library_path:
+            env['LD_LIBRARY_PATH'] = ld_library_path
+        self._process = subprocess.Popen(cmd.split(' '),
+                                         env=env,
                                          stdout=subprocess.PIPE,
                                          stderr=subprocess.PIPE)
         self.stdout_reader = AsyncReader(
@@ -114,24 +121,6 @@ class ProcManager():
 
 class Packet:
     TS_PATTERN = re.compile('(\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d)[\s]+:*(.*)')
-
-    KNOWN_PACKETS = []
-
-    @staticmethod
-    def create(lines):
-        logdbg("lines=%s" % lines)
-        if lines:
-            ts, payload = Packet.get_timestamp(lines[0])
-            logdbg("ts=%s payload=%s" % (ts, payload))
-            if ts and payload:
-                for parser in Packet.KNOWN_PACKETS:
-                    if payload.find(parser.IDENTIFIER) >= 0:
-                        pkt = parser.parse(ts, payload, lines)
-                        logdbg("pkt=%s" % pkt)
-                        return pkt
-                logdbg("unhandled message format: ts=%s payload=%s" %
-                       (ts, payload))
-        return None
 
     @staticmethod
     def get_timestamp(line):
@@ -383,6 +372,34 @@ class OSTHGR810Packet(Packet):
         return pkt
 
 
+class OSTHR228NPacket(Packet):
+    # 2016-09-09 11:59:10 :   Thermo Sensor THR228N
+    # House Code:      111
+    # Channel:         2
+    # Battery:         OK
+    # Temperature:     24.70 C
+
+    IDENTIFIER = "Thermo Sensor THR228N"
+    PARSEINFO = {
+        'House Code': ['house_code', None, lambda x : int(x) ],
+        'Channel': ['channel', None, lambda x : int(x) ],
+        'Battery': ['battery', None, lambda x : 0 if x == 'OK' else 1],
+        'Temperature':
+            ['temperature', re.compile('([\d.]+) C'), lambda x : float(x)]
+        }
+    @staticmethod
+    def parse(ts, payload, lines):
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRIC
+        pkt.update(Packet.parse_lines(lines, OSTHR228NPacket.PARSEINFO))
+        channel = pkt.pop('channel', 0)
+        code = pkt.pop('house_code', 0)
+        sensor_id = "%s:%s" % (channel, code)
+        pkt = Packet.add_identifiers(pkt, sensor_id, OSTHR228NPacket.__name__)
+        return pkt
+
+
 class LaCrossePacket(Packet):
     # 2016-09-08 00:43:52 :LaCrosse WS :9 :202
     # Temperature: 21.0 C
@@ -413,6 +430,34 @@ class LaCrossePacket(Packet):
             sensor_id = "%s:%s" % (parts[1].strip(), parts[2].strip())
         pkt = Packet.add_identifiers(pkt, sensor_id, LaCrossePacket.__name__)
         return pkt
+
+
+class PacketFactory(object):
+
+    Packet.KNOWN_PACKETS = [
+        FOWH1080Packet,
+        AcuriteTowerPacket,
+        Acurite5n1Packet,
+        HidekiTS04Packet,
+        OSTHGR810Packet,
+        OSTHR228NPacket,
+        LaCrossePacket]
+
+    @staticmethod
+    def create(lines):
+        logdbg("lines=%s" % lines)
+        if lines:
+            ts, payload = Packet.get_timestamp(lines[0])
+            logdbg("ts=%s payload=%s" % (ts, payload))
+            if ts and payload:
+                for parser in Packet.KNOWN_PACKETS:
+                    if payload.find(parser.IDENTIFIER) >= 0:
+                        pkt = parser.parse(ts, payload, lines)
+                        logdbg("pkt=%s" % pkt)
+                        return pkt
+                logdbg("unhandled message format: ts=%s payload=%s" %
+                       (ts, payload))
+        return None
 
 
 class SDRConfigurationEditor(weewx.drivers.AbstractConfEditor):
@@ -456,16 +501,13 @@ class SDRDriver(weewx.drivers.AbstractDevice):
         self._log_unmapped = tobool(stn_dict.get('log_unmapped_sensors', False))
         self._obs_map = stn_dict.get('sensor_map', None)
         loginf('sensor map is %s' % self._obs_map)
-        self._cmd = stn_dict.get('cmd', 'rtl_433')
+        # -q - suppress non-data messages
+        # -U - print timestamps in UTC
+        # -F json - emit data in json format (not all drivers support this)
+        self._cmd = stn_dict.get('cmd', 'rtl_433 -q -U')
+        self._path = stn_dict.get('path', None)
+        self._ld_library_path = stn_dict.get('ld_library_path', None)
         self._last_pkt = None # avoid duplicate sequential packets
-        # FIXME: make this list dynamically loadable
-        Packet.KNOWN_PACKETS = [
-            FOWH1080Packet,
-            AcuriteTowerPacket,
-            Acurite5n1Packet,
-            HidekiTS04Packet,
-            OSTHGR810Packet,
-            LaCrossePacket]
         self._mgr = ProcManager()
 
     def closePort(self):
@@ -475,10 +517,10 @@ class SDRDriver(weewx.drivers.AbstractDevice):
         return 'SDR'
 
     def genLoopPackets(self):
-        self._mgr.startup(self._cmd)
+        self._mgr.startup(self._cmd, self._path, self._ld_library_path)
         while self._mgr.running():
             for lines in self._mgr.process():
-                packet = Packet.create(lines)
+                packet = PacketFactory.create(lines)
                 if packet:
                     packet = self.map_to_fields(packet, self._obs_map)
                     if packet:
@@ -516,7 +558,7 @@ class SDRDriver(weewx.drivers.AbstractDevice):
 if __name__ == '__main__':
     import optparse
 
-    usage = """%prog [options] [--debug] [--help]"""
+    usage = """%prog [options] [--debug] [--help] [--cmd=rtl_433]"""
 
     syslog.openlog('sdr', syslog.LOG_PID | syslog.LOG_CONS)
     syslog.setlogmask(syslog.LOG_UPTO(syslog.LOG_INFO))
@@ -525,6 +567,12 @@ if __name__ == '__main__':
                       help='display driver version')
     parser.add_option('--debug', dest='debug', action='store_true',
                       help='display diagnostic information while running')
+    parser.add_option('--cmd', dest='cmd', default='rtl_433',
+                      help='rtl_433 command')
+    parser.add_option('--path', dest='path',
+                      help='value for PATH')
+    parser.add_option('--ld_library_path', dest='ld_library_path',
+                      help='value for LD_LIBRARY_PATH')
 
     (options, args) = parser.parse_args()
 
@@ -540,13 +588,14 @@ if __name__ == '__main__':
                             Acurite5n1Packet,
                             HidekiTS04Packet,
                             OSTHGR810Packet,
+                            OSTHR228NPacket,
                             LaCrossePacket]
     mgr = ProcManager()
-    mgr.startup('rtl_433')
+    mgr.startup(options.cmd, path=options.path, ld_library_path=options.ld_library_path)
     for lines in mgr.process():
         if options.debug:
             print "out:", lines
-        packet = Packet.create(lines)
+        packet = PacketFactory.create(lines)
         if packet:
             if options.debug:
                 print 'parsed: %s' % packet
