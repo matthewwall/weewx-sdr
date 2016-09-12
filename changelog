@@ -1,2 +1,10 @@
+0.7 12sep2016
+* improved process management
+* report errors better during startup
+* use new mapping syntax output=input
+* added comments about how to configure
+* options to log unparsed packets
+* options to log unmapped data from parsed packets
+
 0.1 30mar2016
 * initial release
