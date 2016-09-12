@@ -21,10 +21,8 @@ Output from the following sensors is recognized:
     Fine Offset WH1080 weather station
     HIDEKI TS04 sensor
     Weather Sensor THGR810
+    Thermo Sensor THR228N
     LaCrosse WS
-
-Output from unrecognized sensors will be emitted to the log when parameter
-log_unknown_sensors = 1
 
 
 Installation
@@ -66,35 +64,35 @@ Here are some examples:
 [SDR]
     driver = user.sdr
     [[sensor_map]]
-        wind_dir.0BFA.Acurite5n1Packet = windDir
-        wind_speed.0BFA.Acurite5n1Packet = windSpeed
-        temperature.0BFA.Acurite5n1Packet = outTemp
-        humidity.0BFA.Acurite5n1Packet = outHumidity
-        temperature.24A4.AcuriteTowerPacket = inTemp
-        humidity.24A4.AcuriteTowerPacket = inHumidity
+        windDir = wind_dir.0BFA.Acurite5n1Packet
+        windSpeed = wind_speed.0BFA.Acurite5n1Packet
+        outTemp = temperature.0BFA.Acurite5n1Packet
+        outHumidity = humidity.0BFA.Acurite5n1Packet
+        inTemp = temperature.24A4.AcuriteTowerPacket
+        inHumidity = humidity.24A4.AcuriteTowerPacket
 
 # collect data from two Hideki TS04 sensors with channel=1 and channel=2
 [SDR]
     driver = user.sdr
     [[sensor_map]]
-        battery.1:9.HidekiTS04Packet = outBatteryStatus
-        humidity.1:9.HidekiTS04Packet = outHumidity
-        temperature.1:9.HidekiTS04Packet = outTemp
-        battery.2:9.HidekiTS04Packet = inBatteryStatus
-        humidity.2:9.HidekiTS04Packet = inHumidity
-        temperature.2:9.HidekiTS04Packet = inTemp
+        outBatteryStatus = battery.1:9.HidekiTS04Packet
+        outHumidity = humidity.1:9.HidekiTS04Packet
+        outTemp = temperature.1:9.HidekiTS04Packet
+        inBatteryStatus = battery.2:9.HidekiTS04Packet
+        inHumidity = humidity.2:9.HidekiTS04Packet
+        inTemp = temperature.2:9.HidekiTS04Packet
 
 # collect data from Fine Offset sensor cluster 0026
 [SDR]
     driver = user.sdr
     [[sensor_map]]
-        wind_gust.0026.FOWH1080Packet = windGust
-        battery.0026.FOWH1080Packet = outBatteryStatus
-        total_rain.0026.FOWH1080Packet = rain
-        wind_speed.0026.FOWH1080Packet = windSpeed
-        wind_dir.0026.FOWH1080Packet = windDir
-        humidity.0026.FOWH1080Packet = outHumidity
-        temperature.0026.FOWH1080Packet = outTemp
+        windGust = wind_gust.0026.FOWH1080Packet
+        outBatteryStatus = battery.0026.FOWH1080Packet
+        rain_total = rain_total.0026.FOWH1080Packet
+        windSpeed = wind_speed.0026.FOWH1080Packet
+        windDir = wind_dir.0026.FOWH1080Packet
+        outHumidity = humidity.0026.FOWH1080Packet
+        outTemp = temperature.0026.FOWH1080Packet
 
 
 Environment

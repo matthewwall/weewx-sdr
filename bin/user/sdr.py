@@ -3,9 +3,53 @@
 """
 Collect data from stl-sdr.  Run rtl_433 on a thread and push the output onto
 a queue.
-"""
 
-# FIXME: make packet parsers dynamically loadable
+The SDR detects many different sensors and sensor types, so this driver
+includes a mechanism to filter the incoming data, and to map the filtered
+data onto the weewx database schema and identify the type of data from each
+sensor.
+
+Sensors are filtered based on a tuple that identifies uniquely each sensor.
+A tuple consists of the observation name, a unique identifier for the hardware,
+and the packet type, separated by periods:
+
+  <observation_name>.<hardware_id>.<packet_type>
+
+The data type determines how data from the sensor will be processed.  The
+data types include:
+
+  gauge - instantaneous measure, e.g., temperature, humidity
+  counter - continuous counters with overflow, e.g., rain_total, snow_total
+  absolute - counter that resets on each reading, e.g., rain, snow
+
+The default type is gauge.
+
+The filter and data types are specified in a sensor_map stanza in the driver
+stanza.  For example:
+
+[SDR]
+    driver = user.sdr
+    [[sensor_map]]
+        inTemp = temperature.25A6.AcuriteTowerPacket
+        [[[outTemp]]]
+            sensor = temperature.24A4.AcuriteTowerPacket
+        [[[rain]]]
+            sensor = rain_total.A52B.Acurite5n1Packet
+            data_type = counter
+
+If no sensor_map is specified, no data will be collected.
+
+To identify sensors, run the driver directly.  Alternatively, use the options
+log_unknown_sensors and log_unmapped_sensors to see data from the SDR that are
+not yet recognized by your configuration.
+
+[SDR]
+    driver = user.sdr
+    log_unknown_sensors = True
+    log_unmapped_sensors = True
+
+The default for each of these is False.
+"""
 
 from __future__ import with_statement
 from calendar import timegm
@@ -21,9 +65,13 @@ import weewx.drivers
 from weeutil.weeutil import tobool
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.4'
+DRIVER_VERSION = '0.6'
 
+# -q - suppress non-data messages
+# -U - print timestamps in UTC
+# -F json - emit data in json format (not all drivers support this)
 DEFAULT_CMD = 'rtl_433 -q -U'
+
 
 def loader(config_dict, _):
     return SDRDriver(**config_dict[DRIVER_NAME])
@@ -484,13 +532,13 @@ class SDRConfigurationEditor(weewx.drivers.AbstractConfEditor):
     #
 # map data from any fine offset sensor cluster to database field names
 #    [[sensor_map]]
-#        wind_gust.*.FOWH1080Packet = windGust
-#        battery.*.FOWH1080Packet = outBatteryStatus
-#        total_rain.*.FOWH1080Packet = rain
-#        wind_speed.*.FOWH1080Packet = windSpeed
-#        wind_dir.*.FOWH1080Packet = windDir
-#        humidity.*.FOWH1080Packet = outHumidity
-#        temperature.*.FOWH1080Packet = outTemp
+#        windGust = wind_gust.*.FOWH1080Packet
+#        outBatteryStatus = battery.*.FOWH1080Packet
+#        rain_total = rain_total.*.FOWH1080Packet
+#        windSpeed = wind_speed.*.FOWH1080Packet
+#        windDir = wind_dir.*.FOWH1080Packet
+#        outHumidity = humidity.*.FOWH1080Packet
+#        outTemp = temperature.*.FOWH1080Packet
 
 """
 
@@ -501,11 +549,8 @@ class SDRDriver(weewx.drivers.AbstractDevice):
         loginf('driver version is %s' % DRIVER_VERSION)
         self._log_unknown = tobool(stn_dict.get('log_unknown_sensors', False))
         self._log_unmapped = tobool(stn_dict.get('log_unmapped_sensors', False))
-        self._obs_map = stn_dict.get('sensor_map', None)
-        loginf('sensor map is %s' % self._obs_map)
-        # -q - suppress non-data messages
-        # -U - print timestamps in UTC
-        # -F json - emit data in json format (not all drivers support this)
+        self._sensor_map = stn_dict.get('sensor_map', {})
+        loginf('sensor map is %s' % self._sensor_map)
         self._cmd = stn_dict.get('cmd', DEFAULT_CMD)
         self._path = stn_dict.get('path', None)
         self._ld_library_path = stn_dict.get('ld_library_path', None)
@@ -524,7 +569,7 @@ class SDRDriver(weewx.drivers.AbstractDevice):
             for lines in self._mgr.process():
                 packet = PacketFactory.create(lines)
                 if packet:
-                    packet = self.map_to_fields(packet, self._obs_map)
+                    packet = self.map_to_fields(packet, self._sensor_map)
                     if packet:
                         if packet != self._last_pkt:
                             logdbg("packet=%s" % packet)
@@ -542,16 +587,16 @@ class SDRDriver(weewx.drivers.AbstractDevice):
             raise weewx.WeeWxIOError("rtl_433 process is not running")
 
     @staticmethod
-    def map_to_fields(pkt, obs_map=None):
-        if obs_map is None:
-            return pkt
+    def map_to_fields(pkt, sensor_map):
         packet = dict()
-        keys_a = set(pkt.keys())
-        keys_b = set(obs_map.keys())
-        keys = keys_a & keys_b
-        if keys:
-            for k in keys:
-                packet[obs_map[k]] = pkt[k]
+        for k in sensor_map.keys():
+            if isinstance(sensor_map[k], basestring) and sensor_map[k] in pkt:
+                packet[k] = pkt[sensor_map[k]]
+            elif (isinstance(sensor_map[k], dict)
+                  and 'sensor' in sensor_map[k]
+                  and sensor_map[k]['sensor'] in pkt):
+                packet[k] = pkt[sensor_map[k]['sensor']]
+        if packet:
             for k in ['dateTime', 'usUnits']:
                 packet[k] = pkt[k]
         return packet
@@ -588,16 +633,12 @@ if __name__ == '__main__':
         syslog.setlogmask(syslog.LOG_UPTO(syslog.LOG_DEBUG))
 
     mgr = ProcManager()
-    mgr.startup(options.cmd, path=options.path, ld_library_path=options.ld_library_path)
+    mgr.startup(options.cmd, path=options.path,
+                ld_library_path=options.ld_library_path)
     for lines in mgr.process():
-        if options.debug:
-            print "out:", lines
+        print "out:", lines
         packet = PacketFactory.create(lines)
         if packet:
-            if options.debug:
-                print 'parsed: %s' % packet
-            packet = SDRDriver.map_to_fields(packet)
-            print 'packet: %s' % packet
+            print 'parsed: %s' % packet
         else:
             print "unparsed:", lines
-        time.sleep(0.1)
