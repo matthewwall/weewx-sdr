@@ -21,7 +21,7 @@ import weewx.drivers
 from weeutil.weeutil import tobool
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.3'
+DRIVER_VERSION = '0.4'
 
 def loader(config_dict, _):
     return SDRDriver(**config_dict[DRIVER_NAME])
