@@ -33,7 +33,7 @@ stanza.  For example:
         inTemp = temperature.25A6.AcuriteTowerPacket
         [[[outTemp]]]
             sensor = temperature.24A4.AcuriteTowerPacket
-        [[[rain]]]
+        [[[rain_total]]]
             sensor = rain_total.A52B.Acurite5n1Packet
             data_type = counter
 
@@ -51,6 +51,9 @@ not yet recognized by your configuration.
 The default for each of these is False.
 """
 
+# FIXME: data_type is not yet implemented.  quite possibly it does not belong
+#        in the driver anyway.
+
 from __future__ import with_statement
 from calendar import timegm
 import Queue
@@ -65,7 +68,7 @@ import weewx.drivers
 from weeutil.weeutil import tobool
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.6'
+DRIVER_VERSION = '0.7'
 
 # -q - suppress non-data messages
 # -U - print timestamps in UTC
@@ -115,6 +118,7 @@ class ProcManager():
     TS = re.compile('^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d[\s]+')
 
     def __init__(self):
+        self._cmd = None
         self._process = None
         self.stdout_queue = Queue.Queue()
         self.stdout_reader = None
@@ -122,25 +126,40 @@ class ProcManager():
         self.stderr_reader = None
 
     def startup(self, cmd, path=None, ld_library_path=None):
-        loginf("startup process '%s'" % cmd)
+        self._cmd = cmd
+        loginf("startup process '%s'" % self._cmd)
         env = os.environ.copy()
         if path:
             env['PATH'] = path + ':' + env['PATH']
         if ld_library_path:
             env['LD_LIBRARY_PATH'] = ld_library_path
-        self._process = subprocess.Popen(cmd.split(' '),
-                                         env=env,
-                                         stdout=subprocess.PIPE,
-                                         stderr=subprocess.PIPE)
-        self.stdout_reader = AsyncReader(
-            self._process.stdout, self.stdout_queue, 'stdout-thread')
-        self.stdout_reader.start()
-        self.stderr_reader = AsyncReader(
-            self._process.stderr, self.stderr_queue, 'stderr-thread')
-        self.stderr_reader.start()
+        try:
+            self._process = subprocess.Popen(cmd.split(' '),
+                                             env=env,
+                                             stdout=subprocess.PIPE,
+                                             stderr=subprocess.PIPE)
+            self.stdout_reader = AsyncReader(
+                self._process.stdout, self.stdout_queue, 'stdout-thread')
+            self.stdout_reader.start()
+            self.stderr_reader = AsyncReader(
+                self._process.stderr, self.stderr_queue, 'stderr-thread')
+            self.stderr_reader.start()
+        except (OSError, ValueError), e:
+            raise weewx.WeeWxIOError("failed to start process: %s" % e)
+
+    def shutdown(self):
+        loginf('shutdown process %s' % self._cmd)
+        self.stdout_reader.join(10.0)
+        self.stdout_reader = None
+        self.stderr_reader.join(10.0)
+        self.stderr_reader = None
+        self._process.stdout.close()
+        self._process.stderr.close()
+        self._process.terminate()
+        self._process = None
 
     def running(self):
-        return self.stdout_reader.is_alive()
+        return self._process.poll() is None
 
     def get_stderr(self):
         lines = []
@@ -148,11 +167,11 @@ class ProcManager():
             lines.append(self.stderr_queue.get())
         return lines
 
-    def process(self):
+    def get_stdout(self):
         lines = []
         while self.running():
             try:
-                line = self.stdout_queue.get(True, 10)
+                line = self.stdout_queue.get(True, 3)
                 m = ProcManager.TS.search(line)
                 if m and lines:
                     yield lines
@@ -161,12 +180,7 @@ class ProcManager():
             except Queue.Empty:
                 yield lines
                 lines = []
-
-    def shutdown(self):
-        loginf('shutdown process')
-        self.stdout_reader.join(10.0)
-        self._process.stdout.close()
-        self._process = None
+        yield lines
 
 
 class Packet:
@@ -188,7 +202,7 @@ class Packet:
     @staticmethod
     def parse_lines(lines, parseinfo={}):
         # parse each line, splitting on colon for name:value
-        # tuble is label, pattern, lambda
+        # tuple in parseinfo is label, pattern, lambda
         # if there is a label, use it to transform the name
         # if there is a pattern, use it to match the value
         # if there is a lamba, use it to conver the value
@@ -551,11 +565,13 @@ class SDRDriver(weewx.drivers.AbstractDevice):
         self._log_unmapped = tobool(stn_dict.get('log_unmapped_sensors', False))
         self._sensor_map = stn_dict.get('sensor_map', {})
         loginf('sensor map is %s' % self._sensor_map)
-        self._cmd = stn_dict.get('cmd', DEFAULT_CMD)
-        self._path = stn_dict.get('path', None)
-        self._ld_library_path = stn_dict.get('ld_library_path', None)
+        cmd = stn_dict.get('cmd', DEFAULT_CMD)
+        path = stn_dict.get('path', None)
+        ld_library_path = stn_dict.get('ld_library_path', None)
         self._last_pkt = None # avoid duplicate sequential packets
+        self._last_rain = None
         self._mgr = ProcManager()
+        self._mgr.startup(cmd, path, ld_library_path)
 
     def closePort(self):
         self._mgr.shutdown()
@@ -564,9 +580,8 @@ class SDRDriver(weewx.drivers.AbstractDevice):
         return 'SDR'
 
     def genLoopPackets(self):
-        self._mgr.startup(self._cmd, self._path, self._ld_library_path)
         while self._mgr.running():
-            for lines in self._mgr.process():
+            for lines in self._mgr.get_stdout():
                 packet = PacketFactory.create(lines)
                 if packet:
                     packet = self.map_to_fields(packet, self._sensor_map)
@@ -574,6 +589,7 @@ class SDRDriver(weewx.drivers.AbstractDevice):
                         if packet != self._last_pkt:
                             logdbg("packet=%s" % packet)
                             self._last_pkt = packet
+                            self._calculate_deltas(packet)
                             yield packet
                         else:
                             logdbg("ignoring duplicate packet %s" % packet)
@@ -585,6 +601,17 @@ class SDRDriver(weewx.drivers.AbstractDevice):
         else:
             logerr("err: %s" % self._mgr.get_stderr())
             raise weewx.WeeWxIOError("rtl_433 process is not running")
+
+    def _calculate_deltas(self, pkt):
+        # FIXME: do this generically for any counter, not just rain
+        if 'rain_total' in pkt:
+            total = pkt['rain_total']
+            if (total is not None and self._last_rain is not None and
+                total < self._last_rain):
+                loginf("rain counter decrement ignored:"
+                       " new: %s old: %s" % (total, self._last_rain))
+            pkt['rain'] = weewx.wxformlas.calculate_rain(total, self._last_rain)
+            self._last_rain = total
 
     @staticmethod
     def map_to_fields(pkt, sensor_map):
@@ -635,7 +662,7 @@ if __name__ == '__main__':
     mgr = ProcManager()
     mgr.startup(options.cmd, path=options.path,
                 ld_library_path=options.ld_library_path)
-    for lines in mgr.process():
+    for lines in mgr.get_stdout():
         print "out:", lines
         packet = PacketFactory.create(lines)
         if packet:
