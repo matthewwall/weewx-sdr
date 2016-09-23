@@ -27,6 +27,8 @@ Output from the following sensors is recognized:
 
 Installation
 
+0) install pre-requisites
+
 a) install weewx
     http://weewx.com/docs/usersguide.htm
 b) install rtl-sdr
@@ -93,6 +95,57 @@ Here are some examples:
         windDir = wind_dir.0026.FOWH1080Packet
         outHumidity = humidity.0026.FOWH1080Packet
         outTemp = temperature.0026.FOWH1080Packet
+
+To figure out the sensor identifiers, run the driver directly, possibly with
+the --debug option.  Another option is to run weewx with the logging options
+for [SDR] enabled to display the sensors found by rtl, the sensor identifiers
+used by weewx, and the sensors actually recognized by weewx.
+
+[SDR]
+    driver = user.sdr
+    log_unknown_sensors = True
+    log_unmapped_sensors = True
+
+By default the logging options are False.
+
+
+How to diagnose problems
+
+First try running the rtl_433 application to be sure that it works properly:
+
+sudo rtl_433
+
+Once that is working, run the driver directly to be sure that it is collecting
+data from the rtl_433 application:
+
+cd /home/weewx
+sudo PYTHONPATH=bin python bin/user/sdr.py
+
+Make note of the sensor identifiers.  Each identifier is a three-part string
+consisting of the observation, sensor id, and rf packet type, separated by
+periods.  You need these in the sensor map to tell weewx the association
+between sensors and database fields.
+
+Once that is working and you have created the sensor map, run weewx directly
+in one shell while you monitor the weewx log in a separate shell:
+
+in shell 1:
+cd /home/weewx
+sudo ./bin/weewxd weewx.conf
+
+in shell 2:
+tail -f /var/log/syslog
+
+At this point, verify that the mapping you made in the weewx configuration file
+is working as you intend.  You should see data from your sensors in the weewx
+LOOP and REC output.  If not, check the log file.  Use the logging options in
+the [SDR] section of the weewx configuration file to help figure out which
+sensors are captured, recognized, and parsed.
+
+Once you are satisfied with the output when running weewx directly, run weewx
+as a daemon and configure rc script or systemd to run weewx at system startup.
+
+sudo /etc/init.d/weewx start
 
 
 Environment
