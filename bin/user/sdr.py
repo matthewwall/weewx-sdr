@@ -68,7 +68,7 @@ import weewx.drivers
 from weeutil.weeutil import tobool
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.7'
+DRIVER_VERSION = '0.8'
 
 # -q - suppress non-data messages
 # -U - print timestamps in UTC
@@ -403,6 +403,36 @@ class HidekiTS04Packet(Packet):
         return pkt
 
 
+class OSTHGR122NPacket(Packet):
+    # 2016-09-12 21:44:55     :       OS :    THGR122N
+    # House Code:      96
+    # Channel:         3
+    # Battery:         OK
+    # Temperature:     27.30 C
+    # Humidity:        36 %
+
+    IDENTIFIER = "THGR122N"
+    PARSEINFO = {
+        'House Code': ['house_code', None, lambda x : int(x) ],
+        'Channel': ['channel', None, lambda x : int(x) ],
+        'Battery': ['battery', None, lambda x : 0 if x == 'OK' else 1],
+        'Temperature':
+            ['temperature', re.compile('([\d.]+) C'), lambda x : float(x)],
+        'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x : float(x)]
+        }
+    @staticmethod
+    def parse(ts, payload, lines):
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRIC
+        pkt.update(Packet.parse_lines(lines, OSTHGR122NPacket.PARSEINFO))
+        channel = pkt.pop('channel', 0)
+        code = pkt.pop('house_code', 0)
+        sensor_id = "%s:%s" % (channel, code)
+        pkt = Packet.add_identifiers(pkt, sensor_id, OSTHGR122NPacket.__name__)
+        return pkt
+
+
 class OSTHGR810Packet(Packet):
     # 2016-09-01 22:05:47 :Weather Sensor THGR810
     # House Code: 122
@@ -503,6 +533,7 @@ class PacketFactory(object):
         AcuriteTowerPacket,
         Acurite5n1Packet,
         HidekiTS04Packet,
+        OSTHGR122NPacket,
         OSTHGR810Packet,
         OSTHR228NPacket,
         LaCrossePacket]

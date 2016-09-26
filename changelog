@@ -1,3 +1,6 @@
+0.8 25sep2016
+* added support for OSTHGR122NPacket (thanks to marco tibaldi)
+
 0.7 12sep2016
 * improved process management
 * report errors better during startup
