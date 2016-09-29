@@ -274,12 +274,17 @@ class AcuriteTowerPacket(Packet):
 class Acurite5n1Packet(Packet):
     # 2016-08-31 16:41:39 Acurite 5n1 sensor 0x0BFA Ch C, Msg 31, Wind 15 kmph / 9.3 mph 270.0^ W (3), rain gauge 0.00 in
     # 2016-08-30 23:57:25 Acurite 5n1 sensor 0x0BFA Ch C, Msg 38, Wind 2 kmph / 1.2 mph, 21.3 C 70.3 F 70 % RH
+    # 2016-09-27 17:09:34 Acurite 5n1 sensor 0x062C Ch A, Total rain fall since last reset: 2.00
+    #
+    # the 'rain fall since last reset' seems to be emitted once when rtl_433
+    # starts up, then never again.  the rain measure in the type 31 messages
+    # is a cumulative value, but not the same as rain since last reset.
 
     IDENTIFIER = "Acurite 5n1 sensor"
     PATTERN = re.compile('0x([0-9a-fA-F]+) Ch ([A-C]), (.*)')
     RAIN = re.compile('Total rain fall since last reset: ([\d.]+)')
     MSG = re.compile('Msg (\d+), (.*)')
-    MSG31 = re.compile('Wind ([\d.]+) kmph / ([\d.]+) mph ([\d.]+)')
+    MSG31 = re.compile('Wind ([\d.]+) kmph / ([\d.]+) mph ([\d.]+).*rain gauge (\d.]+) in')
     MSG38 = re.compile('Wind ([\d.]+) kmph / ([\d.]+) mph, ([\d.]+) C ([\d.]+) F ([\d.]+) % RH')
 
     @staticmethod
@@ -302,6 +307,7 @@ class Acurite5n1Packet(Packet):
                         pkt['wind_speed'] = float(m.group(1))
                         pkt['wind_speed_mph'] = float(m.group(2))
                         pkt['wind_dir'] = float(m.group(3))
+                        pkt['rain_total'] = float(m.group(4))
                         pkt = Packet.add_identifiers(
                             pkt, sensor_id, Acurite5n1Packet.__name__)
                 elif msg_type == '38':
@@ -320,7 +326,9 @@ class Acurite5n1Packet(Packet):
             else:
                 m = Acurite5n1Packet.RAIN.search(payload)
                 if m:
-                    pkt['rain_total'] = float(m.group(1))
+                    total = float(m.group(1))
+                    loginf("Acurite5n1Packet: rain since reset: %s" % total)
+                    pkt['rain_since_reset'] = total
                     pkt = Packet.add_identifiers(
                         pkt, sensor_id, Acurite5n1Packet.__name__)
                 else:
