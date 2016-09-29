@@ -15,15 +15,6 @@ and the packet type, separated by periods:
 
   <observation_name>.<hardware_id>.<packet_type>
 
-The data type determines how data from the sensor will be processed.  The
-data types include:
-
-  gauge - instantaneous measure, e.g., temperature, humidity
-  counter - continuous counters with overflow, e.g., rain_total, snow_total
-  absolute - counter that resets on each reading, e.g., rain, snow
-
-The default type is gauge.
-
 The filter and data types are specified in a sensor_map stanza in the driver
 stanza.  For example:
 
@@ -31,13 +22,21 @@ stanza.  For example:
     driver = user.sdr
     [[sensor_map]]
         inTemp = temperature.25A6.AcuriteTowerPacket
-        [[[outTemp]]]
-            sensor = temperature.24A4.AcuriteTowerPacket
-        [[[rain_total]]]
-            sensor = rain_total.A52B.Acurite5n1Packet
-            data_type = counter
+        outTemp = temperature.24A4.AcuriteTowerPacket
+        rain_total = rain_total.A52B.Acurite5n1Packet
 
 If no sensor_map is specified, no data will be collected.
+
+The deltas stanza indicates which observations are cumulative measures and
+how they should be split into delta measures.
+
+[SDR]
+    ...
+    [[deltas]]
+        rain = rain_total
+
+In this case, the value for rain will be a delta calculated from sequential
+rain_total observations.
 
 To identify sensors, run the driver directly.  Alternatively, use the options
 log_unknown_sensors and log_unmapped_sensors to see data from the SDR that are
@@ -68,7 +67,7 @@ import weewx.drivers
 from weeutil.weeutil import tobool
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.8'
+DRIVER_VERSION = '0.9'
 
 # -q - suppress non-data messages
 # -U - print timestamps in UTC
@@ -598,17 +597,25 @@ class SDRConfigurationEditor(weewx.drivers.AbstractConfEditor):
 
 class SDRDriver(weewx.drivers.AbstractDevice):
 
+    # map the counter total to the counter delta.  for example, the pair
+    #   rain:rain_total
+    # will result in a delta called 'rain' from the cumulative 'rain_total'.
+    # these are applied to mapped packets.
+    DEFAULT_DELTAS = {'rain': 'rain_total'}
+
     def __init__(self, **stn_dict):
         loginf('driver version is %s' % DRIVER_VERSION)
         self._log_unknown = tobool(stn_dict.get('log_unknown_sensors', False))
         self._log_unmapped = tobool(stn_dict.get('log_unmapped_sensors', False))
         self._sensor_map = stn_dict.get('sensor_map', {})
         loginf('sensor map is %s' % self._sensor_map)
+        self._deltas = stn_dict.get('deltas', SDRDriver.DEFAULT_DELTAS)
+        loginf('deltas is %s' % self._deltas)
+        self._counter_values = dict()
         cmd = stn_dict.get('cmd', DEFAULT_CMD)
         path = stn_dict.get('path', None)
         ld_library_path = stn_dict.get('ld_library_path', None)
         self._last_pkt = None # avoid duplicate sequential packets
-        self._last_rain = None
         self._mgr = ProcManager()
         self._mgr.startup(cmd, path, ld_library_path)
 
@@ -642,15 +649,25 @@ class SDRDriver(weewx.drivers.AbstractDevice):
             raise weewx.WeeWxIOError("rtl_433 process is not running")
 
     def _calculate_deltas(self, pkt):
-        # FIXME: do this generically for any counter, not just rain
-        if 'rain_total' in pkt:
-            total = pkt['rain_total']
-            if (total is not None and self._last_rain is not None and
-                total < self._last_rain):
-                loginf("rain counter decrement ignored:"
-                       " new: %s old: %s" % (total, self._last_rain))
-            pkt['rain'] = weewx.wxformlas.calculate_rain(total, self._last_rain)
-            self._last_rain = total
+        for k in self._deltas:
+            label = self._deltas[k]
+            if label in pkt:
+                total = pkt[label]
+                last_value = self._counter_values.get(label)
+                if (total is not None and last_value is not None and
+                    total < last_value):
+                    loginf("%s decrement ignored:"
+                           " new: %s old: %s" % (label, total, last_value))
+                pkt[k] = self._calculate_delta(total, last_value)
+                self._counter_values[label] = total
+
+    @staticmethod
+    def _calculate_delta(newtotal, oldtotal):
+        delta = None
+        if(newtotal is not None and oldtotal is not None and
+           newtotal >= oldtotal):
+            delta = newtotal - oldtotal
+        return delta
 
     @staticmethod
     def map_to_fields(pkt, sensor_map):
