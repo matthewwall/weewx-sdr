@@ -309,6 +309,9 @@ class Acurite5n1Packet(Packet):
                         pkt['rain_total'] = float(m.group(4))
                         pkt = Packet.add_identifiers(
                             pkt, sensor_id, Acurite5n1Packet.__name__)
+                    else:
+                        loginf("Acurite5n1Packet: no match for type 31: '%s'"
+                               % payload)
                 elif msg_type == '38':
                     m = Acurite5n1Packet.MSG38.search(payload)
                     if m:
@@ -319,6 +322,9 @@ class Acurite5n1Packet(Packet):
                         pkt['humidity'] = float(m.group(5))
                         pkt = Packet.add_identifiers(
                             pkt, sensor_id, Acurite5n1Packet.__name__)
+                    else:
+                        loginf("Acurite5n1Packet: no match for type 38: '%s'"
+                               % payload)
                 else:
                     loginf("Acurite5n1Packet: unknown message type %s"
                            " in line '%s'" % (msg_type, lines[0]))
@@ -640,7 +646,7 @@ class SDRDriver(weewx.drivers.AbstractDevice):
                         else:
                             logdbg("ignoring duplicate packet %s" % packet)
                     elif self._log_unmapped:
-                        loginf("unmapped: %s" % lines)
+                        loginf("unmapped: %s (%s)" % (lines, packet))
                 elif self._log_unknown:
                     loginf("unparsed: %s" % lines)
             self._mgr.get_stderr() # flush the stderr queue
@@ -689,8 +695,8 @@ if __name__ == '__main__':
     import optparse
 
     usage = """%prog [options] [--debug] [--help]
-                     [--cmd='rtl_433 -q -U'] 
-                     [--path=PATH] [--ld_library_path=LD_LIBRARY_PATH]"""
+                     [--cmd='%s']
+                     [--path=PATH] [--ld_library_path=LD_LIBRARY_PATH]""" % DEFAULT_CMD
 
     syslog.openlog('sdr', syslog.LOG_PID | syslog.LOG_CONS)
     syslog.setlogmask(syslog.LOG_UPTO(syslog.LOG_INFO))
