@@ -283,7 +283,7 @@ class Acurite5n1Packet(Packet):
     PATTERN = re.compile('0x([0-9a-fA-F]+) Ch ([A-C]), (.*)')
     RAIN = re.compile('Total rain fall since last reset: ([\d.]+)')
     MSG = re.compile('Msg (\d+), (.*)')
-    MSG31 = re.compile('Wind ([\d.]+) kmph / ([\d.]+) mph ([\d.]+).*rain gauge (\d.]+) in')
+    MSG31 = re.compile('Wind ([\d.]+) kmph / ([\d.]+) mph ([\d.]+).*rain gauge ([\d.]+) in')
     MSG38 = re.compile('Wind ([\d.]+) kmph / ([\d.]+) mph, ([\d.]+) C ([\d.]+) F ([\d.]+) % RH')
 
     @staticmethod
