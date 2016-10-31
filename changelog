@@ -1,3 +1,6 @@
+0.11 31oct2016
+* added parser for acurite 986 packets (thanks to andy)
+
 0.9 29sep2016
 * added generic support for rain_total and other cumulative measures
 * for acurite 5n1, get rain from type 31 message instead of reset message

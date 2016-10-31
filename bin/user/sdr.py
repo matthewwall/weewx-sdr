@@ -67,11 +67,11 @@ import weewx.drivers
 from weeutil.weeutil import tobool
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.10'
+DRIVER_VERSION = '0.11'
 
 # -q - suppress non-data messages
 # -U - print timestamps in UTC
-# -F json - emit data in json format (not all drivers support this)
+# -F json - emit data in json format (not all rtl_433 drivers support this)
 DEFAULT_CMD = 'rtl_433 -q -U'
 
 
@@ -344,6 +344,29 @@ class Acurite5n1Packet(Packet):
         return pkt
 
 
+class Acurite986Packet(Packet):
+    # 2016-10-28 02:28:20 Acurite 986 sensor 0x2c87 - 2F: 20.0 C 68 F
+    IDENTIFIER = "Acurite 986 sensor"
+    PATTERN = re.compile('0x([0-9a-fA-F]+) - 2F: ([\d.]+) C ([\d.]+) F')
+    #PATTERN = re.compile('0x([0-9a-fA-F]+) - ([0-9a-fA-F]+): ([\d.]+) C ([\d.]+) F')
+    #PATTERN = re.compile('0x([0-9a-fA-F]+) Ch ([A-C]): ([\d.]+) C ([\d.]+) F ([\d]+) % RH')
+    @staticmethod
+    def parse(ts, payload, lines):
+        pkt = dict()
+        m = Acurite986Packet.PATTERN.search(lines[0])
+        if m:
+            pkt['dateTime'] = ts
+            pkt['usUnits'] = weewx.METRIC
+            sensor_id = m.group(1)
+            #channel = m.group(2)
+            pkt['temperature'] = float(m.group(2))
+            pkt['temperature_F'] = float(m.group(3))
+            pkt = Packet.add_identifiers(
+                pkt, sensor_id, Acurite986Packet.__name__)
+        else:
+            loginf("Acurite986Packet: unrecognized data: '%s'" % lines[0])
+
+
 class FOWH1080Packet(Packet):
     # 2016-09-02 22:26:05 :Fine Offset WH1080 weather station
     # Msg type: 0
@@ -545,6 +568,7 @@ class PacketFactory(object):
         FOWH1080Packet,
         AcuriteTowerPacket,
         Acurite5n1Packet,
+        Acurite986Packet,
         HidekiTS04Packet,
         OSTHGR122NPacket,
         OSTHGR810Packet,
@@ -706,7 +730,7 @@ if __name__ == '__main__':
     parser.add_option('--debug', dest='debug', action='store_true',
                       help='display diagnostic information while running')
     parser.add_option('--cmd', dest='cmd', default=DEFAULT_CMD,
-                      help='rtl_433 command')
+                      help='rtl_433 command with options')
     parser.add_option('--path', dest='path',
                       help='value for PATH')
     parser.add_option('--ld_library_path', dest='ld_library_path',
