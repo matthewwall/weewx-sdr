@@ -67,7 +67,7 @@ import weewx.drivers
 from weeutil.weeutil import tobool
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.9'
+DRIVER_VERSION = '0.10'
 
 # -q - suppress non-data messages
 # -U - print timestamps in UTC
@@ -695,8 +695,8 @@ if __name__ == '__main__':
     import optparse
 
     usage = """%prog [options] [--debug] [--help]
-                     [--cmd='%s']
-                     [--path=PATH] [--ld_library_path=LD_LIBRARY_PATH]""" % DEFAULT_CMD
+                     [--cmd=RTL_CMD]
+                     [--path=PATH] [--ld_library_path=LD_LIBRARY_PATH]"""
 
     syslog.openlog('sdr', syslog.LOG_PID | syslog.LOG_CONS)
     syslog.setlogmask(syslog.LOG_UPTO(syslog.LOG_INFO))
