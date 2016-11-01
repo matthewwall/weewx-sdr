@@ -174,7 +174,7 @@ the LD_LIBRARY_PATH and PATH in the weewx-sdr driver itself.  For example:
 [SDR]
     driver = user.sdr
     path = /opt/rtl-433/bin
-    ld_library_path = /opt/libusb-1.0.22:/opt/rtl-sdr/lib
+    ld_library_path = /opt/libusb-1.0.22/lib:/opt/rtl-sdr/lib
     [[sensor_map]]
         ...
 
