@@ -50,12 +50,10 @@ not yet recognized by your configuration.
 The default for each of these is False.
 """
 
-# FIXME: data_type is not yet implemented.  quite possibly it does not belong
-#        in the driver anyway.
-
 from __future__ import with_statement
 from calendar import timegm
 import Queue
+import fnmatch
 import os
 import re
 import subprocess
@@ -258,13 +256,13 @@ class AcuriteTowerPacket(Packet):
         if m:
             pkt['dateTime'] = ts
             pkt['usUnits'] = weewx.METRIC
-            sensor_id = m.group(1)
+            hardware_id = m.group(1)
             channel = m.group(2)
             pkt['temperature'] = float(m.group(3))
             pkt['temperature_F'] = float(m.group(4))
             pkt['humidity'] = float(m.group(5))
             pkt = Packet.add_identifiers(
-                pkt, sensor_id, AcuriteTowerPacket.__name__)
+                pkt, hardware_id, AcuriteTowerPacket.__name__)
         else:
             loginf("AcuriteTowerPacket: unrecognized data: '%s'" % lines[0])
         return pkt
@@ -293,7 +291,7 @@ class Acurite5n1Packet(Packet):
         if m:
             pkt['dateTime'] = ts
             pkt['usUnits'] = weewx.METRIC
-            sensor_id = m.group(1)
+            hardware_id = m.group(1)
             channel = m.group(2)
             payload = m.group(3)
             m = Acurite5n1Packet.MSG.search(payload)
@@ -308,7 +306,7 @@ class Acurite5n1Packet(Packet):
                         pkt['wind_dir'] = float(m.group(3))
                         pkt['rain_total'] = float(m.group(4))
                         pkt = Packet.add_identifiers(
-                            pkt, sensor_id, Acurite5n1Packet.__name__)
+                            pkt, hardware_id, Acurite5n1Packet.__name__)
                     else:
                         loginf("Acurite5n1Packet: no match for type 31: '%s'"
                                % payload)
@@ -321,7 +319,7 @@ class Acurite5n1Packet(Packet):
                         pkt['temperature_F'] = float(m.group(4))
                         pkt['humidity'] = float(m.group(5))
                         pkt = Packet.add_identifiers(
-                            pkt, sensor_id, Acurite5n1Packet.__name__)
+                            pkt, hardware_id, Acurite5n1Packet.__name__)
                     else:
                         loginf("Acurite5n1Packet: no match for type 38: '%s'"
                                % payload)
@@ -335,7 +333,7 @@ class Acurite5n1Packet(Packet):
                     loginf("Acurite5n1Packet: rain since reset: %s" % total)
                     pkt['rain_since_reset'] = total
                     pkt = Packet.add_identifiers(
-                        pkt, sensor_id, Acurite5n1Packet.__name__)
+                        pkt, hardware_id, Acurite5n1Packet.__name__)
                 else:
                     loginf("Acurite5n1Packet: unknown message format: '%s'" %
                            lines[0])
@@ -346,10 +344,13 @@ class Acurite5n1Packet(Packet):
 
 class Acurite986Packet(Packet):
     # 2016-10-28 02:28:20 Acurite 986 sensor 0x2c87 - 2F: 20.0 C 68 F
+    # 2016-10-31 15:24:29 Acurite 986 sensor 0x2c87 - 2F: 16.7 C 62 F
+    # 2016-10-31 15:23:54 Acurite 986 sensor 0x85ed - 1R: 16.7 C 62 F
+
     IDENTIFIER = "Acurite 986 sensor"
     PATTERN = re.compile('0x([0-9a-fA-F]+) - 2F: ([\d.]+) C ([\d.]+) F')
     #PATTERN = re.compile('0x([0-9a-fA-F]+) - ([0-9a-fA-F]+): ([\d.]+) C ([\d.]+) F')
-    #PATTERN = re.compile('0x([0-9a-fA-F]+) Ch ([A-C]): ([\d.]+) C ([\d.]+) F ([\d]+) % RH')
+
     @staticmethod
     def parse(ts, payload, lines):
         pkt = dict()
@@ -357,14 +358,15 @@ class Acurite986Packet(Packet):
         if m:
             pkt['dateTime'] = ts
             pkt['usUnits'] = weewx.METRIC
-            sensor_id = m.group(1)
+            hardware_id = m.group(1)
             #channel = m.group(2)
             pkt['temperature'] = float(m.group(2))
             pkt['temperature_F'] = float(m.group(3))
             pkt = Packet.add_identifiers(
-                pkt, sensor_id, Acurite986Packet.__name__)
+                pkt, hardware_id, Acurite986Packet.__name__)
         else:
             loginf("Acurite986Packet: unrecognized data: '%s'" % lines[0])
+        return pkt
 
 
 class FOWH1080Packet(Packet):
@@ -682,14 +684,14 @@ class SDRDriver(weewx.drivers.AbstractDevice):
         for k in self._deltas:
             label = self._deltas[k]
             if label in pkt:
-                total = pkt[label]
+                value = pkt[label]
                 last_value = self._counter_values.get(label)
-                if (total is not None and last_value is not None and
-                    total < last_value):
+                if (value is not None and last_value is not None and
+                    value < last_value):
                     loginf("%s decrement ignored:"
-                           " new: %s old: %s" % (label, total, last_value))
-                pkt[k] = self._calculate_delta(total, last_value)
-                self._counter_values[label] = total
+                           " new: %s old: %s" % (label, value, last_value))
+                pkt[k] = self._calculate_delta(value, last_value)
+                self._counter_values[label] = value
 
     @staticmethod
     def _calculate_delta(newtotal, oldtotal):
@@ -701,18 +703,49 @@ class SDRDriver(weewx.drivers.AbstractDevice):
 
     @staticmethod
     def map_to_fields(pkt, sensor_map):
+        # selectively get elements from the packet using the specified sensor
+        # map.  if the identifier is found, then use its value.  if not, then
+        # skip it completely (it is not given a None value).  include the
+        # time stamp and unit system only if we actually got data.
         packet = dict()
-        for k in sensor_map.keys():
-            if isinstance(sensor_map[k], basestring) and sensor_map[k] in pkt:
-                packet[k] = pkt[sensor_map[k]]
-            elif (isinstance(sensor_map[k], dict)
-                  and 'sensor' in sensor_map[k]
-                  and sensor_map[k]['sensor'] in pkt):
-                packet[k] = pkt[sensor_map[k]['sensor']]
+        for n in sensor_map.keys():
+            label = SDRDriver._find_match(sensor_map[n], pkt.keys())
+            if label:
+                packet[n] = pkt.get(label)
         if packet:
             for k in ['dateTime', 'usUnits']:
                 packet[k] = pkt[k]
         return packet
+
+    @staticmethod
+    def _find_match(pattern, keylist):
+        # find the first key in pkt that matches the specified pattern.
+        # the general form of a pattern is:
+        #   <observation_name>.<sensor_id>.<packet_type>
+        # do glob-style matching.
+        if pattern in keylist:
+            return pattern
+        match = None
+        pparts = pattern.split('.')
+        if len(pparts) == 3:
+            for k in keylist:
+                kparts = k.split('.')
+                if (len(kparts) == 3 and
+                    SDRDriver._part_match(pparts[0], kparts[0]) and
+                    SDRDriver._part_match(pparts[1], kparts[1]) and
+                    SDRDriver._part_match(pparts[2], kparts[2])):
+                    match = k
+                    break
+                elif pparts[0] == k:
+                    match = k
+                    break
+        return match
+
+    @staticmethod
+    def _part_match(pattern, value):
+        # use glob matching for parts of the tuple
+        matches = fnmatch.filter([value], pattern)
+        return True if matches else False
 
 
 if __name__ == '__main__':

@@ -1,5 +1,7 @@
 0.11 31oct2016
 * added parser for acurite 986 packets (thanks to andy)
+* removed vestigial code from data_type
+* use glob matching for sensor identifier tuple components
 
 0.9 29sep2016
 * added generic support for rain_total and other cumulative measures
