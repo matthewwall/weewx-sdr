@@ -167,3 +167,23 @@ export LD_LIBRARY_PATH=/opt/rtl-sdr/lib
 Typically this would be done in the rc script that starts weewx.  If rtl-433
 and rtl-sdr are install to /usr/local or /usr, then there should be no need
 to set the PATH or LD_LIBRARY_PATH before invoking weewx.
+
+If you cannot control the environment in which weewx runs, then you can specify
+the LD_LIBRARY_PATH and PATH in the weewx-sdr driver itself.  For example:
+
+[SDR]
+    driver = user.sdr
+    path = /opt/rtl-433/bin
+    ld_library_path = /opt/libusb-1.0.22:/opt/rtl-sdr/lib
+    [[sensor_map]]
+        ...
+
+
+libusb
+
+I have had problems running rtl-sdr on systems with libusb 1.0.11.  The rtl_433
+command craps out with a segmentation fault, and the rtl_test command sometimes
+leaves the dongle in a weird state that can be cleared only by unplugging then
+replugging the dongle.
+
+Using a more recent version of libusb (e.g., 1.0.22) seems to clear things up.
