@@ -174,7 +174,7 @@ the LD_LIBRARY_PATH and PATH in the weewx-sdr driver itself.  For example:
 [SDR]
     driver = user.sdr
     path = /opt/rtl-433/bin
-    ld_library_path = /opt/libusb-1.0.22/lib:/opt/rtl-sdr/lib
+    ld_library_path = /opt/libusb-1.0.20/lib:/opt/rtl-sdr/lib
     [[sensor_map]]
         ...
 
@@ -186,4 +186,4 @@ command craps out with a segmentation fault, and the rtl_test command sometimes
 leaves the dongle in a weird state that can be cleared only by unplugging then
 replugging the dongle.
 
-Using a more recent version of libusb (e.g., 1.0.22) seems to clear things up.
+Using a more recent version of libusb (e.g., 1.0.20) seems to clear things up.
