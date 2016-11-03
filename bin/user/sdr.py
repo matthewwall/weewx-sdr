@@ -823,9 +823,11 @@ class SDRDriver(weewx.drivers.AbstractDevice):
 if __name__ == '__main__':
     import optparse
 
-    usage = """%prog [options] [--debug] [--help]
-                     [--cmd=RTL_CMD]
-                     [--path=PATH] [--ld_library_path=LD_LIBRARY_PATH]"""
+    usage = """%prog [--debug] [--help]
+        [--version]
+        [--list-supported-sensors]
+        [--cmd=RTL_CMD]
+        [--path=PATH] [--ld_library_path=LD_LIBRARY_PATH]"""
 
     syslog.openlog('sdr', syslog.LOG_PID | syslog.LOG_CONS)
     syslog.setlogmask(syslog.LOG_UPTO(syslog.LOG_INFO))
