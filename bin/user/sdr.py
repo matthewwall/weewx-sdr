@@ -605,6 +605,8 @@ class LaCrossePacket(Packet):
     # 2016-09-08 00:43:53 :LaCrosse WS :9 :202
     # Wind speed: 0.0 m/s
     # Direction: 67.500
+    # 2016-11-03 17:43:20 :LaCrosse WS :9 :202
+    # Rainfall: 850.04 mm
 
     IDENTIFIER = "LaCrosse WS"
     PARSEINFO = {
@@ -613,7 +615,9 @@ class LaCrossePacket(Packet):
         'Direction': ['wind_dir', None, lambda x : float(x)],
         'Temperature':
             ['temperature', re.compile('([\d.]+) C'), lambda x : float(x)],
-        'Humidity': ['humidity', None, lambda x : int(x)]
+        'Humidity': ['humidity', None, lambda x : int(x)],
+        'Rainfall':
+            ['rain_total', re.compile('([\d.]+) mm'), lambda x : float(x)]
         }
     @staticmethod
     def parse(ts, payload, lines):
@@ -870,3 +874,5 @@ if __name__ == '__main__':
             print 'parsed: %s' % packet
         else:
             print "unparsed:", lines
+    for lines in mgr.get_stderr():
+        print "err:", lines
