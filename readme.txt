@@ -15,7 +15,8 @@ radio that is compatible with the rtl-sdr software.  Uses the modules in
 rtl_433 to recognize packets.
 
 Output from many different sensors is supported.  To see the list of supported
-sensors, run the driver directly with the --list-supported-sensors option.
+sensors, run the driver directly with the list-supported action.
+
 If a sensor is supported by rtl_433 but not by weewx-sdr, it is a fairly simple
 matter of writing a parser for that sensor within weewx-sdr.  Things are a bit
 more complicated if a sensor is not supported by rtl_433.
@@ -65,10 +66,22 @@ sudo PYTHONPATH=bin python bin/user/sdr.py --help
 
 Configuration
 
+Use the [SDR] section of the weewx configuration file (nominally weewx.conf) to
+adjust the driver configuration.
+
+The default configuration uses this command:
+
+rtl_433 -q -U
+
+Specify additional options using the cmd parameter.  For example:
+
+[SDR]
+    driver = user.sdr
+    cmd = rtl_433 -q -U -G
+
 The rtl_433 executable emits data for many different types of sensors, some of
 which have similar output.  Use the sensor_map to distinguish between sensors
-and map the output from rtl_433 to the database fields in weewx.  This is done
-in the driver section of weewx.conf.
+and map the output from rtl_433 to the database fields in weewx.
 
 Here are some examples:
 
@@ -117,16 +130,6 @@ used by weewx, and the sensors actually recognized by weewx.
     log_unmapped_sensors = True
 
 By default the logging options are False.
-
-The default configuration uses this command:
-
-rtl_433 -q -U
-
-Specify additional options using the cmd parameter.  For example:
-
-[SDR]
-    driver = user.sdr
-    cmd = rtl_433 -q -U -G
 
 
 How to diagnose problems

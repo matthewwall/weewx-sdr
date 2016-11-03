@@ -829,9 +829,8 @@ if __name__ == '__main__':
 
     usage = """%prog [--debug] [--help]
         [--version]
-        [--list-supported-sensors]
-        [--cmd=RTL_CMD]
-        [--path=PATH] [--ld_library_path=LD_LIBRARY_PATH]"""
+        [--action=(show-packets | show-detected | list-supported)]
+        [--cmd=RTL_CMD] [--path=PATH] [--ld_library_path=LD_LIBRARY_PATH]"""
 
     syslog.openlog('sdr', syslog.LOG_PID | syslog.LOG_CONS)
     syslog.setlogmask(syslog.LOG_UPTO(syslog.LOG_INFO))
@@ -846,9 +845,8 @@ if __name__ == '__main__':
                       help='value for PATH')
     parser.add_option('--ld_library_path', dest='ld_library_path',
                       help='value for LD_LIBRARY_PATH')
-    parser.add_option('--list-supported-sensors', dest='list_supported',
-                      action='store_true',
-                      help='list sensors supported by this driver')
+    parser.add_option('--action', dest='action', default='show-packets',
+                      help='actions include show-packets, show-detected, list-supported')
 
     (options, args) = parser.parse_args()
 
@@ -859,20 +857,38 @@ if __name__ == '__main__':
     if options.debug:
         syslog.setlogmask(syslog.LOG_UPTO(syslog.LOG_DEBUG))
 
-    if options.list_supported:
+    if options.action == 'list-supported':
         for pt in Packet.KNOWN_PACKETS:
             print pt.IDENTIFIER
-        exit(0)
-
-    mgr = ProcManager()
-    mgr.startup(options.cmd, path=options.path,
-                ld_library_path=options.ld_library_path)
-    for lines in mgr.get_stdout():
-        print "out:", lines
-        packet = PacketFactory.create(lines)
-        if packet:
-            print 'parsed: %s' % packet
-        else:
-            print "unparsed:", lines
-    for lines in mgr.get_stderr():
-        print "err:", lines
+    elif options.action == 'show-detected':
+        # display identifiers for detected sensors
+        mgr = ProcManager()
+        mgr.startup(options.cmd, path=options.path,
+                    ld_library_path=options.ld_library_path)
+        detected = dict()
+        for lines in mgr.get_stdout():
+#            print "out:", lines
+            packet = PacketFactory.create(lines)
+            if packet:
+                del packet['usUnits']
+                del packet['dateTime']
+                keys = packet.keys()
+                label = re.sub(r'^[^\.]+', '', keys[0])
+                if label not in detected:
+                    detected[label] = 0
+                detected[label] += 1
+            print detected
+    else:
+        # display output and parsed/unparsed packets
+        mgr = ProcManager()
+        mgr.startup(options.cmd, path=options.path,
+                    ld_library_path=options.ld_library_path)
+        for lines in mgr.get_stdout():
+            print "out:", lines
+            packet = PacketFactory.create(lines)
+            if packet:
+                print 'parsed: %s' % packet
+            else:
+                print "unparsed:", lines
+        for lines in mgr.get_stderr():
+            print "err:", lines
