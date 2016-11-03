@@ -65,7 +65,7 @@ import weewx.drivers
 from weeutil.weeutil import tobool
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.11'
+DRIVER_VERSION = '0.12'
 
 # -q - suppress non-data messages
 # -U - print timestamps in UTC
@@ -532,6 +532,71 @@ class OSTHR228NPacket(Packet):
         return pkt
 
 
+class OSPCR800Packet(Packet):
+    # 2016-11-03 04:36:23 : OS : PCR800
+    # House Code: 93
+    # Channel: 0
+    # Battery: OK
+    # Rain Rate: 0.0 in/hr
+    # Total Rain: 41.0 in
+
+    IDENTIFIER = "PCR800"
+    PARSEINFO = {
+        'House Code': ['house_code', None, lambda x : int(x) ],
+        'Channel': ['channel', None, lambda x : int(x) ],
+        'Battery': ['battery', None, lambda x : 0 if x == 'OK' else 1],
+        'Rain Rate':
+            ['rain_rate', re.compile('([\d.]+) in'), lambda x : float(x)],
+        'Total Rain':
+            ['rain_total', re.compile('([\d.]+) in'), lambda x : float(x)]
+        }
+    @staticmethod
+    def parse(ts, payload, lines):
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.US
+        pkt.update(Packet.parse_lines(lines, OSPCR800Packet.PARSEINFO))
+        channel = pkt.pop('channel', 0)
+        code = pkt.pop('house_code', 0)
+        sensor_id = "%s:%s" % (channel, code)
+        pkt = Packet.add_identifiers(pkt, sensor_id, OSPCR800Packet.__name__)
+        return pkt
+
+
+class OSWGR800Packet(Packet):
+    # 2016-11-03 04:36:34 : OS : WGR800
+    # House Code: 85
+    # Channel: 0
+    # Battery: OK
+    # Gust: 1.1 m/s
+    # Average: 1.1 m/s
+    # Direction: 22.5 degrees
+
+    IDENTIFIER = "WGR800"
+    PARSEINFO = {
+        'House Code': ['house_code', None, lambda x : int(x) ],
+        'Channel': ['channel', None, lambda x : int(x) ],
+        'Battery': ['battery', None, lambda x : 0 if x == 'OK' else 1],
+        'Gust':
+            ['wind_gust', re.compile('([\d.]+) m'), lambda x : float(x)],
+        'Average':
+            ['wind_speed', re.compile('([\d.]+) m'), lambda x : float(x)],
+        'Direction':
+            ['wind_dir', re.compile('([\d.]+) degrees'), lambda x : float(x)]
+        }
+    @staticmethod
+    def parse(ts, payload, lines):
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRICWX
+        pkt.update(Packet.parse_lines(lines, OSWGR800Packet.PARSEINFO))
+        channel = pkt.pop('channel', 0)
+        code = pkt.pop('house_code', 0)
+        sensor_id = "%s:%s" % (channel, code)
+        pkt = Packet.add_identifiers(pkt, sensor_id, OSWGR800Packet.__name__)
+        return pkt
+
+
 class LaCrossePacket(Packet):
     # 2016-09-08 00:43:52 :LaCrosse WS :9 :202
     # Temperature: 21.0 C
@@ -575,6 +640,8 @@ class PacketFactory(object):
         OSTHGR122NPacket,
         OSTHGR810Packet,
         OSTHR228NPacket,
+        OSPCR800Packet,
+        OSWGR800Packet,
         LaCrossePacket]
 
     @staticmethod
@@ -768,6 +835,8 @@ if __name__ == '__main__':
                       help='value for PATH')
     parser.add_option('--ld_library_path', dest='ld_library_path',
                       help='value for LD_LIBRARY_PATH')
+    parser.add_option('--list-supported-sensors', dest='list_supported',
+                      help='list sensors supported by this driver')
 
     (options, args) = parser.parse_args()
 
@@ -777,6 +846,11 @@ if __name__ == '__main__':
 
     if options.debug:
         syslog.setlogmask(syslog.LOG_UPTO(syslog.LOG_DEBUG))
+
+    if options.list_supported:
+        for pt in Packet.KNOWN_PACKETS:
+            print pt.IDENTIFIER
+        exit(0)
 
     mgr = ProcManager()
     mgr.startup(options.cmd, path=options.path,

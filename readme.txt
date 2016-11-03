@@ -14,15 +14,11 @@ Tested with the Realtek RTL2838UHIDIR.  Should work with any software-defined
 radio that is compatible with the rtl-sdr software.  Uses the modules in
 rtl_433 to recognize packets.
 
-Output from the following sensors is recognized:
-
-    Acurite tower sensor
-    Acurite 5n1 sensor
-    Fine Offset WH1080 weather station
-    HIDEKI TS04 sensor
-    Weather Sensor THGR810
-    Thermo Sensor THR228N
-    LaCrosse WS
+Output from many different sensors is supported.  To see the list of supported
+sensors, run the driver directly with the --list-supported-sensors option.
+If a sensor is supported by rtl_433 but not by weewx-sdr, it is a fairly simple
+matter of writing a parser for that sensor within weewx-sdr.  Things are a bit
+more complicated if a sensor is not supported by rtl_433.
 
 
 Installation
