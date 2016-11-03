@@ -44,9 +44,23 @@ wee_extension --install weewx-sdr.zip
 
 wee_config --reconfigure
 
-4) start weewx
+4) modify the [SDR] section of weewx.conf using a text editor
+
+- create a [[sensor_map]]
+- possibly modify the cmd
+
+5) start weewx
 
 sudo /etc/init.d/weewx start
+
+
+How to run the driver directly
+
+Run the driver directly for testing and diagnostics.  For example, if weewx
+was installed using setup.py:
+
+cd /home/weewx
+sudo PYTHONPATH=bin python bin/user/sdr.py --help
 
 
 Configuration
@@ -104,6 +118,16 @@ used by weewx, and the sensors actually recognized by weewx.
 
 By default the logging options are False.
 
+The default configuration uses this command:
+
+rtl_433 -q -U
+
+Specify additional options using the cmd parameter.  For example:
+
+[SDR]
+    driver = user.sdr
+    cmd = rtl_433 -q -U -G
+
 
 How to diagnose problems
 
@@ -111,8 +135,20 @@ First try running the rtl_433 application to be sure that it works properly:
 
 sudo rtl_433
 
+Be sure that you are capturing data from the sensors you care about.  To do
+this, you might want to experiment with some of the options to rtl_433.  For
+example, this will eliminate extraneous output (-q), use UTC for timestamps
+(-U), and register all rtl_433 drivers (-G):
+
+sudo rtl_433 -q -U -G
+
+If you know exactly which sensors you want to monitor, try the -R option to
+reduce the clutter.  For example,
+
+sudo rtl_433 -q -U -R 9 -R -31
+
 Once that is working, run the driver directly to be sure that it is collecting
-data from the rtl_433 application:
+data from the rtl_433 application.
 
 cd /home/weewx
 sudo PYTHONPATH=bin python bin/user/sdr.py
@@ -122,8 +158,9 @@ consisting of the observation, sensor id, and rf packet type, separated by
 periods.  You need these in the sensor map to tell weewx the association
 between sensors and database fields.
 
-Once that is working and you have created the sensor map, run weewx directly
-in one shell while you monitor the weewx log in a separate shell:
+In the weewx configuration file, enter the rtl_433 options (if necessary) and
+the sensor map.  Then run weewx directly in one shell while you monitor the
+weewx log in a separate shell:
 
 in shell 1:
 cd /home/weewx

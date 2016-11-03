@@ -671,6 +671,9 @@ class SDRConfigurationEditor(weewx.drivers.AbstractConfEditor):
     # The driver to use
     driver = user.sdr
 
+    # How to invoke the rtl_433 command
+#    cmd = %s
+
     # The sensor map associates observations with database fields.  Each map
     # element consists of a tuple on the left and a database field name on the
     # right.  The tuple on the left consists of:
@@ -680,6 +683,8 @@ class SDRConfigurationEditor(weewx.drivers.AbstractConfEditor):
     # The sensor_identifier is hardware-specific.  For example, Acurite sensors
     # have a 4 character hexadecimal identifier, whereas fine offset sensor
     # clusters have a 4 digit identifier.
+    #
+    # glob-style pattern matching is supported for the sensor_identifier.
     #
 # map data from any fine offset sensor cluster to database field names
 #    [[sensor_map]]
@@ -691,7 +696,7 @@ class SDRConfigurationEditor(weewx.drivers.AbstractConfEditor):
 #        outHumidity = humidity.*.FOWH1080Packet
 #        outTemp = temperature.*.FOWH1080Packet
 
-"""
+""" % DEFAULT_CMD
 
 
 class SDRDriver(weewx.drivers.AbstractDevice):
