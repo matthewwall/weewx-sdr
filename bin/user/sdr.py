@@ -845,8 +845,8 @@ if __name__ == '__main__':
                       help='value for PATH')
     parser.add_option('--ld_library_path', dest='ld_library_path',
                       help='value for LD_LIBRARY_PATH')
-    parser.add_option('--filter', dest='filter', default='',
-                      help='output to be hidden: out, parsed, unparsed')
+    parser.add_option('--filter', dest='filter', default='empty',
+                      help='output to be hidden: out, parsed, unparsed, empty')
     parser.add_option('--action', dest='action', default='show-packets',
                       help='actions include show-packets, show-detected, list-supported')
 
@@ -887,14 +887,16 @@ if __name__ == '__main__':
         mgr.startup(options.cmd, path=options.path,
                     ld_library_path=options.ld_library_path)
         for lines in mgr.get_stdout():
-            if 'out' not in hidden:
+            if 'out' not in hidden and (
+                'empty' not in hidden or len(lines)):
                 print "out:", lines
             packet = PacketFactory.create(lines)
             if packet:
                 if 'parsed' not in hidden:
                     print 'parsed: %s' % packet
             else:
-                if 'unparsed' not in hidden:
+                if 'unparsed' not in hidden and (
+                    'empty' not in hidden or len(lines)):
                     print "unparsed:", lines
         for lines in mgr.get_stderr():
             print "err:", lines
