@@ -836,6 +836,7 @@ if __name__ == '__main__':
     parser.add_option('--ld_library_path', dest='ld_library_path',
                       help='value for LD_LIBRARY_PATH')
     parser.add_option('--list-supported-sensors', dest='list_supported',
+                      action='store_true',
                       help='list sensors supported by this driver')
 
     (options, args) = parser.parse_args()
