@@ -8,6 +8,7 @@ weather stations, energy monitors, doorbells, and many other devices that use
 unlicensed spectrum such as 433MHz, 838MHz, and 900MHz frequencies.
 
 
+===============================================================================
 Hardware
 
 Tested with the Realtek RTL2838UHIDIR.  Should work with any software-defined
@@ -22,6 +23,7 @@ matter of writing a parser for that sensor within weewx-sdr.  Things are a bit
 more complicated if a sensor is not supported by rtl_433.
 
 
+===============================================================================
 Installation
 
 0) install pre-requisites
@@ -47,14 +49,15 @@ wee_config --reconfigure
 
 4) modify the [SDR] section of weewx.conf using a text editor
 
-- create a [[sensor_map]]
-- possibly modify the cmd
+- create a [[sensor_map]] for the sensors you want to capture
+- possibly modify the 'cmd' parameter
 
 5) start weewx
 
 sudo /etc/init.d/weewx start
 
 
+===============================================================================
 How to run the driver directly
 
 Run the driver directly for testing and diagnostics.  For example, if weewx
@@ -64,6 +67,7 @@ cd /home/weewx
 sudo PYTHONPATH=bin python bin/user/sdr.py --help
 
 
+===============================================================================
 Configuration
 
 Use the [SDR] section of the weewx configuration file (nominally weewx.conf) to
@@ -132,6 +136,7 @@ used by weewx, and the sensors actually recognized by weewx.
 By default the logging options are False.
 
 
+===============================================================================
 How to diagnose problems
 
 First try running the rtl_433 application to be sure that it works properly:
@@ -184,6 +189,7 @@ as a daemon and configure rc script or systemd to run weewx at system startup.
 sudo /etc/init.d/weewx start
 
 
+===============================================================================
 Environment
 
 The driver invokes the rtl_433 executable, so the path to that executable and
@@ -209,12 +215,14 @@ the LD_LIBRARY_PATH and PATH in the weewx-sdr driver itself.  For example:
 
 [SDR]
     driver = user.sdr
+    cmd = rlt_433 -q -U
     path = /opt/rtl-433/bin
     ld_library_path = /opt/libusb-1.0.20/lib:/opt/rtl-sdr/lib
     [[sensor_map]]
         ...
 
 
+===============================================================================
 libusb
 
 I have had problems running rtl-sdr on systems with libusb 1.0.11.  The rtl_433
@@ -223,3 +231,20 @@ leaves the dongle in a weird state that can be cleared only by unplugging then
 replugging the dongle.
 
 Using a more recent version of libusb (e.g., 1.0.20) seems to clear things up.
+
+
+===============================================================================
+Support for new sensors
+
+To add support for new sensors, capture the output from rtl_433.  To capture
+output, run the driver directly and hide known packets:
+
+PYTHONPATH=bin python bin/user/sdr.py --cmd "rtl_433 -q -U -G" --hide parsed,out,empty
+
+This should emit a line for each unparsed type.  For example:
+
+unparsed: ['2016-11-04 16:12:39 :\tFine Offset Electronics, WH2 Temperature/Humidity sensor\n', '\tID:\t 38\n', '\tTemperature:\t 54.4 C\n', '\tHumidity:\t 55 %\n']
+
+If you are not comfortable writing your own parser, post the output to the
+issues section of the weewx-sdr repository and some helpful person might write
+the parser for you.
