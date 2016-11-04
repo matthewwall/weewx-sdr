@@ -682,7 +682,8 @@ class PacketFactory(object):
         OSTHR228NPacket,
         OSPCR800Packet,
         OSWGR800Packet,
-        LaCrossePacket]
+        LaCrossePacket,
+        CalibeurRF104Packet]
 
     @staticmethod
     def create(lines):
