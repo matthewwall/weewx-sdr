@@ -248,7 +248,7 @@ class AcuriteTowerPacket(Packet):
     # 2016-08-30 23:57:20 Acurite tower sensor 0x37FC Ch A: 26.7 C 80.1 F 16 % RH
 
     IDENTIFIER = "Acurite tower sensor"
-    PATTERN = re.compile('0x([0-9a-fA-F]+) Ch ([A-C]): ([\d.]+) C ([\d.]+) F ([\d]+) % RH')
+    PATTERN = re.compile('0x([0-9a-fA-F]+) Ch ([A-C]): ([\d.-]+) C ([\d.-]+) F ([\d]+) % RH')
     @staticmethod
     def parse(ts, payload, lines):
         pkt = dict()
@@ -282,7 +282,7 @@ class Acurite5n1Packet(Packet):
     RAIN = re.compile('Total rain fall since last reset: ([\d.]+)')
     MSG = re.compile('Msg (\d+), (.*)')
     MSG31 = re.compile('Wind ([\d.]+) kmph / ([\d.]+) mph ([\d.]+).*rain gauge ([\d.]+) in')
-    MSG38 = re.compile('Wind ([\d.]+) kmph / ([\d.]+) mph, ([\d.]+) C ([\d.]+) F ([\d.]+) % RH')
+    MSG38 = re.compile('Wind ([\d.]+) kmph / ([\d.]+) mph, ([\d.-]+) C ([\d.-]+) F ([\d.]+) % RH')
 
     @staticmethod
     def parse(ts, payload, lines):
@@ -348,7 +348,7 @@ class Acurite986Packet(Packet):
     # 2016-10-31 15:23:54 Acurite 986 sensor 0x85ed - 1R: 16.7 C 62 F
 
     IDENTIFIER = "Acurite 986 sensor"
-    PATTERN = re.compile('0x([0-9a-fA-F]+) - 2F: ([\d.]+) C ([\d.]+) F')
+    PATTERN = re.compile('0x([0-9a-fA-F]+) - 2F: ([\d.-]+) C ([\d.-]+) F')
     #PATTERN = re.compile('0x([0-9a-fA-F]+) - ([0-9a-fA-F]+): ([\d.]+) C ([\d.]+) F')
 
     @staticmethod
@@ -375,7 +375,7 @@ class AcuriteLightningPacket(Packet):
     # 2016-11-04 04:43:22 Acurite lightning 0x536F Ch A Msg Type 0x51: 15 C 58 % RH Strikes 55 Distance 69 - c0  53  6f  3a  d1  0f  b7  c5  18
 
     IDENTIFIER = "Acurite lightning"
-    PATTERN = re.compile('0x([0-9a-fA-F]+) Ch (.) Msg Type 0x([0-9]+): ([\d.]+) C ([\d.]+) % RH Strikes ([\d]+) Distance ([\d.]+)')
+    PATTERN = re.compile('0x([0-9a-fA-F]+) Ch (.) Msg Type 0x([0-9]+): ([\d.]+) C ([\d.-]+) % RH Strikes ([\d]+) Distance ([\d.]+)')
 
     @staticmethod
     def parse(ts, payload, lines):
@@ -389,7 +389,7 @@ class AcuriteLightningPacket(Packet):
             msg_type = m.group(3)
             pkt['temperature'] = float(m.group(4))
             pkt['humidity'] = float(m.group(5))
-            pkt['strikes'] = float(m.group(6))
+            pkt['strikes_total'] = float(m.group(6))
             pkt['distance'] = float(m.group(7))
             pkt = Packet.add_identifiers(
                 pkt, hardware_id, AcuriteLightningPacket.__name__)
@@ -419,7 +419,7 @@ class FOWH1080Packet(Packet):
 #        'Msg type': ['msg_type', None, None],
         'StationID': ['station_id', None, None],
         'Temperature': [
-            'temperature', re.compile('([\d.]+) C'), lambda x : float(x)],
+            'temperature', re.compile('([\d.-]+) C'), lambda x : float(x)],
         'Humidity': [
             'humidity', re.compile('([\d.]+) %'), lambda x : float(x)],
 #        'Wind string': ['wind_dir_ord', None, None],
@@ -454,7 +454,7 @@ class HidekiTS04Packet(Packet):
         'Channel': ['channel', None, lambda x : int(x)],
         'Battery': ['battery', None, lambda x : 0 if x == 'OK' else 1],
         'Temperature':
-            ['temperature', re.compile('([\d.]+) C'), lambda x : float(x)],
+            ['temperature', re.compile('([\d.-]+) C'), lambda x : float(x)],
         'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x : float(x)]
         }
     @staticmethod
@@ -484,7 +484,7 @@ class OSTHGR122NPacket(Packet):
         'Channel': ['channel', None, lambda x : int(x) ],
         'Battery': ['battery', None, lambda x : 0 if x == 'OK' else 1],
         'Temperature':
-            ['temperature', re.compile('([\d.]+) C'), lambda x : float(x)],
+            ['temperature', re.compile('([\d.-]+) C'), lambda x : float(x)],
         'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x : float(x)]
         }
     @staticmethod
@@ -525,9 +525,9 @@ class OSTHGR810Packet(Packet):
         'Channel': ['channel', None, lambda x : int(x) ],
         'Battery': ['battery', None, lambda x : 0 if x == 'OK' else 1],
         'Celcius':
-            ['temperature', re.compile('([\d.]+) C'), lambda x : float(x)],
+            ['temperature', re.compile('([\d.-]+) C'), lambda x : float(x)],
         'Fahrenheit':
-            ['temperature_F', re.compile('([\d.]+) F'), lambda x : float(x)],
+            ['temperature_F', re.compile('([\d.-]+) F'), lambda x : float(x)],
         'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x : float(x)]
         }
     @staticmethod
@@ -556,7 +556,7 @@ class OSTHR228NPacket(Packet):
         'Channel': ['channel', None, lambda x : int(x) ],
         'Battery': ['battery', None, lambda x : 0 if x == 'OK' else 1],
         'Temperature':
-            ['temperature', re.compile('([\d.]+) C'), lambda x : float(x)]
+            ['temperature', re.compile('([\d.-]+) C'), lambda x : float(x)]
         }
     @staticmethod
     def parse(ts, payload, lines):
@@ -653,7 +653,7 @@ class LaCrossePacket(Packet):
             ['wind_speed', re.compile('([\d.]+) m/s'), lambda x : float(x)],
         'Direction': ['wind_dir', None, lambda x : float(x)],
         'Temperature':
-            ['temperature', re.compile('([\d.]+) C'), lambda x : float(x)],
+            ['temperature', re.compile('([\d.-]+) C'), lambda x : float(x)],
         'Humidity': ['humidity', None, lambda x : int(x)],
         'Rainfall':
             ['rain_total', re.compile('([\d.]+) mm'), lambda x : float(x)]
@@ -678,11 +678,16 @@ class CalibeurRF104Packet(Packet):
     # Temperature: 1.8 C
     # Humidity: 71 %
 
+    # 2016-11-04 05:16:39 :Calibeur RF-104
+    # ID: 1
+    # Temperature: -2.2 C
+    # Humidity: 71 %
+
     IDENTIFIER = "Calibeur RF-104"
     PARSEINFO = {
         'ID': ['id', None, lambda x : int(x)],
         'Temperature':
-            ['temperature', re.compile('([\d.]+) C'), lambda x : float(x)],
+            ['temperature', re.compile('([\d.-]+) C'), lambda x : float(x)],
         'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x : float(x)]
         }
     @staticmethod
@@ -776,7 +781,9 @@ class SDRDriver(weewx.drivers.AbstractDevice):
     #   rain:rain_total
     # will result in a delta called 'rain' from the cumulative 'rain_total'.
     # these are applied to mapped packets.
-    DEFAULT_DELTAS = {'rain': 'rain_total'}
+    DEFAULT_DELTAS = {
+        'rain': 'rain_total',
+        'strikes': 'strikes_total'}
 
     def __init__(self, **stn_dict):
         loginf('driver version is %s' % DRIVER_VERSION)
