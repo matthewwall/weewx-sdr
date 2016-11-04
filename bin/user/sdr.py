@@ -184,7 +184,7 @@ class Packet:
     TS_PATTERN = re.compile('(\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d)[\s]+:*(.*)')
 
     @staticmethod
-    def get_timestamp(line):
+    def parse_timestamp(line):
         ts = payload = None
         try:
             m = Packet.TS_PATTERN.search(line)
@@ -366,6 +366,35 @@ class Acurite986Packet(Packet):
                 pkt, hardware_id, Acurite986Packet.__name__)
         else:
             loginf("Acurite986Packet: unrecognized data: '%s'" % lines[0])
+        return pkt
+
+
+class AcuriteLightningPacket(Packet):
+    # 2016-11-04 04:34:58 Acurite lightning 0x536F Ch A Msg Type 0x51: 15 C 58 % RH Strikes 50 Distance 69 - c0  53  6f  3a  d1  0f  b2  c5  13*
+    # 2016-11-04 04:43:14 Acurite lightning 0x536F Ch A Msg Type 0x51: 15 C 58 % RH Strikes 55 Distance 5 - c0  53  6f  3a  d1  0f  b7  05  58*
+    # 2016-11-04 04:43:22 Acurite lightning 0x536F Ch A Msg Type 0x51: 15 C 58 % RH Strikes 55 Distance 69 - c0  53  6f  3a  d1  0f  b7  c5  18
+
+    IDENTIFIER = "Acurite lightning"
+    PATTERN = re.compile('0x([0-9a-fA-F]+) Ch (.) Msg Type 0x([0-9]+): ([\d.]+) C ([\d.]+) % RH Strikes ([\d]+) Distance ([\d.]+)')
+
+    @staticmethod
+    def parse(ts, payload, lines):
+        pkt = dict()
+        m = AcuriteLightningPacket.PATTERN.search(lines[0])
+        if m:
+            pkt['dateTime'] = ts
+            pkt['usUnits'] = weewx.METRIC
+            hardware_id = m.group(1)
+            channel = m.group(2)
+            msg_type = m.group(3)
+            pkt['temperature'] = float(m.group(4))
+            pkt['humidity'] = float(m.group(5))
+            pkt['strikes'] = float(m.group(6))
+            pkt['distance'] = float(m.group(7))
+            pkt = Packet.add_identifiers(
+                pkt, hardware_id, AcuriteLightningPacket.__name__)
+        else:
+            loginf("AcuriteLightningPacket: unrecognized data: '%s'" % lines[0])
         return pkt
 
 
@@ -676,6 +705,7 @@ class PacketFactory(object):
         AcuriteTowerPacket,
         Acurite5n1Packet,
         Acurite986Packet,
+        AcuriteLightningPacket,
         HidekiTS04Packet,
         OSTHGR122NPacket,
         OSTHGR810Packet,
@@ -689,7 +719,7 @@ class PacketFactory(object):
     def create(lines):
         logdbg("lines=%s" % lines)
         if lines:
-            ts, payload = Packet.get_timestamp(lines[0])
+            ts, payload = Packet.parse_timestamp(lines[0])
             logdbg("ts=%s payload=%s" % (ts, payload))
             if ts and payload:
                 for parser in Packet.KNOWN_PACKETS:

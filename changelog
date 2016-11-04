@@ -4,6 +4,7 @@
 * added support for lacrosse rainfall messages
 * provide feedback when no permission to read usb device
 * added support for Calibeur RF104 sensors
+* added support for acurite lightning sensor
 
 0.11 31oct2016
 * added parser for acurite 986 packets (thanks to andy)
