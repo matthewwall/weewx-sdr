@@ -643,6 +643,32 @@ class LaCrossePacket(Packet):
         return pkt
 
 
+class CalibeurRF104Packet(Packet):
+    # 2016-11-01 01:25:28 :Calibeur RF-104
+    # ID: 1
+    # Temperature: 1.8 C
+    # Humidity: 71 %
+
+    IDENTIFIER = "Calibeur RF-104"
+    PARSEINFO = {
+        'ID': ['id', None, lambda x : int(x)],
+        'Temperature':
+            ['temperature', re.compile('([\d.]+) C'), lambda x : float(x)],
+        'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x : float(x)]
+        }
+    @staticmethod
+    def parse(ts, payload, lines):
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRIC
+        pkt.update(Packet.parse_lines(lines, CalibeurRF104Packet.PARSEINFO))
+        pkt_id = pkt.pop('id', 0)
+        sensor_id = "%s" % pkt_id
+        pkt = Packet.add_identifiers(
+            pkt, sensor_id, CalibeurRF104Packet.__name__)
+        return pkt
+
+
 class PacketFactory(object):
 
     Packet.KNOWN_PACKETS = [
