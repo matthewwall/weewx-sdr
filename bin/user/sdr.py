@@ -472,6 +472,7 @@ class OSTHGR122NPacket(Packet):
 
 
 class OSTHGR810Packet(Packet):
+    # rtl_433 circa jul 2016 emits this
     # 2016-09-01 22:05:47 :Weather Sensor THGR810
     # House Code: 122
     # Channel: 1
@@ -480,7 +481,16 @@ class OSTHGR810Packet(Packet):
     # Fahrenheit: 80.06 F
     # Humidity: 58 %
 
-    IDENTIFIER = "Weather Sensor THGR810"
+    # rtl_433 circa nov 2016 emits this
+    # 2016-11-04 02:21:37 :OS :THGR810
+    # House Code: 122
+    # Channel: 1
+    # Battery: OK
+    # Celcius: 22.20 C
+    # Fahrenheit: 71.96 F
+    # Humidity: 57 %
+
+    IDENTIFIER = "THGR810"
     PARSEINFO = {
         'House Code': ['house_code', None, lambda x : int(x) ],
         'Channel': ['channel', None, lambda x : int(x) ],
