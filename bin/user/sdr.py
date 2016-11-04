@@ -1160,15 +1160,3 @@ if __name__ == '__main__':
                     print "unparsed:", lines
         for lines in mgr.get_stderr():
             print "err:", lines
-
-
-# detected but not yet handled:
-
-# {"time" : "2016-11-04 14:44:58", "model" : "Fine Offset Electronics, WH2 Temperature/Humidity sensor", "id" : 255, "temperature_C" : -204.700, "humidity" : 213}
-
-# '2016-11-04 16:12:38 :\tFine Offset Electronics, WH2 Temperature/Humidity sensor\n', '\tID:\t 38\n', '\tTemperature:\t 54.4 C\n', '\tHumidity:\t 55 %\n'
-# '2016-11-04 16:12:39 :\tFine Offset Electronics, WH2 Temperature/Humidity sensor\n', '\tID:\t 38\n', '\tTemperature:\t 54.4 C\n', '\tHumidity:\t 55 %\n'
-
-# '2016-11-04 15:47:37 :\tSchraeder \t:\tTPMS\n', '\tID:\t F7F854\n', '\t:\tOK\n'
-
-# '2016-11-04 16:28:32\n', '\tCelcius:\t 0.00 C\n', '\tHumidity:\t 0 %\n', '\tChannel:\t 3\n', '\tId:\t 0\n', '\tStatus:\t 0\n'
