@@ -29,7 +29,7 @@ Installation
 0) install pre-requisites
 
 a) install weewx
-    http://weewx.com/docs/
+    http://weewx.com/docs.html
 b) install rtl-sdr
     http://sdr.osmocom.org/trac/wiki/rtl-sdr
 c) install rtl_433
