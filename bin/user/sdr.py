@@ -377,16 +377,17 @@ class Acurite5n1Packet(Packet):
             loginf("Acurite5n1Packet: unrecognized data: '%s'" % lines[0])
         return pkt
 
-
 class Acurite986Packet(Packet):
-    # 2016-10-28 02:28:20 Acurite 986 sensor 0x2c87 - 2F: 20.0 C 68 F
     # 2016-10-31 15:24:29 Acurite 986 sensor 0x2c87 - 2F: 16.7 C 62 F
     # 2016-10-31 15:23:54 Acurite 986 sensor 0x85ed - 1R: 16.7 C 62 F
 
-    IDENTIFIER = "Acurite 986 sensor"
-    PATTERN = re.compile('0x([0-9a-fA-F]+) - 2F: ([\d.-]+) C ([\d.-]+) F')
-    #PATTERN = re.compile('0x([0-9a-fA-F]+) - ([0-9a-fA-F]+): ([\d.]+) C ([\d.]+) F')
+    # The 986 hardware_id changes, so using the 1F and 2R as the hardware
+    # identifer.  As long as you only have one set of sendors and your 
+    # close neighbors have none.
+    # todo battery monitor
 
+    IDENTIFIER = "Acurite 986 sensor"
+    PATTERN = re.compile('0x([0-9a-fA-F]+) - (1R|2F): ([\d.]+) C ([\d.]+) F')
     @staticmethod
     def parse_text(ts, payload, lines):
         pkt = dict()
@@ -394,16 +395,15 @@ class Acurite986Packet(Packet):
         if m:
             pkt['dateTime'] = ts
             pkt['usUnits'] = weewx.METRIC
-            hardware_id = m.group(1)
-            #channel = m.group(2)
-            pkt['temperature'] = float(m.group(2))
-            pkt['temperature_F'] = float(m.group(3))
+            hardware_id = m.group(2)
+            channel = m.group(1)
+            pkt['temperature'] = float(m.group(3))
+            pkt['temperature_F'] = float(m.group(4))
             pkt = Packet.add_identifiers(
                 pkt, hardware_id, Acurite986Packet.__name__)
         else:
             loginf("Acurite986Packet: unrecognized data: '%s'" % lines[0])
         return pkt
-
 
 class AcuriteLightningPacket(Packet):
     # 2016-11-04 04:34:58 Acurite lightning 0x536F Ch A Msg Type 0x51: 15 C 58 % RH Strikes 50 Distance 69 - c0  53  6f  3a  d1  0f  b2  c5  13*
