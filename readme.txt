@@ -29,7 +29,7 @@ Installation
 0) install pre-requisites
 
 a) install weewx
-    http://weewx.com/docs/usersguide.htm
+    http://weewx.com/docs/
 b) install rtl-sdr
     http://sdr.osmocom.org/trac/wiki/rtl-sdr
 c) install rtl_433
@@ -41,18 +41,23 @@ wget -O weewx-sdr.zip https://github.com/matthewwall/weewx-sdr/archive/master.zi
 
 2) install the driver
 
-wee_extension --install weewx-sdr.zip
+sudo wee_extension --install weewx-sdr.zip
 
 3) configure the driver
 
-wee_config --reconfigure
+sudo wee_config --reconfigure
 
-4) modify the [SDR] section of weewx.conf using a text editor
+4) run the driver directly to identify the packets you want to capture
 
-- create a [[sensor_map]] for the sensors you want to capture
+cd /home/weewx
+sudo PYTHONPATH=bin python bin/user/sdr.py --cmd="rtl_433 -q -U -G"
+
+5) modify the [SDR] section of weewx.conf using a text editor
+
+- create a [[sensor_map]] for the data you want to capture
 - possibly modify the 'cmd' parameter
 
-5) start weewx
+6) start weewx
 
 sudo /etc/init.d/weewx start
 
@@ -65,6 +70,10 @@ was installed using setup.py:
 
 cd /home/weewx
 sudo PYTHONPATH=bin python bin/user/sdr.py --help
+
+If weewx was installed from deb or rpm:
+
+sudo PYTHONPATH=bin python /usr/share/weewx/bin/user/sdr.py --help
 
 
 ===============================================================================
