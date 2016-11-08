@@ -109,6 +109,20 @@ Here are some examples:
         inTemp = temperature.24A4.AcuriteTowerPacket
         inHumidity = humidity.24A4.AcuriteTowerPacket
 
+# collect data from Acurite 986 fridge/freezer sensor set 1R and 2F
+[SDR]
+    driver = user.sdr
+    [[sensor_map]]
+        extraTemp1 = temperature.1R.Acurite986Packet
+        extraTemp2 = temperature.2F.Acurite986Packet
+
+# collect data from Acurite 06002RM t/h sensor 3067
+[SDR]
+    driver = user.sdr
+    [[sensor_map]]
+        inTemp = temperature.3067.AcuriteTowerPacket
+        inHumidity = humidity.3067.AcuriteTowerPacket
+
 # collect data from two Hideki TS04 sensors with channel=1 and channel=2
 [SDR]
     driver = user.sdr
