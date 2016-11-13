@@ -73,7 +73,7 @@ sudo PYTHONPATH=bin python bin/user/sdr.py --help
 
 If weewx was installed from deb or rpm:
 
-sudo PYTHONPATH=bin python /usr/share/weewx/bin/user/sdr.py --help
+sudo PYTHONPATH=/usr/share/weewx python /usr/share/weewx/user/sdr.py --help
 
 
 ===============================================================================
