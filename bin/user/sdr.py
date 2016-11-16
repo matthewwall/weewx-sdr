@@ -241,7 +241,7 @@ class Packet:
         # tuple in parseinfo is label, pattern, lambda
         # if there is a label, use it to transform the name
         # if there is a pattern, use it to match the value
-        # if there is a lamba, use it to conver the value
+        # if there is a lamba, use it to convert the value
         packet = dict()
         for line in lines[1:]:
             if line.count(':') == 1:
@@ -1022,21 +1022,19 @@ class SDRDriver(weewx.drivers.AbstractDevice):
         for k in self._deltas:
             label = self._deltas[k]
             if label in pkt:
-                value = pkt[label]
-                last_value = self._counter_values.get(label)
-                if (value is not None and last_value is not None and
-                    value < last_value):
-                    loginf("%s decrement ignored:"
-                           " new: %s old: %s" % (label, value, last_value))
-                pkt[k] = self._calculate_delta(value, last_value)
-                self._counter_values[label] = value
+                pkt[k] = self._calculate_delta(
+                    label, pkt[label], self._counter_values.get(label))
+                self._counter_values[label] = pkt[label]
 
     @staticmethod
-    def _calculate_delta(newtotal, oldtotal):
+    def _calculate_delta(label, newtotal, oldtotal):
         delta = None
-        if(newtotal is not None and oldtotal is not None and
-           newtotal >= oldtotal):
-            delta = newtotal - oldtotal
+        if newtotal is not None and oldtotal is not None:
+            if newtotal >= oldtotal:
+                delta = newtotal - oldtotal
+            else:
+                loginf("%s decrement ignored:"
+                       " new: %s old: %s" % (label, value, last_value))
         return delta
 
     @staticmethod
