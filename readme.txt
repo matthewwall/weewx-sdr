@@ -106,8 +106,11 @@ Here are some examples:
         windSpeed = wind_speed.0BFA.Acurite5n1Packet
         outTemp = temperature.0BFA.Acurite5n1Packet
         outHumidity = humidity.0BFA.Acurite5n1Packet
+        rain_total = rain_total.0BFA.Acurite5n1Packet
         inTemp = temperature.24A4.AcuriteTowerPacket
         inHumidity = humidity.24A4.AcuriteTowerPacket
+    [[deltas]]
+        rain = rain_total
 
 # collect data from Acurite 986 fridge/freezer sensor set 1R and 2F
 [SDR]
@@ -145,6 +148,8 @@ Here are some examples:
         windDir = wind_dir.0026.FOWH1080Packet
         outHumidity = humidity.0026.FOWH1080Packet
         outTemp = temperature.0026.FOWH1080Packet
+    [[deltas]]
+        rain = rain_total
 
 To figure out the sensor identifiers, run the driver directly, possibly with
 the --debug option.  Another option is to run weewx with the logging options
