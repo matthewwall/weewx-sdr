@@ -68,18 +68,18 @@ import syslog
 import threading
 import time
 
-import weewx.drivers
-from weeutil.weeutil import tobool
-
 try:
     import cjson as json
     setattr(json, 'dumps', json.encode)
     setattr(json, 'loads', json.decode)
-except ImportError, e:
+except (ImportError, AttributeError):
     try:
         import simplejson as json
-    except ImportError, e:
+    except ImportError:
         import json
+
+import weewx.drivers
+from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
