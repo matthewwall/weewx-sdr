@@ -264,12 +264,14 @@ class Packet:
         return None
 
     @staticmethod
-    def parse_lines(lines, parseinfo={}):
+    def parse_lines(lines, parseinfo=None):
         # parse each line, splitting on colon for name:value
         # tuple in parseinfo is label, pattern, lambda
         # if there is a label, use it to transform the name
         # if there is a pattern, use it to match the value
         # if there is a lamba, use it to convert the value
+        if parseinfo is None:
+            parseinfo = dict()
         packet = dict()
         for line in lines[1:]:
             if line.count(':') == 1:
@@ -334,7 +336,7 @@ class AcuriteTowerPacket(Packet):
             pkt['dateTime'] = ts
             pkt['usUnits'] = weewx.METRIC
             hardware_id = m.group(1)
-            channel = m.group(2)
+            #channel = m.group(2)
             pkt['temperature'] = float(m.group(3))
             pkt['temperature_F'] = float(m.group(4))
             pkt['humidity'] = float(m.group(5))
@@ -382,7 +384,7 @@ class Acurite5n1Packet(Packet):
             pkt['dateTime'] = ts
             pkt['usUnits'] = weewx.METRIC
             hardware_id = m.group(1)
-            channel = m.group(2)
+            #channel = m.group(2)
             payload = m.group(3)
             m = Acurite5n1Packet.MSG.search(payload)
             if m:
@@ -506,8 +508,8 @@ class CalibeurRF104Packet(Packet):
     IDENTIFIER = "Calibeur RF-104"
     PARSEINFO = {
         'ID': ['id', None, lambda x: int(x)],
-        'Temperature':
-            ['temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
+        'Temperature': [
+            'temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
         'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x: float(x)]}
 
     @staticmethod
@@ -601,8 +603,8 @@ class HidekiTS04Packet(Packet):
         'Rolling Code': ['rolling_code', None, lambda x: int(x)],
         'Channel': ['channel', None, lambda x: int(x)],
         'Battery': ['battery', None, lambda x: 0 if x == 'OK' else 1],
-        'Temperature':
-            ['temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
+        'Temperature': [
+            'temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
         'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x: float(x)]}
 
     @staticmethod
@@ -651,14 +653,14 @@ class LaCrossePacket(Packet):
 
     IDENTIFIER = "LaCrosse WS"
     PARSEINFO = {
-        'Wind speed':
-            ['wind_speed', re.compile('([\d.]+) m/s'), lambda x: float(x)],
+        'Wind speed': [
+            'wind_speed', re.compile('([\d.]+) m/s'), lambda x: float(x)],
         'Direction': ['wind_dir', None, lambda x: float(x)],
-        'Temperature':
-            ['temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
+        'Temperature': [
+            'temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
         'Humidity': ['humidity', None, lambda x: int(x)],
-        'Rainfall':
-            ['rain_total', re.compile('([\d.]+) mm'), lambda x: float(x)]}
+        'Rainfall': [
+            'rain_total', re.compile('([\d.]+) mm'), lambda x: float(x)]}
 
     @staticmethod
     def parse_text(ts, payload, lines):
@@ -744,8 +746,8 @@ class OSTHGR122NPacket(Packet):
         'House Code': ['house_code', None, lambda x: int(x)],
         'Channel': ['channel', None, lambda x: int(x)],
         'Battery': ['battery', None, lambda x: 0 if x == 'OK' else 1],
-        'Temperature':
-            ['temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
+        'Temperature': [
+            'temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
         'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x: float(x)]}
 
     @staticmethod
@@ -803,10 +805,10 @@ class OSTHGR810Packet(Packet):
         'House Code': ['house_code', None, lambda x: int(x)],
         'Channel': ['channel', None, lambda x: int(x)],
         'Battery': ['battery', None, lambda x: 0 if x == 'OK' else 1],
-        'Celcius':
-            ['temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
-        'Fahrenheit':
-            ['temperature_F', re.compile('([\d.-]+) F'), lambda x: float(x)],
+        'Celcius': [
+            'temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
+        'Fahrenheit': [
+            'temperature_F', re.compile('([\d.-]+) F'), lambda x: float(x)],
         'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x: float(x)]}
 
     @staticmethod
@@ -880,12 +882,12 @@ class OSWGR800Packet(Packet):
         'House Code': ['house_code', None, lambda x: int(x)],
         'Channel': ['channel', None, lambda x: int(x)],
         'Battery': ['battery', None, lambda x: 0 if x == 'OK' else 1],
-        'Gust':
-            ['wind_gust', re.compile('([\d.]+) m'), lambda x: float(x)],
-        'Average':
-            ['wind_speed', re.compile('([\d.]+) m'), lambda x: float(x)],
-        'Direction':
-            ['wind_dir', re.compile('([\d.]+) degrees'), lambda x: float(x)]}
+        'Gust': [
+            'wind_gust', re.compile('([\d.]+) m'), lambda x: float(x)],
+        'Average': [
+            'wind_speed', re.compile('([\d.]+) m'), lambda x: float(x)],
+        'Direction': [
+            'wind_dir', re.compile('([\d.]+) degrees'), lambda x: float(x)]}
 
     @staticmethod
     def parse_text(ts, payload, lines):
@@ -1180,11 +1182,11 @@ if __name__ == '__main__':
         detected = dict()
         for lines in mgr.get_stdout():
 #            print "out:", lines
-            packet = PacketFactory.create(lines)
-            if packet:
-                del packet['usUnits']
-                del packet['dateTime']
-                keys = packet.keys()
+            p = PacketFactory.create(lines)
+            if p:
+                del p['usUnits']
+                del p['dateTime']
+                keys = p.keys()
                 label = re.sub(r'^[^\.]+', '', keys[0])
                 if label not in detected:
                     detected[label] = 0
@@ -1200,10 +1202,10 @@ if __name__ == '__main__':
             if 'out' not in hidden and (
                 'empty' not in hidden or len(lines)):
                 print "out:", lines
-            packet = PacketFactory.create(lines)
-            if packet:
+            p = PacketFactory.create(lines)
+            if p:
                 if 'parsed' not in hidden:
-                    print 'parsed: %s' % packet
+                    print 'parsed: %s' % p
             else:
                 if 'unparsed' not in hidden and (
                     'empty' not in hidden or len(lines)):
