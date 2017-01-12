@@ -1,4 +1,8 @@
-0.13 11jan2016
+0.14 12jan2017
+* provide more feedback during shutdown for debugging
+* attempt to do better shutdown of rtl_433 process
+
+0.13 11jan2017
 * deal with changes to acurite decoder in rtl-433 - use json now
 
 0.12 03nov2016

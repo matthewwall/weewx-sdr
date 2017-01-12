@@ -84,7 +84,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.13'
+DRIVER_VERSION = '0.14rc1'
 
 # -q - suppress non-data messages
 # -U - print timestamps in UTC
@@ -120,15 +120,20 @@ class AsyncReader(threading.Thread):
         threading.Thread.__init__(self)
         self._fd = fd
         self._queue = queue
+        self._running = False
         self.setDaemon(True)
         self.setName(label)
 
     def run(self):
+        logdbg("start async reader for %s" % self.getName())
+        self._running = True
         for line in iter(self._fd.readline, ''):
             self._queue.put(line)
+            if not self._running:
+                break
 
-    def eof(self):
-        return not self.is_alive() and self._queue.empty()
+    def stop_running(self):
+        self._running = False
 
 
 class ProcManager():
@@ -165,14 +170,36 @@ class ProcManager():
             raise weewx.WeeWxIOError("failed to start process: %s" % e)
 
     def shutdown(self):
+        max_wait = 10
         loginf('shutdown process %s' % self._cmd)
+        logdbg('waiting for %s' % self.stdout_reader.getName())
+        self.stdout_reader.stop_running()
         self.stdout_reader.join(10.0)
+        if self.stdout_reader.isAlive():
+            loginf('timed out waiting for %s' % self.stdout_reader.getName())
         self.stdout_reader = None
+        logdbg('waiting for %s' % self.stderr_reader.getName())
+        self.stderr_reader.stop_running()
         self.stderr_reader.join(10.0)
+        if self.stderr_reader.isAlive():
+            loginf('timed out waiting for %s' % self.stderr_reader.getName())
         self.stderr_reader = None
+        logdbg("close stdout")
         self._process.stdout.close()
+        logdbg("close stderr")
         self._process.stderr.close()
+        logdbg("terminate process")
         self._process.terminate()
+        for i in range(max_wait):
+            if self._process.poll() is None:
+                break
+            time.sleep(1)
+        else:
+            logerr('process not terminated after %s seconds' % max_wait)
+            logdbg('attempting to kill process')
+            self._process.kill()
+            if self._process.poll() is None:
+                logerr('process did not respond to kill either')
         self._process = None
 
     def running(self):
