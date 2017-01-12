@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-# Copyright 2016 Matthew Wall, all rights reserved
+# Copyright 2016 Matthew Wall
+# Distributed under the terms of the GNU Public License (GPLv3)
 """
 Collect data from stl-sdr.  Run rtl_433 on a thread and push the output onto
 a queue.
@@ -83,7 +84,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.12'
+DRIVER_VERSION = '0.13'
 
 # -q - suppress non-data messages
 # -U - print timestamps in UTC
@@ -286,6 +287,15 @@ class Packet:
 class AcuriteTowerPacket(Packet):
     # 2016-08-30 23:57:20 Acurite tower sensor 0x37FC Ch A: 26.7 C 80.1 F 16 % RH
 
+    # 2017-01-12 02:55:10 : Acurite tower sensor : 12391 : B
+    # Temperature: 18.0 C
+    # Humidity: 68
+    # Battery: 0
+    # : 68
+
+    # {"time" : "2017-01-12 03:43:05", "model" : "Acurite tower sensor", "id" : 521, "channel" : "A", "temperature_C" : 0.800, "humidity" : 68, "battery" : 0, "status" : 68}
+    # {"time" : "2017-01-12 03:43:11", "model" : "Acurite tower sensor", "id" : 5585, "channel" : "C", "temperature_C" : 21.100, "humidity" : 32, "battery" : 0, "status" : 68}
+
     IDENTIFIER = "Acurite tower sensor"
     PATTERN = re.compile('0x([0-9a-fA-F]+) Ch ([A-C]): ([\d.-]+) C ([\d.-]+) F ([\d]+) % RH')
 
@@ -306,6 +316,19 @@ class AcuriteTowerPacket(Packet):
         else:
             loginf("AcuriteTowerPacket: unrecognized data: '%s'" % lines[0])
         return pkt
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        hardware_id = "%04x" % obj.get('id', 0)
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['battery'] = 0 if obj.get('battery') == 0 else 1
+        pkt['status'] = obj.get('status')
+        return Packet.add_identifiers(
+            pkt, hardware_id, AcuriteTowerPacket.__name__)
 
 
 class Acurite5n1Packet(Packet):

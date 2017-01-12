@@ -1,3 +1,6 @@
+0.13 11jan2016
+* deal with changes to acurite decoder in rtl-433 - use json now
+
 0.12 03nov2016
 * added option to enumerate supported sensors
 * added support for OS WGR800 and PCR800 sensors

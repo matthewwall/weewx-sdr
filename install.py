@@ -1,5 +1,6 @@
 # installer for the weewx-sdr driver
-# Copyright 2016 Matthew Wall, all rights reserved
+# Copyright 2016 Matthew Wall
+# Distributed under the terms of the GNU Public License (GPLv3)
 
 from setup import ExtensionInstaller
 
@@ -9,7 +10,7 @@ def loader():
 class SDRInstaller(ExtensionInstaller):
     def __init__(self):
         super(SDRInstaller, self).__init__(
-            version="0.12",
+            version="0.13",
             name='sdr',
             description='Capture data from rtl_433',
             author="Matthew Wall",
