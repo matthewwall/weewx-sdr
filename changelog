@@ -1,6 +1,7 @@
 0.14 12jan2017
 * provide more feedback during shutdown for debugging
 * attempt to do better shutdown of rtl_433 process
+* fixed bug in delta reporting log message
 
 0.13 11jan2017
 * deal with changes to acurite decoder in rtl-433 - use json now

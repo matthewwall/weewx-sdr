@@ -84,7 +84,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.14rc1'
+DRIVER_VERSION = '0.14'
 
 # -q - suppress non-data messages
 # -U - print timestamps in UTC
@@ -1086,7 +1086,7 @@ class SDRDriver(weewx.drivers.AbstractDevice):
                 delta = newtotal - oldtotal
             else:
                 loginf("%s decrement ignored:"
-                       " new: %s old: %s" % (label, value, last_value))
+                       " new: %s old: %s" % (label, newtotal, oldtotal))
         return delta
 
     @staticmethod
