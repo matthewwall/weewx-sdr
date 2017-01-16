@@ -50,14 +50,11 @@ not yet recognized by your configuration.
 
 The default for each of these is False.
 
-Eventually we would prefer to have everything coming in json.  Unfortunately,
-many of the rtl_433 drivers do not emit this format yet (as of January 2017).
-The driver is implemented to detect both json and single- or multi-line output,
-but new development will prefer json.
+Eventually we would prefer to have all rtl_433 output as json.  Unfortunately,
+many of the rtl_433 decoders do not emit this format yet (as of January 2017).
+So this driver is designed to look for json first, then fall back to single-
+or multi-line plain text format.
 """
-
-# WARNING: supporting both plain text and json is a pita.  this will change!
-# FIXME: get rid of the line popping - support only single-line json
 
 from __future__ import with_statement
 from calendar import timegm
@@ -85,12 +82,13 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.15'
+DRIVER_VERSION = '0.16'
 
+# The default command requests json output from every decoder
 # -q - suppress non-data messages
 # -U - print timestamps in UTC
-# -G - emit data for all rtl drivers (only available in newer rtl_433)
-# -F json - emit data in json format (not all rtl_433 drivers support this)
+# -G - emit data for all rtl decoder (only available in newer rtl_433)
+# -F json - emit data in json format (not all rtl_433 decoders support this)
 DEFAULT_CMD = 'rtl_433 -q -U -G -F json'
 
 
@@ -171,7 +169,6 @@ class ProcManager():
             raise weewx.WeeWxIOError("failed to start process: %s" % e)
 
     def shutdown(self):
-        max_wait = 10
         loginf('shutdown process %s' % self._cmd)
         logdbg('waiting for %s' % self.stdout_reader.getName())
         self.stdout_reader.stop_running()
@@ -189,18 +186,10 @@ class ProcManager():
         self._process.stdout.close()
         logdbg("close stderr")
         self._process.stderr.close()
-        logdbg("terminate process")
-        self._process.terminate()
-        for i in range(max_wait):
-            if self._process.poll() is None:
-                break
-            time.sleep(1)
-        else:
-            logerr('process not terminated after %s seconds' % max_wait)
-            logdbg('attempting to kill process')
-            self._process.kill()
-            if self._process.poll() is None:
-                logerr('process did not respond to kill either')
+        logdbg('kill process')
+        self._process.kill()
+        if self._process.poll() is None:
+            logerr('process did not respond to kill, shutting down anyway')
         self._process = None
 
     def running(self):
@@ -325,11 +314,20 @@ class Packet:
         return packet
 
 
+class Acurite(object):
+    @staticmethod
+    def insert_ids(pkt, pkt_type):
+        # there should be a station_id field in the packet to identify sensor.
+        # ensure the station_id is upper-case - it should be 4 hex characters.
+        station_id = pkt.pop('station_id', '0000').upper()
+        return Packet.add_identifiers(pkt, station_id, pkt_type)
+
+
 class AcuriteTowerPacket(Packet):
     # initial implementation was single-line
     # 2016-08-30 23:57:20 Acurite tower sensor 0x37FC Ch A: 26.7 C 80.1 F 16 % RH
     #
-    # multi-line was introduced nov2016
+    # multi-line was introduced nov2016 - only single line is supported here
     # 2017-01-12 02:55:10 : Acurite tower sensor : 12391 : B
     # Temperature: 18.0 C
     # Humidity: 68
@@ -346,13 +344,12 @@ class AcuriteTowerPacket(Packet):
         if m:
             pkt['dateTime'] = ts
             pkt['usUnits'] = weewx.METRIC
-            hardware_id = m.group(1)
-            #channel = m.group(2)
+            pkt['hardware_id'] = m.group(1)
+            pkt['channel'] = m.group(2)
             pkt['temperature'] = float(m.group(3))
             pkt['temperature_F'] = float(m.group(4))
             pkt['humidity'] = float(m.group(5))
-            pkt = Packet.add_identifiers(
-                pkt, hardware_id, AcuriteTowerPacket.__name__)
+            pkt = Acurite.insert_ids(pkt, AcuriteTowerPacket.__name__)
         else:
             loginf("AcuriteTowerPacket: unrecognized data: '%s'" % lines[0])
         lines.pop(0)
@@ -366,14 +363,13 @@ class AcuriteTowerPacket(Packet):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['usUnits'] = weewx.METRIC
-        hardware_id = "%04x" % obj.get('id', 0)
+        pkt['hardware_id'] = "%04x" % obj.get('id', 0)
         pkt['channel'] = obj.get('channel')
         pkt['battery'] = 0 if obj.get('battery') == 0 else 1
         pkt['status'] = obj.get('status')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        return Packet.add_identifiers(
-            pkt, hardware_id.upper(), AcuriteTowerPacket.__name__)
+        return Acurite.insert_ids(pkt, AcuriteTowerPacket.__name__)
 
 
 class Acurite5n1Packet(Packet):
@@ -399,8 +395,8 @@ class Acurite5n1Packet(Packet):
         if m:
             pkt['dateTime'] = ts
             pkt['usUnits'] = weewx.METRIC
-            hardware_id = m.group(1)
-            #channel = m.group(2)
+            pkt['hardware_id'] = m.group(1)
+            pkt['channel'] = m.group(2)
             payload = m.group(3)
             m = Acurite5n1Packet.MSG.search(payload)
             if m:
@@ -413,8 +409,6 @@ class Acurite5n1Packet(Packet):
                         pkt['wind_speed_mph'] = float(m.group(2))
                         pkt['wind_dir'] = float(m.group(3))
                         pkt['rain_total'] = float(m.group(4))
-                        pkt = Packet.add_identifiers(
-                            pkt, hardware_id, Acurite5n1Packet.__name__)
                     else:
                         loginf("Acurite5n1Packet: no match for type 31: '%s'"
                                % payload)
@@ -426,8 +420,6 @@ class Acurite5n1Packet(Packet):
                         pkt['temperature'] = float(m.group(3))
                         pkt['temperature_F'] = float(m.group(4))
                         pkt['humidity'] = float(m.group(5))
-                        pkt = Packet.add_identifiers(
-                            pkt, hardware_id, Acurite5n1Packet.__name__)
                     else:
                         loginf("Acurite5n1Packet: no match for type 38: '%s'"
                                % payload)
@@ -438,17 +430,15 @@ class Acurite5n1Packet(Packet):
                 m = Acurite5n1Packet.RAIN.search(payload)
                 if m:
                     total = float(m.group(1))
-                    loginf("Acurite5n1Packet: rain since reset: %s" % total)
                     pkt['rain_since_reset'] = total
-                    pkt = Packet.add_identifiers(
-                        pkt, hardware_id, Acurite5n1Packet.__name__)
+                    loginf("Acurite5n1Packet: rain since reset: %s" % total)
                 else:
                     loginf("Acurite5n1Packet: unknown message format: '%s'" %
                            lines[0])
         else:
             loginf("Acurite5n1Packet: unrecognized data: '%s'" % lines[0])
         lines.pop(0)
-        return pkt
+        return Acurite.insert_ids(pkt, Acurite5n1Packet.__name__)
 
     # {"time" : "2017-01-16 02:34:12", "model" : "Acurite 5n1 sensor", "sensor_id" : 3066, "channel" : "C", "sequence_num" : 1, "battery" : "OK", "message_type" : 49, "wind_speed" : 0.000, "wind_dir_deg" : 67.500, "wind_dir" : "ENE", "rainfall_accumulation" : 0.000, "raincounter_raw" : 8978}
     # {"time" : "2017-01-16 02:37:33", "model" : "Acurite 5n1 sensor", "sensor_id" : 3066, "channel" : "C", "sequence_num" : 1, "battery" : "OK", "message_type" : 56, "wind_speed" : 0.000, "temperature_F" : 27.500, "humidity" : 56}
@@ -460,7 +450,7 @@ class Acurite5n1Packet(Packet):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['usUnits'] = weewx.US
-        hardware_id = "%s" % obj.get('sensor_id', '0000')
+        pkt['hardware_id'] = "%04x" % obj.get('sensor_id', 0)
         pkt['channel'] = obj.get('channel')
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         pkt['status'] = obj.get('status')
@@ -476,8 +466,7 @@ class Acurite5n1Packet(Packet):
         # put some units on the rain total - each tip is 0.01 inch
         if 'rain_counter' in pkt:
             pkt['rain_total'] = pkt['rain_counter'] * 0.01 # inch
-        return Packet.add_identifiers(
-            pkt, hardware_id.upper(), Acurite5n1Packet.__name__)
+        return Acurite.insert_ids(pkt, Acurite5n1Packet.__name__)
 
 
 class Acurite986Packet(Packet):
@@ -500,16 +489,14 @@ class Acurite986Packet(Packet):
         if m:
             pkt['dateTime'] = ts
             pkt['usUnits'] = weewx.METRIC
-            hardware_id = m.group(2)
-            channel = m.group(1)
+            pkt['hardware_id'] = m.group(2)
+            pkt['channel'] = m.group(1)
             pkt['temperature'] = float(m.group(3))
             pkt['temperature_F'] = float(m.group(4))
-            pkt = Packet.add_identifiers(
-                pkt, hardware_id, Acurite986Packet.__name__)
         else:
             loginf("Acurite986Packet: unrecognized data: '%s'" % lines[0])
         lines.pop(0)
-        return pkt
+        return Acurite.insert_ids(pkt, Acurite986Packet.__name__)
 
 
 class AcuriteLightningPacket(Packet):
@@ -528,19 +515,17 @@ class AcuriteLightningPacket(Packet):
         if m:
             pkt['dateTime'] = ts
             pkt['usUnits'] = weewx.METRIC
-            hardware_id = m.group(1)
-            channel = m.group(2)
-            msg_type = m.group(3)
+            pkt['hardware_id'] = m.group(1)
+            pkt['channel'] = m.group(2)
+            pkt['msg_type'] = m.group(3)
             pkt['temperature'] = float(m.group(4))
             pkt['humidity'] = float(m.group(5))
             pkt['strikes_total'] = float(m.group(6))
             pkt['distance'] = float(m.group(7))
-            pkt = Packet.add_identifiers(
-                pkt, hardware_id, AcuriteLightningPacket.__name__)
         else:
             loginf("AcuriteLightningPacket: unrecognized data: '%s'" % lines[0])
         lines.pop(0)
-        return pkt
+        return Acurite.insert_ids(pkt, AcuriteLightningPacket.__name__)
 
 
 class CalibeurRF104Packet(Packet):

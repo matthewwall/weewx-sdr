@@ -1,6 +1,7 @@
 0.16 16jan2017
 * added support for Rubicson temperature sensor
 * ensure hex identifiers for acurite sensors
+* just kill the rtl_433 process instead of trying to terminate it
 
 0.15 15jan2017
 * default to json format (-F json)
