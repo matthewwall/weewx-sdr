@@ -622,6 +622,16 @@ class FOWH1080Packet(Packet):
         return pkt
 
 
+class Hideki(object):
+    @staticmethod
+    def insert_ids(pkt, pkt_type):
+        channel = pkt.pop('channel', 0)
+        code = pkt.pop('rolling_code', 0)
+        sensor_id = "%s:%s" % (channel, code)
+        pkt = Packet.add_identifiers(pkt, sensor_id, pkt_type)
+        return pkt
+
+
 class HidekiTS04Packet(Packet):
     # 2016-08-31 17:41:30 :   HIDEKI TS04 sensor
     # Rolling Code: 9
@@ -647,7 +657,7 @@ class HidekiTS04Packet(Packet):
         pkt['dateTime'] = ts
         pkt['usUnits'] = weewx.METRIC
         pkt.update(Packet.parse_lines(lines, HidekiTS04Packet.PARSEINFO))
-        return HidekiTS04Packet.insert_ids(pkt)
+        return Hideki.insert_ids(pkt, HidekiTS04Packet.__name__)
 
     @staticmethod
     def parse_json(obj):
@@ -659,15 +669,7 @@ class HidekiTS04Packet(Packet):
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
-        return HidekiTS04Packet.insert_ids(pkt)
-
-    @staticmethod
-    def insert_ids(pkt):
-        channel = pkt.pop('channel', 0)
-        code = pkt.pop('rolling_code', 0)
-        sensor_id = "%s:%s" % (channel, code)
-        pkt = Packet.add_identifiers(pkt, sensor_id, HidekiTS04Packet.__name__)
-        return pkt
+        return Hideki.insert_ids(pkt, HidekiTS04Packet.__name__)
 
 
 class HidekiWindPacket(Packet):
@@ -697,7 +699,7 @@ class HidekiWindPacket(Packet):
         pkt['dateTime'] = ts
         pkt['usUnits'] = weewx.METRIC
         pkt.update(Packet.parse_lines(lines, HidekiWindPacket.PARSEINFO))
-        return HidekiWindPacket.insert_ids(pkt)
+        return Hideki.insert_ids(pkt, HidekiWindPacket.__name__)
 
     @staticmethod
     def parse_json(obj):
@@ -710,15 +712,7 @@ class HidekiWindPacket(Packet):
         pkt['wind_speed'] = Packet.get_float(obj, 'windstrength')
         pkt['wind_dir'] = Packet.get_float(obj, 'winddirection')
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
-        return HidekiWindPacket.insert_ids(pkt)
-
-    @staticmethod
-    def insert_ids(pkt):
-        channel = pkt.pop('channel', 0)
-        code = pkt.pop('rolling_code', 0)
-        sensor_id = "%s:%s" % (channel, code)
-        pkt = Packet.add_identifiers(pkt, sensor_id, HidekiWindPacket.__name__)
-        return pkt
+        return Hideki.insert_ids(pkt, HidekiWindPacket.__name__)
 
 
 class HidekiRainPacket(Packet):
@@ -743,7 +737,7 @@ class HidekiRainPacket(Packet):
         pkt['dateTime'] = ts
         pkt['usUnits'] = weewx.METRIC
         pkt.update(Packet.parse_lines(lines, HidekiRainPacket.PARSEINFO))
-        return HidekiRainPacket.insert_ids(pkt)
+        return Hideki.insert_ids(pkt, HidekiRainPacket.__name__)
 
     @staticmethod
     def parse_json(obj):
@@ -754,15 +748,7 @@ class HidekiRainPacket(Packet):
         pkt['channel'] = obj.get('channel')
         pkt['rain_total'] = Packet.get_float(obj, 'rain')
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
-        return HidekiRainPacket.insert_ids(pkt)
-
-    @staticmethod
-    def insert_ids(pkt):
-        channel = pkt.pop('channel', 0)
-        code = pkt.pop('rolling_code', 0)
-        sensor_id = "%s:%s" % (channel, code)
-        pkt = Packet.add_identifiers(pkt, sensor_id, HidekiRainPacket.__name__)
-        return pkt
+        return Hideki.insert_ids(pkt, HidekiRainPacket.__name__)
 
 
 class LaCrossePacket(Packet):
