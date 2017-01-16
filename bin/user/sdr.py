@@ -51,12 +51,13 @@ not yet recognized by your configuration.
 The default for each of these is False.
 
 Eventually we would prefer to have everything coming in json.  Unfortunately,
-many of the rtl_433 drivers do not emit this format yet.  So the json support
-should be considered experimental, and the plain text format (often multi-line)
-is the baseline implementation.
+many of the rtl_433 drivers do not emit this format yet (as of January 2017).
+The driver is implemented to detect both json and single- or multi-line output,
+but new development will prefer json.
 """
 
 # WARNING: supporting both plain text and json is a pita.  this will change!
+# FIXME: get rid of the line popping - support only single-line json
 
 from __future__ import with_statement
 from calendar import timegm
@@ -84,13 +85,13 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.14'
+DRIVER_VERSION = '0.15'
 
 # -q - suppress non-data messages
 # -U - print timestamps in UTC
 # -G - emit data for all rtl drivers (only available in newer rtl_433)
 # -F json - emit data in json format (not all rtl_433 drivers support this)
-DEFAULT_CMD = 'rtl_433 -q -U'
+DEFAULT_CMD = 'rtl_433 -q -U -G -F json'
 
 
 def loader(config_dict, _):
@@ -264,6 +265,15 @@ class Packet:
         return None
 
     @staticmethod
+    def get_int(obj, key_):
+        if key_ in obj:
+            try:
+                return int(obj[key_])
+            except ValueError:
+                pass
+        return None
+
+    @staticmethod
     def parse_lines(lines, parseinfo=None):
         # parse each line, splitting on colon for name:value
         # tuple in parseinfo is label, pattern, lambda
@@ -296,6 +306,8 @@ class Packet:
                     logerr("parse failed for line '%s': %s" % (line, e))
             else:
                 logdbg("skip line '%s'" % line)
+        while lines:
+            lines.pop(0)
         return packet
 
     @staticmethod
@@ -314,16 +326,15 @@ class Packet:
 
 
 class AcuriteTowerPacket(Packet):
+    # initial implementation was single-line
     # 2016-08-30 23:57:20 Acurite tower sensor 0x37FC Ch A: 26.7 C 80.1 F 16 % RH
-
+    #
+    # multi-line was introduced nov2016
     # 2017-01-12 02:55:10 : Acurite tower sensor : 12391 : B
     # Temperature: 18.0 C
     # Humidity: 68
     # Battery: 0
     # : 68
-
-    # {"time" : "2017-01-12 03:43:05", "model" : "Acurite tower sensor", "id" : 521, "channel" : "A", "temperature_C" : 0.800, "humidity" : 68, "battery" : 0, "status" : 68}
-    # {"time" : "2017-01-12 03:43:11", "model" : "Acurite tower sensor", "id" : 5585, "channel" : "C", "temperature_C" : 21.100, "humidity" : 32, "battery" : 0, "status" : 68}
 
     IDENTIFIER = "Acurite tower sensor"
     PATTERN = re.compile('0x([0-9a-fA-F]+) Ch ([A-C]): ([\d.-]+) C ([\d.-]+) F ([\d]+) % RH')
@@ -344,7 +355,11 @@ class AcuriteTowerPacket(Packet):
                 pkt, hardware_id, AcuriteTowerPacket.__name__)
         else:
             loginf("AcuriteTowerPacket: unrecognized data: '%s'" % lines[0])
+        lines.pop(0)
         return pkt
+
+    # {"time" : "2017-01-12 03:43:05", "model" : "Acurite tower sensor", "id" : 521, "channel" : "A", "temperature_C" : 0.800, "humidity" : 68, "battery" : 0, "status" : 68}
+    # {"time" : "2017-01-12 03:43:11", "model" : "Acurite tower sensor", "id" : 5585, "channel" : "C", "temperature_C" : 21.100, "humidity" : 32, "battery" : 0, "status" : 68}
 
     @staticmethod
     def parse_json(obj):
@@ -352,12 +367,13 @@ class AcuriteTowerPacket(Packet):
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['usUnits'] = weewx.METRIC
         hardware_id = "%04x" % obj.get('id', 0)
-        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
-        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['channel'] = obj.get('channel')
         pkt['battery'] = 0 if obj.get('battery') == 0 else 1
         pkt['status'] = obj.get('status')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
         return Packet.add_identifiers(
-            pkt, hardware_id, AcuriteTowerPacket.__name__)
+            pkt, hardware_id.upper(), AcuriteTowerPacket.__name__)
 
 
 class Acurite5n1Packet(Packet):
@@ -431,7 +447,37 @@ class Acurite5n1Packet(Packet):
                            lines[0])
         else:
             loginf("Acurite5n1Packet: unrecognized data: '%s'" % lines[0])
+        lines.pop(0)
         return pkt
+
+    # {"time" : "2017-01-16 02:34:12", "model" : "Acurite 5n1 sensor", "sensor_id" : 3066, "channel" : "C", "sequence_num" : 1, "battery" : "OK", "message_type" : 49, "wind_speed" : 0.000, "wind_dir_deg" : 67.500, "wind_dir" : "ENE", "rainfall_accumulation" : 0.000, "raincounter_raw" : 8978}
+    # {"time" : "2017-01-16 02:37:33", "model" : "Acurite 5n1 sensor", "sensor_id" : 3066, "channel" : "C", "sequence_num" : 1, "battery" : "OK", "message_type" : 56, "wind_speed" : 0.000, "temperature_F" : 27.500, "humidity" : 56}
+
+    # FIXME: verify that wind speed is mph
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.US
+        hardware_id = "%s" % obj.get('sensor_id', '0000')
+        pkt['channel'] = obj.get('channel')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['status'] = obj.get('status')
+        msg_type = obj.get('message_type')
+        if msg_type == 49: # 0x31
+            pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed') # mph?
+            pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+            pkt['rain_counter'] = Packet.get_int(obj, 'raincounter_raw')
+        elif msg_type == 56: # 0x38
+            pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed') # mph?
+            pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
+            pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        # put some units on the rain total - each tip is 0.01 inch
+        if 'rain_counter' in pkt:
+            pkt['rain_total'] = pkt['rain_counter'] * 0.01 # inch
+        return Packet.add_identifiers(
+            pkt, hardware_id.upper(), Acurite5n1Packet.__name__)
 
 
 class Acurite986Packet(Packet):
@@ -462,6 +508,7 @@ class Acurite986Packet(Packet):
                 pkt, hardware_id, Acurite986Packet.__name__)
         else:
             loginf("Acurite986Packet: unrecognized data: '%s'" % lines[0])
+        lines.pop(0)
         return pkt
 
 
@@ -469,6 +516,7 @@ class AcuriteLightningPacket(Packet):
     # 2016-11-04 04:34:58 Acurite lightning 0x536F Ch A Msg Type 0x51: 15 C 58 % RH Strikes 50 Distance 69 - c0  53  6f  3a  d1  0f  b2  c5  13*
     # 2016-11-04 04:43:14 Acurite lightning 0x536F Ch A Msg Type 0x51: 15 C 58 % RH Strikes 55 Distance 5 - c0  53  6f  3a  d1  0f  b7  05  58*
     # 2016-11-04 04:43:22 Acurite lightning 0x536F Ch A Msg Type 0x51: 15 C 58 % RH Strikes 55 Distance 69 - c0  53  6f  3a  d1  0f  b7  c5  18
+    # 2017-01-16 02:37:39 Acurite lightning 0x526F Ch A Msg Type 0x11: 67 C 38 % RH Strikes 47 Distance 81 - dd  52* 6f  a6  11  c3  af  d1  98*
 
     IDENTIFIER = "Acurite lightning"
     PATTERN = re.compile('0x([0-9a-fA-F]+) Ch (.) Msg Type 0x([0-9]+): ([\d.]+) C ([\d.-]+) % RH Strikes ([\d]+) Distance ([\d.]+)')
@@ -491,6 +539,7 @@ class AcuriteLightningPacket(Packet):
                 pkt, hardware_id, AcuriteLightningPacket.__name__)
         else:
             loginf("AcuriteLightningPacket: unrecognized data: '%s'" % lines[0])
+        lines.pop(0)
         return pkt
 
 
@@ -636,6 +685,101 @@ class HidekiTS04Packet(Packet):
         return pkt
 
 
+class HidekiWindPacket(Packet):
+    # 2017-01-16 05:39:42 : HIDEKI Wind sensor
+    # Rolling Code: 0
+    # Channel: 4
+    # Battery: OK
+    # Temperature: -5.0 C
+    # Wind Strength: 2.57 km/h
+    # Direction: 45.0 \xc2\xb0
+
+    # {"time" : "2017-01-16 04:38:39", "model" : "HIDEKI Wind sensor", "rc" : 0, "channel" : 4, "battery" : "OK", "temperature_C" : -4.400, "windstrength" : 2.897, "winddirection" : 292.500}
+
+    IDENTIFIER = "HIDEKI Wind sensor"
+    PARSEINFO = {
+        'Rolling Code': ['rolling_code', None, lambda x: int(x)],
+        'Channel': ['channel', None, lambda x: int(x)],
+        'Battery': ['battery', None, lambda x: 0 if x == 'OK' else 1],
+        'Temperature': [
+            'temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
+        'Wind Strength': ['wind_speed', re.compile('([\d.]+) km/h'), lambda x: float(x)],
+        'Direction': ['wind_dir', re.compile('([\d.]+) '), lambda x: float(x)]}
+
+    @staticmethod
+    def parse_text(ts, payload, lines):
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRIC
+        pkt.update(Packet.parse_lines(lines, HidekiWindPacket.PARSEINFO))
+        return HidekiWindPacket.insert_ids(pkt)
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['rolling_code'] = obj.get('rc')
+        pkt['channel'] = obj.get('channel')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['wind_speed'] = Packet.get_float(obj, 'windstrength')
+        pkt['wind_dir'] = Packet.get_float(obj, 'winddirection')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        return HidekiWindPacket.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        channel = pkt.pop('channel', 0)
+        code = pkt.pop('rolling_code', 0)
+        sensor_id = "%s:%s" % (channel, code)
+        pkt = Packet.add_identifiers(pkt, sensor_id, HidekiWindPacket.__name__)
+        return pkt
+
+
+class HidekiRainPacket(Packet):
+    # 2017-01-16 05:39:42 : HIDEKI Rain sensor
+    # Rolling Code: 0
+    # Channel: 4
+    # Battery: OK
+    # Rain: 2622.900
+
+    # {"time" : "2017-01-16 04:38:50", "model" : "HIDEKI Rain sensor", "rc" : 0, "channel" : 4, "battery" : "OK", "rain" : 2622.900}
+
+    IDENTIFIER = "HIDEKI Rain sensor"
+    PARSEINFO = {
+        'Rolling Code': ['rolling_code', None, lambda x: int(x)],
+        'Channel': ['channel', None, lambda x: int(x)],
+        'Battery': ['battery', None, lambda x: 0 if x == 'OK' else 1],
+        'Rain': ['rain_total', re.compile('([\d.]+) '), lambda x: float(x)]}
+
+    @staticmethod
+    def parse_text(ts, payload, lines):
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRIC
+        pkt.update(Packet.parse_lines(lines, HidekiRainPacket.PARSEINFO))
+        return HidekiRainPacket.insert_ids(pkt)
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['rolling_code'] = obj.get('rc')
+        pkt['channel'] = obj.get('channel')
+        pkt['rain_total'] = Packet.get_float(obj, 'rain')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        return HidekiRainPacket.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        channel = pkt.pop('channel', 0)
+        code = pkt.pop('rolling_code', 0)
+        sensor_id = "%s:%s" % (channel, code)
+        pkt = Packet.add_identifiers(pkt, sensor_id, HidekiRainPacket.__name__)
+        return pkt
+
+
 class LaCrossePacket(Packet):
     # 2016-09-08 00:43:52 :LaCrosse WS :9 :202
     # Temperature: 21.0 C
@@ -699,6 +843,25 @@ class LaCrossePacket(Packet):
         hardware_id = pkt.pop('hw_id', 0)
         sensor_id = "%s:%s" % (ws_id, hardware_id)
         pkt = Packet.add_identifiers(pkt, sensor_id, LaCrossePacket.__name__)
+        return pkt
+
+
+class LaCrosseTX141THBv2Packet(Packet):
+
+    # {"time" : "2017-01-16 15:24:43", "temperature" : 54.140, "humidity" : 34, "id" : 221, "model" : "LaCrosse TX141TH-Bv2 sensor", "battery" : "OK", "test" : "Yes"}
+
+    IDENTIFIER = "LaCrosse TX141TH-Bv2 sensor"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.US
+        sensor_id = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt = Packet.add_identifiers(pkt, sensor_id, LaCrosseTX141THBv2Packet.__name__)
         return pkt
 
 
@@ -912,7 +1075,10 @@ class PacketFactory(object):
         CalibeurRF104Packet,
         FOWH1080Packet,
         HidekiTS04Packet,
+        HidekiWindPacket,
+        HidekiRainPacket,
         LaCrossePacket,
+        LaCrosseTX141THBv2Packet,
         OSPCR800Packet,
         OSTHGR122NPacket,
         OSTHGR810Packet,
@@ -921,16 +1087,19 @@ class PacketFactory(object):
 
     @staticmethod
     def create(lines):
+        # return a list of packets from the specified lines
         logdbg("lines=%s" % lines)
-        if lines:
-            # FIXME: might be multiple lines
-            pkt = PacketFactory.parse_json(lines)
+        while lines:
+            pkt = None
+            if lines[0].startswith('{'):
+                pkt = PacketFactory.parse_json(lines)
+                if pkt is None:
+                    logdbg("punt unrecognized line '%s'" % lines[0])
+                lines.pop(0)
+            else:
+                pkt = PacketFactory.parse_text(lines)
             if pkt is not None:
-                return pkt
-            pkt = PacketFactory.parse_text(lines)
-            if pkt is not None:
-                return pkt
-        return None
+                yield pkt
 
     @staticmethod
     def parse_json(lines):
@@ -1050,21 +1219,21 @@ class SDRDriver(weewx.drivers.AbstractDevice):
     def genLoopPackets(self):
         while self._mgr.running():
             for lines in self._mgr.get_stdout():
-                packet = PacketFactory.create(lines)
-                if packet:
-                    packet = self.map_to_fields(packet, self._sensor_map)
+                for packet in PacketFactory.create(lines):
                     if packet:
-                        if packet != self._last_pkt:
-                            logdbg("packet=%s" % packet)
-                            self._last_pkt = packet
-                            self._calculate_deltas(packet)
-                            yield packet
-                        else:
-                            logdbg("ignoring duplicate packet %s" % packet)
-                    elif self._log_unmapped:
-                        loginf("unmapped: %s (%s)" % (lines, packet))
-                elif self._log_unknown:
-                    loginf("unparsed: %s" % lines)
+                        packet = self.map_to_fields(packet, self._sensor_map)
+                        if packet:
+                            if packet != self._last_pkt:
+                                logdbg("packet=%s" % packet)
+                                self._last_pkt = packet
+                                self._calculate_deltas(packet)
+                                yield packet
+                            else:
+                                logdbg("ignoring duplicate packet %s" % packet)
+                        elif self._log_unmapped:
+                            loginf("unmapped: %s (%s)" % (lines, packet))
+                    elif self._log_unknown:
+                        loginf("unparsed: %s" % lines)
             self._mgr.get_stderr() # flush the stderr queue
         else:
             logerr("err: %s" % self._mgr.get_stderr())
@@ -1139,10 +1308,18 @@ class SDRDriver(weewx.drivers.AbstractDevice):
 if __name__ == '__main__':
     import optparse
 
-    usage = """%prog [--debug] [--help]
-        [--version]
+    usage = """%prog [--debug] [--help] [--version]
         [--action=(show-packets | show-detected | list-supported)]
-        [--cmd=RTL_CMD] [--path=PATH] [--ld_library_path=LD_LIBRARY_PATH]"""
+        [--cmd=RTL_CMD] [--path=PATH] [--ld_library_path=LD_LIBRARY_PATH]
+
+Actions:
+  show-packets: display each packet (default)
+  show-detected: display a running count of the number of each packet type
+  list-supported: show a list of the supported packet types
+
+Hide:
+  This is a comma-separate list of the types of data that should not be
+  displayed.  Default is to show everything."""
 
     syslog.openlog('sdr', syslog.LOG_PID | syslog.LOG_CONS)
     syslog.setlogmask(syslog.LOG_UPTO(syslog.LOG_INFO))
@@ -1182,16 +1359,16 @@ if __name__ == '__main__':
         detected = dict()
         for lines in mgr.get_stdout():
 #            print "out:", lines
-            p = PacketFactory.create(lines)
-            if p:
-                del p['usUnits']
-                del p['dateTime']
-                keys = p.keys()
-                label = re.sub(r'^[^\.]+', '', keys[0])
-                if label not in detected:
-                    detected[label] = 0
-                detected[label] += 1
-            print detected
+            for p in PacketFactory.create(lines):
+                if p:
+                    del p['usUnits']
+                    del p['dateTime']
+                    keys = p.keys()
+                    label = re.sub(r'^[^\.]+', '', keys[0])
+                    if label not in detected:
+                        detected[label] = 0
+                    detected[label] += 1
+                print detected
     else:
         # display output and parsed/unparsed packets
         hidden = [x.strip() for x in options.hidden.split(',')]
@@ -1202,13 +1379,13 @@ if __name__ == '__main__':
             if 'out' not in hidden and (
                 'empty' not in hidden or len(lines)):
                 print "out:", lines
-            p = PacketFactory.create(lines)
-            if p:
-                if 'parsed' not in hidden:
-                    print 'parsed: %s' % p
-            else:
-                if 'unparsed' not in hidden and (
-                    'empty' not in hidden or len(lines)):
-                    print "unparsed:", lines
+            for p in PacketFactory.create(lines):
+                if p:
+                    if 'parsed' not in hidden:
+                        print 'parsed: %s' % p
+                else:
+                    if 'unparsed' not in hidden and (
+                        'empty' not in hidden or len(lines)):
+                        print "unparsed:", lines
         for lines in mgr.get_stderr():
             print "err:", lines
