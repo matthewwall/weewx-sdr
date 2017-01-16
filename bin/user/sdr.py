@@ -1128,6 +1128,7 @@ class PacketFactory(object):
                    (ts, payload))
         logdbg("parse_text failed: ts=%s payload=%s line=%s" %
                (ts, payload, lines[0]))
+        lines.pop(0)
         return None
 
     TS_PATTERN = re.compile('(\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d)[\s]+:*(.*)')
