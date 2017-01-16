@@ -1,4 +1,6 @@
 weewx-sdr
+Copyright 2017 Matthew Wall
+Distributed under terms of the GPLv3
 
 This is a driver for weewx that captures data from software-defined radio.
 It works with open source rtl sdr software that in turn works with
