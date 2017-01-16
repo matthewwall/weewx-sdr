@@ -751,7 +751,7 @@ class HidekiRainPacket(Packet):
         return Hideki.insert_ids(pkt, HidekiRainPacket.__name__)
 
 
-class LaCrossePacket(Packet):
+class LaCrossWSPacket(Packet):
     # 2016-09-08 00:43:52 :LaCrosse WS :9 :202
     # Temperature: 21.0 C
     # 2016-09-08 00:43:53 :LaCrosse WS :9 :202
@@ -782,12 +782,12 @@ class LaCrossePacket(Packet):
         pkt = dict()
         pkt['dateTime'] = ts
         pkt['usUnits'] = weewx.METRICWX
-        pkt.update(Packet.parse_lines(lines, LaCrossePacket.PARSEINFO))
+        pkt.update(Packet.parse_lines(lines, LaCrossWSPacket.PARSEINFO))
         parts = payload.split(':')
         if len(parts) == 3:
             pkt['ws_id'] = parts[1].strip()
             pkt['hw_id'] = parts[2].strip()
-        return LaCrossePacket.insert_ids(pkt)
+        return LaCrossWSPacket.insert_ids(pkt)
 
     @staticmethod
     def parse_json(obj):
@@ -806,14 +806,14 @@ class LaCrossePacket(Packet):
             pkt['wind_dir'] = Packet.get_float(obj, 'wind_direction')
         if 'rain' in obj:
             pkt['rain_total'] = Packet.get_float(obj, 'rain')
-        return LaCrossePacket.insert_ids(pkt)
+        return LaCrossWSPacket.insert_ids(pkt)
 
     @staticmethod
     def insert_ids(pkt):
         ws_id = pkt.pop('ws_id', 0)
         hardware_id = pkt.pop('hw_id', 0)
         sensor_id = "%s:%s" % (ws_id, hardware_id)
-        pkt = Packet.add_identifiers(pkt, sensor_id, LaCrossePacket.__name__)
+        pkt = Packet.add_identifiers(pkt, sensor_id, LaCrossWSPacket.__name__)
         return pkt
 
 
@@ -1076,7 +1076,7 @@ class PacketFactory(object):
         HidekiTS04Packet,
         HidekiWindPacket,
         HidekiRainPacket,
-        LaCrossePacket,
+        LaCrossWSPacket,
         LaCrosseTX141THBv2Packet,
         RubicsonTempPacket,
         OSPCR800Packet,
