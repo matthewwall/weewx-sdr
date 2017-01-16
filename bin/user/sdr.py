@@ -865,6 +865,34 @@ class LaCrosseTX141THBv2Packet(Packet):
         return pkt
 
 
+class RubicsonTempPacket(Packet):
+    # 2017-01-15 14:49:03 : Rubicson Temperature Sensor
+    # House Code: 14
+    # Channel: 1
+    # Battery: OK
+    # Temperature: 4.5 C
+    # CRC: OK
+
+    IDENTIFIER = "Rubicson Temperature Sensor"
+    PARSEINFO = {
+        'House Code': ['house_code', None, lambda x: int(x)],
+        'Channel': ['channel', None, lambda x: int(x)],
+        'Battery': ['battery', None, lambda x: 0 if x == 'OK' else 1],
+        'Temperature': ['temperature', re.compile('([\d.]+) C'), lambda x: float(x)]}
+
+    @staticmethod
+    def parse_text(ts, payload, lines):
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRICWX
+        pkt.update(Packet.parse_lines(lines, RubicsonTempPacket.PARSEINFO))
+        channel = pkt.pop('channel', 0)
+        code = pkt.pop('house_code', 0)
+        sensor_id = "%s:%s" % (channel, code)
+        pkt = Packet.add_identifiers(pkt, sensor_id, RubicsonTempPacket.__name__)
+        return pkt
+
+
 class OSPCR800Packet(Packet):
     # 2016-11-03 04:36:23 : OS : PCR800
     # House Code: 93
@@ -1079,6 +1107,7 @@ class PacketFactory(object):
         HidekiRainPacket,
         LaCrossePacket,
         LaCrosseTX141THBv2Packet,
+        RubicsonTempPacket,
         OSPCR800Packet,
         OSTHGR122NPacket,
         OSTHGR810Packet,
