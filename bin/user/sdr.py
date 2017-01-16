@@ -317,10 +317,10 @@ class Packet:
 class Acurite(object):
     @staticmethod
     def insert_ids(pkt, pkt_type):
-        # there should be a station_id field in the packet to identify sensor.
-        # ensure the station_id is upper-case - it should be 4 hex characters.
-        station_id = pkt.pop('station_id', '0000').upper()
-        return Packet.add_identifiers(pkt, station_id, pkt_type)
+        # there should be a sensor_id field in the packet to identify sensor.
+        # ensure the sensor_id is upper-case - it should be 4 hex characters.
+        sensor_id = pkt.pop('hardware_id', '0000').upper()
+        return Packet.add_identifiers(pkt, sensor_id, pkt_type)
 
 
 class AcuriteTowerPacket(Packet):
