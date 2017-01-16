@@ -86,13 +86,13 @@ adjust the driver configuration.
 
 The default configuration uses this command:
 
-rtl_433 -q -U
+rtl_433 -q -U -F json -G
 
 Specify additional options using the cmd parameter.  For example:
 
 [SDR]
     driver = user.sdr
-    cmd = rtl_433 -q -U -G
+    cmd = rtl_433 -q -U -F json -R 17 -R 44 -R 50
 
 The rtl_433 executable emits data for many different types of sensors, some of
 which have similar output.  Use the sensor_map to distinguish between sensors
@@ -265,9 +265,14 @@ Support for new sensors
 To add support for new sensors, capture the output from rtl_433.  To capture
 output, run the driver directly and hide known packets:
 
-PYTHONPATH=bin python bin/user/sdr.py --cmd "rtl_433 -q -U -G" --hide parsed,out,empty
+PYTHONPATH=bin python bin/user/sdr.py --cmd "rtl_433 -q -U -G -F json" --hide parsed,out,empty
 
 This should emit a line for each unparsed type.  For example:
+
+unparsed: ['{"time" : "2017-01-16 15:44:51", "temperature" : 54.140, "humidity" : 34, "id" : 221, "model" : "LaCrosse TX141TH-Bv2 sensor", "battery" : "OK", "test" : "Yes"}\n']
+
+If there is no json ouput, remove the '-F json' option to see the (deprecated)
+non-json output:
 
 unparsed: ['2016-11-04 16:12:39 :\tFine Offset Electronics, WH2 Temperature/Humidity sensor\n', '\tID:\t 38\n', '\tTemperature:\t 54.4 C\n', '\tHumidity:\t 55 %\n']
 
