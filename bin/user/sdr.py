@@ -82,7 +82,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.16'
+DRIVER_VERSION = '0.17'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -855,13 +855,26 @@ class RubicsonTempPacket(Packet):
     def parse_text(ts, payload, lines):
         pkt = dict()
         pkt['dateTime'] = ts
-        pkt['usUnits'] = weewx.METRICWX
+        pkt['usUnits'] = weewx.METRIC
         pkt.update(Packet.parse_lines(lines, RubicsonTempPacket.PARSEINFO))
         channel = pkt.pop('channel', 0)
         code = pkt.pop('house_code', 0)
         sensor_id = "%s:%s" % (channel, code)
-        pkt = Packet.add_identifiers(pkt, sensor_id, RubicsonTempPacket.__name__)
-        return pkt
+        return Packet.add_identifiers(pkt, sensor_id, RubicsonTempPacket.__name__)
+
+    # {"time" : "2017-01-17 20:47:41", "model" : "Rubicson Temperature Sensor", "id" : 14, "channel" : 1, "battery" : "OK", "temperature_C" : -1.800, "crc" : "OK"}
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        channel = obj.get('channel', 0)
+        code = obj.get('id', 0)
+        sensor_id = "%s:%s" % (channel, code)
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        return Packet.add_identifiers(pkt, sensor_id, RubicsonTempPacket.__name__)
 
 
 class OSPCR800Packet(Packet):

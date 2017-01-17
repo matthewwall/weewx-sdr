@@ -1,3 +1,6 @@
+0.17 17jan2017
+* added json support for Rubicson temperature sensor
+
 0.16 16jan2017
 * added support for Rubicson temperature sensor
 * ensure hex identifiers for acurite sensors
