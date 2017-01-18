@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright 2016 Matthew Wall
+# Copyright 2016-2017 Matthew Wall
 # Distributed under the terms of the GNU Public License (GPLv3)
 """
 Collect data from stl-sdr.  Run rtl_433 on a thread and push the output onto
@@ -54,6 +54,11 @@ Eventually we would prefer to have all rtl_433 output as json.  Unfortunately,
 many of the rtl_433 decoders do not emit this format yet (as of January 2017).
 So this driver is designed to look for json first, then fall back to single-
 or multi-line plain text format.
+
+WARNING: Handling of units and unit systems in rtl_433 is a mess.  Although
+there is an option to request SI units, there is no indicate in the decoder
+output whether that option is respected, nor does rtl_433 specify exactly
+which SI units are used for various types of measure.
 """
 
 from __future__ import with_statement
@@ -82,7 +87,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.17'
+DRIVER_VERSION = '0.18'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -877,6 +882,15 @@ class RubicsonTempPacket(Packet):
         return Packet.add_identifiers(pkt, sensor_id, RubicsonTempPacket.__name__)
 
 
+class OS(object):
+    @staticmethod
+    def insert_ids(pkt, pkt_type):
+        channel = pkt.pop('channel', 0)
+        code = pkt.pop('house_code', 0)
+        sensor_id = "%s:%s" % (channel, code)
+        return Packet.add_identifiers(pkt, sensor_id, pkt_type)
+
+
 class OSPCR800Packet(Packet):
     # 2016-11-03 04:36:23 : OS : PCR800
     # House Code: 93
@@ -901,11 +915,7 @@ class OSPCR800Packet(Packet):
         pkt['dateTime'] = ts
         pkt['usUnits'] = weewx.US
         pkt.update(Packet.parse_lines(lines, OSPCR800Packet.PARSEINFO))
-        channel = pkt.pop('channel', 0)
-        code = pkt.pop('house_code', 0)
-        sensor_id = "%s:%s" % (channel, code)
-        pkt = Packet.add_identifiers(pkt, sensor_id, OSPCR800Packet.__name__)
-        return pkt
+        return OS.insert_ids(pkt, OSPCR800Packet.__name__)
 
 
 class OSTHGR122NPacket(Packet):
@@ -931,7 +941,7 @@ class OSTHGR122NPacket(Packet):
         pkt['dateTime'] = ts
         pkt['usUnits'] = weewx.METRIC
         pkt.update(Packet.parse_lines(lines, OSTHGR122NPacket.PARSEINFO))
-        return OSTHGR122NPacket.insert_ids(pkt)
+        return OS.insert_ids(pkt, OSTHGR122NPacket.__name__)
 
     @staticmethod
     def parse_json(obj):
@@ -943,15 +953,7 @@ class OSTHGR122NPacket(Packet):
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        return OSTHGR122NPacket.insert_ids(pkt)
-
-    @staticmethod
-    def insert_ids(pkt):
-        channel = pkt.pop('channel', 0)
-        code = pkt.pop('house_code', 0)
-        sensor_id = "%s:%s" % (channel, code)
-        pkt = Packet.add_identifiers(pkt, sensor_id, OSTHGR122NPacket.__name__)
-        return pkt
+        return OS.insert_ids(pkt, OSTHGR122NPacket.__name__)
 
 
 class OSTHGR810Packet(Packet):
@@ -992,7 +994,7 @@ class OSTHGR810Packet(Packet):
         pkt['dateTime'] = ts
         pkt['usUnits'] = weewx.METRIC
         pkt.update(Packet.parse_lines(lines, OSTHGR810Packet.PARSEINFO))
-        return OSTHGR810Packet.insert_ids(pkt)
+        return OS.insert_ids(pkt, OSTHGR810Packet.__name__)
 
     @staticmethod
     def parse_json(obj):
@@ -1004,15 +1006,7 @@ class OSTHGR810Packet(Packet):
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        return OSTHGR810Packet.insert_ids(pkt)
-
-    @staticmethod
-    def insert_ids(pkt):
-        channel = pkt.pop('channel', 0)
-        code = pkt.pop('house_code', 0)
-        sensor_id = "%s:%s" % (channel, code)
-        pkt = Packet.add_identifiers(pkt, sensor_id, OSTHGR810Packet.__name__)
-        return pkt
+        return OS.insert_ids(pkt, OSTHGR810Packet.__name__)
 
 
 class OSTHR228NPacket(Packet):
@@ -1036,11 +1030,7 @@ class OSTHR228NPacket(Packet):
         pkt['dateTime'] = ts
         pkt['usUnits'] = weewx.METRIC
         pkt.update(Packet.parse_lines(lines, OSTHR228NPacket.PARSEINFO))
-        channel = pkt.pop('channel', 0)
-        code = pkt.pop('house_code', 0)
-        sensor_id = "%s:%s" % (channel, code)
-        pkt = Packet.add_identifiers(pkt, sensor_id, OSTHR228NPacket.__name__)
-        return pkt
+        return OS.insert_ids(pkt, OSTHR228NPacket.__name__)
 
 
 class OSWGR800Packet(Packet):
@@ -1070,11 +1060,7 @@ class OSWGR800Packet(Packet):
         pkt['dateTime'] = ts
         pkt['usUnits'] = weewx.METRICWX
         pkt.update(Packet.parse_lines(lines, OSWGR800Packet.PARSEINFO))
-        channel = pkt.pop('channel', 0)
-        code = pkt.pop('house_code', 0)
-        sensor_id = "%s:%s" % (channel, code)
-        pkt = Packet.add_identifiers(pkt, sensor_id, OSWGR800Packet.__name__)
-        return pkt
+        return OS.insert_ids(pkt, OSWGR800Packet.__name__)
 
 
 class PacketFactory(object):
