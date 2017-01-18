@@ -943,6 +943,8 @@ class OSTHGR122NPacket(Packet):
         pkt.update(Packet.parse_lines(lines, OSTHGR122NPacket.PARSEINFO))
         return OS.insert_ids(pkt, OSTHGR122NPacket.__name__)
 
+    # {"time" : "2017-01-18 14:56:03", "brand" : "OS", "model" :"THGR122N", "id" : 211, "channel" : 1, "battery" : "LOW", "temperature_C" : 7.900, "humidity" : 27}
+
     @staticmethod
     def parse_json(obj):
         pkt = dict()
