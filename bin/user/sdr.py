@@ -87,7 +87,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.18'
+DRIVER_VERSION = '0.20rc1'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -531,6 +531,35 @@ class AcuriteLightningPacket(Packet):
             loginf("AcuriteLightningPacket: unrecognized data: '%s'" % lines[0])
         lines.pop(0)
         return Acurite.insert_ids(pkt, AcuriteLightningPacket.__name__)
+
+
+class AmbientF007THPacket(Packet):
+    # 2017-01-21 18:17:16 : Ambient Weather F007TH Thermo-Hygrometer
+    # House Code: 80
+    # Channel: 1
+    # Temperature: 61.8
+    # Humidity: 13 %
+
+    IDENTIFIER = "Ambient Weather F007TH Thermo-Hygrometer"
+    PARSEINFO = {
+        'House Code': ['house_code', None, lambda x: int(x)],
+        'Channel': ['channel', None, lambda x: int(x)],
+        'Temperature': [
+            'temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
+        'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x: float(x)]}
+
+    @staticmethod
+    def parse_text(ts, payload, lines):
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRIC
+        pkt.update(Packet.parse_lines(lines, AmbientF007THPacket.PARSEINFO))
+        house_code = pkt.pop('house_code', 0)
+        channel = pkt.pop('channel', 0)
+        sensor_id = "%s:%s" % (channel, house_code)
+        pkt = Packet.add_identifiers(
+            pkt, sensor_id, AmbientF007THPacket.__name__)
+        return pkt
 
 
 class CalibeurRF104Packet(Packet):
@@ -1072,6 +1101,7 @@ class PacketFactory(object):
         Acurite5n1Packet,
         Acurite986Packet,
         AcuriteLightningPacket,
+        AmbientF007THPacket,
         CalibeurRF104Packet,
         FOWH1080Packet,
         HidekiTS04Packet,

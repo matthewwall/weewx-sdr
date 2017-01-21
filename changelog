@@ -1,3 +1,6 @@
+0.20 21jan2017
+* added parsing for ambient F007TH sensors
+
 0.19 20jan2017
 * fix sign on rubicson temperature sensor parser
 * fix sign on acurite 968 packet parser
