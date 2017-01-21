@@ -87,7 +87,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.20rc1'
+DRIVER_VERSION = '0.20'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -556,6 +556,22 @@ class AmbientF007THPacket(Packet):
         pkt.update(Packet.parse_lines(lines, AmbientF007THPacket.PARSEINFO))
         house_code = pkt.pop('house_code', 0)
         channel = pkt.pop('channel', 0)
+        sensor_id = "%s:%s" % (channel, house_code)
+        pkt = Packet.add_identifiers(
+            pkt, sensor_id, AmbientF007THPacket.__name__)
+        return pkt
+
+    # {"time" : "2017-01-21 13:01:30", "model" : "Ambient Weather F007TH Thermo-Hygrometer", "device" : 80, "channel" : 1, "temperature_F" : 61.800, "humidity" : 10}
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.US
+        house_code = obj.get('device', 0)
+        channel = obj.get('channel')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
         sensor_id = "%s:%s" % (channel, house_code)
         pkt = Packet.add_identifiers(
             pkt, sensor_id, AmbientF007THPacket.__name__)
