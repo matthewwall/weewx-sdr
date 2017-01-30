@@ -87,14 +87,15 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.20'
+DRIVER_VERSION = '0.21'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
 # -U - print timestamps in UTC
-# -G - emit data for all rtl decoder (only available in newer rtl_433)
 # -F json - emit data in json format (not all rtl_433 decoders support this)
-DEFAULT_CMD = 'rtl_433 -q -U -G -F json'
+# -G - emit data for all rtl decoder (only available in newer rtl_433)
+# Use the -R option instead of -G to indicate specific decoders.
+DEFAULT_CMD = 'rtl_433 -q -U -F json -G'
 
 
 def loader(config_dict, _):
@@ -1022,8 +1023,6 @@ class OSTHGR810Packet(Packet):
     # Fahrenheit: 71.96 F
     # Humidity: 57 %
 
-    # {"time" : "2016-11-04 14:40:05", "brand" : "OS", "model" : "THGR810", "id" : 122, "channel" : 1, "battery" : "OK", "temperature_C" : 20.900, "temperature_F" : 69.620, "humidity" : 57}
-
     IDENTIFIER = "THGR810"
     PARSEINFO = {
         'House Code': ['house_code', None, lambda x: int(x)],
@@ -1042,6 +1041,8 @@ class OSTHGR810Packet(Packet):
         pkt['usUnits'] = weewx.METRIC
         pkt.update(Packet.parse_lines(lines, OSTHGR810Packet.PARSEINFO))
         return OS.insert_ids(pkt, OSTHGR810Packet.__name__)
+
+    # {"time" : "2016-11-04 14:40:05", "brand" : "OS", "model" : "THGR810", "id" : 122, "channel" : 1, "battery" : "OK", "temperature_C" : 20.900, "temperature_F" : 69.620, "humidity" : 57}
 
     @staticmethod
     def parse_json(obj):
@@ -1078,6 +1079,43 @@ class OSTHR228NPacket(Packet):
         pkt['usUnits'] = weewx.METRIC
         pkt.update(Packet.parse_lines(lines, OSTHR228NPacket.PARSEINFO))
         return OS.insert_ids(pkt, OSTHR228NPacket.__name__)
+
+
+class OSUV800Packet(Packet):
+    # 2017-01-30 22:00:12 : OS : UV800
+    # House Code: 207
+    # Channel: 1
+    # Battery: OK
+    # UV Index: 0
+
+    IDENTIFIER = "UV800"
+    PARSEINFO = {
+        'House Code': ['house_code', None, lambda x: int(x)],
+        'Channel': ['channel', None, lambda x: int(x)],
+        'Battery': ['battery', None, lambda x: 0 if x == 'OK' else 1],
+        'UV Index':
+            ['uv_index', re.compile('([\d.-]+) C'), lambda x : float(x)]}
+
+    @staticmethod
+    def parse_text(ts, payload, lines):
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRIC
+        pkt.update(Packet.parse_lines(lines, OSUV800Packet.PARSEINFO))
+        return OS.insert_ids(pkt, OSUV800Packet.__name__)
+
+    # {"time" : "2017-01-30 22:19:40", "brand" : "OS", "model" : "UV800", "id" : 207, "channel" : 1, "battery" : "OK", "uv" : 0}
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['house_code'] = obj.get('id')
+        pkt['channel'] = obj.get('channel')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['uv_index'] = Packet.get_float(obj, 'uv')
+        return OS.insert_ids(pkt, OSUV800Packet.__name__)
 
 
 class OSWGR800Packet(Packet):
@@ -1130,6 +1168,7 @@ class PacketFactory(object):
         OSTHGR122NPacket,
         OSTHGR810Packet,
         OSTHR228NPacket,
+        OSUV800Packet,
         OSWGR800Packet]
 
     @staticmethod

@@ -10,7 +10,7 @@ def loader():
 class SDRInstaller(ExtensionInstaller):
     def __init__(self):
         super(SDRInstaller, self).__init__(
-            version="0.20",
+            version="0.21",
             name='sdr',
             description='Capture data from rtl_433',
             author="Matthew Wall",
