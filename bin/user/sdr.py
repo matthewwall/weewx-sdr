@@ -87,7 +87,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.21'
+DRIVER_VERSION = '0.22'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -512,7 +512,7 @@ class AcuriteLightningPacket(Packet):
     # 2017-01-16 02:37:39 Acurite lightning 0x526F Ch A Msg Type 0x11: 67 C 38 % RH Strikes 47 Distance 81 - dd  52* 6f  a6  11  c3  af  d1  98*
 
     IDENTIFIER = "Acurite lightning"
-    PATTERN = re.compile('0x([0-9a-fA-F]+) Ch (.) Msg Type 0x([0-9]+): ([\d.-]+) C ([\d.]+) % RH Strikes ([\d]+) Distance ([\d.]+)')
+    PATTERN = re.compile('0x([0-9a-fA-F]+) Ch (.) Msg Type 0x([0-9a-fA-F]+): ([\d.-]+) C ([\d.]+) % RH Strikes ([\d]+) Distance ([\d.]+)')
 
     @staticmethod
     def parse_text(ts, payload, lines):

@@ -1,3 +1,6 @@
+0.22 16feb2017
+* deal with hex message types in acurite lightning packets
+
 0.21 30jan2017
 * added support for oregon scientific UVN800
 
