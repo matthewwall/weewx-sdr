@@ -87,7 +87,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.22'
+DRIVER_VERSION = '0.23'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -532,6 +532,25 @@ class AcuriteLightningPacket(Packet):
             loginf("AcuriteLightningPacket: unrecognized data: '%s'" % lines[0])
         lines.pop(0)
         return Acurite.insert_ids(pkt, AcuriteLightningPacket.__name__)
+
+
+class Acurite00275MPacket(Packet):
+    IDENTIFIER = "00275rm"
+
+    # {"time" : "2017-03-09 21:59:11", "model" : "00275rm", "probe" : 2, "id" : 3942, "battery" : "OK", "temperature_C" : 23.300, "humidity" : 34, "ptemperature_C" : 22.700, "crc" : "ok"}
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['hardware_id'] = "%04x" % obj.get('id', 0)
+        pkt['probe'] = obj.get('probe')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['temperature_probe'] = Packet.get_float(obj, 'ptemperature_C')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        return Acurite.insert_ids(pkt, Acurite00275MPacket.__name__)
 
 
 class AmbientF007THPacket(Packet):
@@ -1150,11 +1169,13 @@ class OSWGR800Packet(Packet):
 
 class PacketFactory(object):
 
+    # FIXME: do this with class introspection
     KNOWN_PACKETS = [
         AcuriteTowerPacket,
         Acurite5n1Packet,
         Acurite986Packet,
         AcuriteLightningPacket,
+        Acurite00275MPacket,
         AmbientF007THPacket,
         CalibeurRF104Packet,
         FOWH1080Packet,
