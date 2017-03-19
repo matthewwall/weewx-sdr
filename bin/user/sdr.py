@@ -87,7 +87,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.23'
+DRIVER_VERSION = '0.24'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -506,13 +506,18 @@ class Acurite986Packet(Packet):
 
 
 class AcuriteLightningPacket(Packet):
+    # with rtl_433 update of 19mar2017
+    # 2017-03-19 16:48:31 Acurite lightning 0x976F Ch A Msg Type 0x02: 66.2 F 25 % RH Strikes 1 Distance 0 L_status 0x02 - c0 97* 6f  99  50  72  81  c0  62*
+    # 2017-03-19 16:48:47 Acurite lightning 0x976F Ch A Msg Type 0x02: 66.2 F 25 % RH Strikes 1 Distance 0 L_status 0x02 - c0  97* 6f  99  50  72  81  c0  62*
+
+    # pre-19mar2017
     # 2016-11-04 04:34:58 Acurite lightning 0x536F Ch A Msg Type 0x51: 15 C 58 % RH Strikes 50 Distance 69 - c0  53  6f  3a  d1  0f  b2  c5  13*
     # 2016-11-04 04:43:14 Acurite lightning 0x536F Ch A Msg Type 0x51: 15 C 58 % RH Strikes 55 Distance 5 - c0  53  6f  3a  d1  0f  b7  05  58*
     # 2016-11-04 04:43:22 Acurite lightning 0x536F Ch A Msg Type 0x51: 15 C 58 % RH Strikes 55 Distance 69 - c0  53  6f  3a  d1  0f  b7  c5  18
     # 2017-01-16 02:37:39 Acurite lightning 0x526F Ch A Msg Type 0x11: 67 C 38 % RH Strikes 47 Distance 81 - dd  52* 6f  a6  11  c3  af  d1  98*
 
     IDENTIFIER = "Acurite lightning"
-    PATTERN = re.compile('0x([0-9a-fA-F]+) Ch (.) Msg Type 0x([0-9a-fA-F]+): ([\d.-]+) C ([\d.]+) % RH Strikes ([\d]+) Distance ([\d.]+)')
+    PATTERN = re.compile('0x([0-9a-fA-F]+) Ch (.) Msg Type 0x([0-9a-fA-F]+): ([\d.-]+) ([CF]) ([\d.]+) % RH Strikes ([\d]+) Distance ([\d.]+)')
 
     @staticmethod
     def parse_text(ts, payload, lines):
@@ -520,16 +525,20 @@ class AcuriteLightningPacket(Packet):
         m = AcuriteLightningPacket.PATTERN.search(lines[0])
         if m:
             pkt['dateTime'] = ts
-            pkt['usUnits'] = weewx.METRIC
+            units = m.group(5)
+            if units == 'C':
+                pkt['usUnits'] = weewx.METRIC
+            else:
+                pkt['usUnits'] = weewx.US
             pkt['hardware_id'] = m.group(1)
             pkt['channel'] = m.group(2)
             pkt['msg_type'] = m.group(3)
             pkt['temperature'] = float(m.group(4))
-            pkt['humidity'] = float(m.group(5))
-            pkt['strikes_total'] = float(m.group(6))
-            pkt['distance'] = float(m.group(7))
+            pkt['humidity'] = float(m.group(6))
+            pkt['strikes_total'] = float(m.group(7))
+            pkt['distance'] = float(m.group(8))
         else:
-            loginf("AcuriteLightningPacket: unrecognized data: '%s'" % lines[0])
+            loginf("AcuriteLightningPacket: unrecognized data: %s" % lines[0])
         lines.pop(0)
         return Acurite.insert_ids(pkt, AcuriteLightningPacket.__name__)
 
