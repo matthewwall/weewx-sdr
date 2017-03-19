@@ -87,7 +87,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.23'
+DRIVER_VERSION = '0.24'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -1165,6 +1165,28 @@ class OSWGR800Packet(Packet):
         pkt['usUnits'] = weewx.METRICWX
         pkt.update(Packet.parse_lines(lines, OSWGR800Packet.PARSEINFO))
         return OS.insert_ids(pkt, OSWGR800Packet.__name__)
+		
+
+class ProloguePacket(Packet):
+	# 2017-03-19 : Prologue Temperature and Humidity Sensor
+	# Sample data:
+	# {"time" : "2017-03-15 20:14:19", "model" : "Prologue sensor", "id" : 5, "rid" : 166, "channel" : 1, "battery" : "OK", "button" : 0, 
+	# "temperature_C" : -0.700, "humidity" : 49}
+	
+    IDENTIFIER = "Prologue sensor"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        sensor_id = obj.get('rid')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['channel'] = obj.get('channel')
+        pkt = Packet.add_identifiers(pkt, sensor_id, ProloguePacket.__name__)
+        return pkt
 
 
 class PacketFactory(object):
@@ -1190,7 +1212,8 @@ class PacketFactory(object):
         OSTHGR810Packet,
         OSTHR228NPacket,
         OSUV800Packet,
-        OSWGR800Packet]
+        OSWGR800Packet,
+        ProloguePacket]
 
     @staticmethod
     def create(lines):
