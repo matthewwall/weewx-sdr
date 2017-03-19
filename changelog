@@ -1,5 +1,6 @@
 0.24 19mar2017
 * deal with rtl_433 changes to acurite lightning sensor
+* added support for prologue sensors.  thanks to user Karl Kremer!
 
 0.23 09mar2017
 * added support for acurite 00275RM
