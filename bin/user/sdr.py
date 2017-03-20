@@ -475,6 +475,24 @@ class Acurite5n1Packet(Packet):
         return Acurite.insert_ids(pkt, Acurite5n1Packet.__name__)
 
 
+class Acurite606TXPacket(Packet):
+    # 2017-03-20: Acurite 606TX Temperature Sensor
+    # {"time" : "2017-03-04 16:18:12", "model" : "Acurite 606TX Sensor", "id" : 48, "battery" : "OK", "temperature_C" : -1.100}
+
+    IDENTIFIER = "Acurite 606TX Sensor"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        sensor_id = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt = Packet.add_identifiers(pkt, sensor_id, Acurite606TXPacket.__name__)
+        return pkt
+
+
 class Acurite986Packet(Packet):
     # 2016-10-31 15:24:29 Acurite 986 sensor 0x2c87 - 2F: 16.7 C 62 F
     # 2016-10-31 15:23:54 Acurite 986 sensor 0x85ed - 1R: 16.7 C 62 F
@@ -1196,30 +1214,13 @@ class ProloguePacket(Packet):
         return pkt
 
 
-class Acurite606TXPacket(Packet):
-    # 2017-03-20: Acurite 606TX Temperature Sensor
-    # {"time" : "2017-03-04 16:18:12", "model" : "Acurite 606TX Sensor", "id" : 48, "battery" : "OK", "temperature_C" : -1.100}
-
-    IDENTIFIER = "Acurite 606TX Sensor"
-
-    @staticmethod
-    def parse_json(obj):
-        pkt = dict()
-        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['usUnits'] = weewx.METRIC
-        sensor_id = obj.get('id')
-        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
-        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
-        pkt = Packet.add_identifiers(pkt, sensor_id, Acurite606TXPacket.__name__)
-        return pkt
-
-
 class PacketFactory(object):
 
     # FIXME: do this with class introspection
     KNOWN_PACKETS = [
         AcuriteTowerPacket,
         Acurite5n1Packet,
+        Acurite606TXPacket,
         Acurite986Packet,
         AcuriteLightningPacket,
         Acurite00275MPacket,
@@ -1238,8 +1239,7 @@ class PacketFactory(object):
         OSTHR228NPacket,
         OSUV800Packet,
         OSWGR800Packet,
-        ProloguePacket,
-        Acurite606TXPacket]
+        ProloguePacket]
 
     @staticmethod
     def create(lines):
