@@ -87,7 +87,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.24'
+DRIVER_VERSION = '0.25'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -1196,6 +1196,24 @@ class ProloguePacket(Packet):
         return pkt
 
 
+class Acurite606TXPacket(Packet):
+    # 2017-03-20: Acurite 606TX Temperature Sensor
+    # {"time" : "2017-03-04 16:18:12", "model" : "Acurite 606TX Sensor", "id" : 48, "battery" : "OK", "temperature_C" : -1.100}
+
+    IDENTIFIER = "Acurite 606TX Sensor"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        sensor_id = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt = Packet.add_identifiers(pkt, sensor_id, Acurite606TXPacket.__name__)
+        return pkt
+
+
 class PacketFactory(object):
 
     # FIXME: do this with class introspection
@@ -1220,7 +1238,8 @@ class PacketFactory(object):
         OSTHR228NPacket,
         OSUV800Packet,
         OSWGR800Packet,
-        ProloguePacket]
+        ProloguePacket,
+        Acurite606TXPacket]
 
     @staticmethod
     def create(lines):
