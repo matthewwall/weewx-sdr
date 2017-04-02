@@ -743,9 +743,9 @@ class FOWH25Packet(Packet):
          pkt['usUnits'] = weewx.METRIC
          pkt.update(Packet.parse_lines(lines, FOWH25Packet.PARSEINFO))
          return FOWH25Packet.insert_ids(pkt)
-                                                                               
-     @staticmethod
-     def parse_json(obj):
+
+    @staticmethod
+    def parse_json(obj):
          pkt = dict()
          pkt['dateTime'] = Packet.parse_time(obj.get('time'))
          pkt['usUnits'] = weewx.METRIC
@@ -755,8 +755,8 @@ class FOWH25Packet(Packet):
          pkt['pressure'] = Packet.get_float(obj, 'pressure')
          return FOWH25Packet.insert_ids(pkt)
 
-     @staticmethod
-     def insert_ids(pkt):
+    @staticmethod
+    def insert_ids(pkt):
          station_id = pkt.pop('station_id', '0000')
          pkt = Packet.add_identifiers(pkt, station_id, FOWH25Packet.__name__)
          return pkt
@@ -1238,7 +1238,7 @@ class OSWGR800Packet(Packet):
 
 
 class ProloguePacket(Packet):
-	# 2017-03-19 : Prologue Temperature and Humidity Sensor
+    # 2017-03-19 : Prologue Temperature and Humidity Sensor
 	# {"time" : "2017-03-15 20:14:19", "model" : "Prologue sensor", "id" : 5, "rid" : 166, "channel" : 1, "battery" : "OK", "button" : 0, "temperature_C" : -0.700, "humidity" : 49}
 
     IDENTIFIER = "Prologue sensor"
