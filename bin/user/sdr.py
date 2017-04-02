@@ -87,7 +87,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.25'
+DRIVER_VERSION = '0.26'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -719,6 +719,49 @@ class FOWH1080Packet(Packet):
         return pkt
 
 
+class FOWH25Packet(Packet):                                                   
+    # 2016-09-02 22:26:05 :   Fine Offset Electronics, WH25
+    # ID:     239
+    # Temperature: 19.9 C
+    # Humidity: 78 %
+    # Pressure: 1007.9 hPa
+
+    # {"time" : "2017-03-25 05:33:57", "model" : "Fine Offset Electronics, WH25", "id" : 239, "temperature_C" : 30.200, "humidity" : 68, "pressure" : 1008.000}
+    IDENTIFIER = "Fine Offset Electronics, WH25"
+    PARSEINFO = {
+        'ID': ['station_id', None, lambda x: int(x)],
+        'Temperature':
+            ['temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
+        'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x: float(x)],
+        'Pressure':
+            ['pressure', re.compile('([\d.-]+) hPa'), lambda x: float(x)]}
+
+    @staticmethod
+    def parse_text(ts, payload, lines):
+         pkt = dict()
+         pkt['dateTime'] = ts
+         pkt['usUnits'] = weewx.METRIC
+         pkt.update(Packet.parse_lines(lines, FOWH25Packet.PARSEINFO))
+         return FOWH25Packet.insert_ids(pkt)
+                                                                               
+     @staticmethod
+     def parse_json(obj):
+         pkt = dict()
+         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+         pkt['usUnits'] = weewx.METRIC
+         pkt['station_id'] = obj.get('id')
+         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+         pkt['humidity'] = Packet.get_float(obj, 'humidity')
+         pkt['pressure'] = Packet.get_float(obj, 'pressure')
+         return FOWH25Packet.insert_ids(pkt)
+
+     @staticmethod
+     def insert_ids(pkt):
+         station_id = pkt.pop('station_id', '0000')
+         pkt = Packet.add_identifiers(pkt, station_id, FOWH25Packet.__name__)
+         return pkt
+
+
 class Hideki(object):
     @staticmethod
     def insert_ids(pkt, pkt_type):
@@ -1227,6 +1270,7 @@ class PacketFactory(object):
         AmbientF007THPacket,
         CalibeurRF104Packet,
         FOWH1080Packet,
+        FOWH25Packet,
         HidekiTS04Packet,
         HidekiWindPacket,
         HidekiRainPacket,
