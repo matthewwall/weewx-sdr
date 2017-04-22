@@ -87,7 +87,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.26'
+DRIVER_VERSION = '0.27'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -1053,6 +1053,51 @@ class OSPCR800Packet(Packet):
         return OS.insert_ids(pkt, OSPCR800Packet.__name__)
 
 
+# apparently rtl_433 uses BHTR968 when it should be BTHR968
+class OSBTHR968Packet(Packet):
+    # Added 2017-04-22 ALG
+    # 2017-09-12 21:44:55     :       OS :    BHTR968
+    # House Code:      111
+    # Channel:         0
+    # Battery:         OK
+    # Celcius:         26.20 C
+    # Fahrenheit:      79.16 F
+    # Humidity:        36 %
+    # Pressure:        1012 mbar
+
+    IDENTIFIER = "BHTR968"
+    PARSEINFO = {
+        'House Code': ['house_code', None, lambda x: int(x)],
+        'Channel': ['channel', None, lambda x: int(x)],
+        'Battery': ['battery', None, lambda x: 0 if x == 'OK' else 1],
+        'Temperature': ['temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
+        'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x: float(x)],
+	'Pressure': ['pressure', re.compile('([\d.]+) mbar'), lambda x: float(x)]}
+
+    @staticmethod
+    def parse_text(ts, payload, lines):
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRIC
+        pkt.update(Packet.parse_lines(lines, OSBTHR968Packet.PARSEINFO))
+        return OS.insert_ids(pkt, OSBTHR968Packet.__name__)
+
+    # {"time" : "2017-01-18 14:56:03", "brand" : "OS", "model" :"BHTR968", "id" : 111, "channel" : 0, "battery" : "OK", "temperature_C" : 27.200, "temperature_F" : 80.960,  "humidity" : 46, "pressure" : 1013}
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['house_code'] = obj.get('id')
+        pkt['channel'] = obj.get('channel')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+	pkt['pressure'] = Packet.get_float(obj, 'pressure')
+        return OS.insert_ids(pkt, OSBTHR968Packet.__name__)
+
+
 class OSTHGR122NPacket(Packet):
     # 2016-09-12 21:44:55     :       OS :    THGR122N
     # House Code:      96
@@ -1278,6 +1323,7 @@ class PacketFactory(object):
         LaCrosseTX141THBv2Packet,
         RubicsonTempPacket,
         OSPCR800Packet,
+	OSBTHR968Packet,
         OSTHGR122NPacket,
         OSTHGR810Packet,
         OSTHR228NPacket,
