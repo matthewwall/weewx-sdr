@@ -47,7 +47,7 @@ sudo wee_extension --install weewx-sdr.zip
 
 3) configure the driver
 
-sudo wee_config --reconfigure driver=user.sdr --no-prompt
+sudo wee_config --reconfigure --driver=user.sdr --no-prompt
 
 4) run the driver directly to identify the packets you want to capture
 
