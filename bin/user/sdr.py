@@ -87,7 +87,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.27'
+DRIVER_VERSION = '0.28'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -719,6 +719,31 @@ class FOWH1080Packet(Packet):
         return pkt
 
 
+class FOWH3080Packet(Packet):
+    # {"time" : "2017-05-15 17:21:07", "model" : "Fine Offset Electronics WH3080 Weather Station", "msg_type" : 2, "uv_sensor_id" : 225, "uv_status" : "OK", "uv_index" : 1, "lux" : 7837.000, "wm" : 11.474, "fc" : 728.346}
+
+    IDENTIFIER = "Fine Offset Electronics WH3080 Weather Station"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['station_id'] = obj.get('uv_sensor_id')
+        pkt['uv_index'] = Packet.get_float(obj, 'uv_index')
+        pkt['lux'] = Packet.get_float(obj, 'lux')
+        pkt['wm'] = Packet.get_float(obj, 'wm')
+        pkt['fc'] = Packet.get_float(obj, 'fc')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        return FOWH3080Packet.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        pkt = Packet.add_identifiers(pkt, station_id, FOWH3080Packet.__name__)
+        return pkt
+
+
 class FOWH25Packet(Packet):                                                   
     # 2016-09-02 22:26:05 :   Fine Offset Electronics, WH25
     # ID:     239
@@ -1315,6 +1340,7 @@ class PacketFactory(object):
         AmbientF007THPacket,
         CalibeurRF104Packet,
         FOWH1080Packet,
+        FOWH3080Packet,
         FOWH25Packet,
         HidekiTS04Packet,
         HidekiWindPacket,

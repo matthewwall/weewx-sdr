@@ -1,3 +1,6 @@
+0.28 16may2017
+* added support for fine offset wh3080 packets
+
 0.27 11apr2017
 * added support for oregon scientific BTHR968.  thanks to Art Greenberg!
 
