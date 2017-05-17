@@ -703,6 +703,7 @@ class FOWH1080Packet(Packet):
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['usUnits'] = weewx.METRIC
         pkt['station_id'] = obj.get('id')
+        pkt['msg_type'] = Packet.get_int(obj, 'msg_type')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         pkt['wind_dir'] = Packet.get_float(obj, 'direction_deg')
@@ -719,7 +720,72 @@ class FOWH1080Packet(Packet):
         return pkt
 
 
+class FOWHx080Packet(Packet):
+    # 2017-05-15 11:58:31: Fine Offset Electronics WH1080 / WH3080 Weather Station
+    # Msg type: 0
+    # Station ID: 236
+    # Temperature: 23.9 ° C
+    # Humidity: 48%
+    # Wind string: NE
+    # Wind degrees: 45
+    # Wind Avg Speed: 1.22
+    # Wind gust: 2.45
+    # Total rainfall: 525.3
+    # Battery: OK
+
+    # 2017-05-15 12:04:48: Fine Offset Electronics WH1080 / WH3080 Weather Station
+    # Msg type: 1
+    # Station ID: 173
+    # Signal Type: WWVB / MSF
+    # Hours: 21
+    # Minutes: 71
+    # Seconds: 11
+    # Year: 2165
+    # Month: 25
+    # Day: 70
+
+    IDENTIFIER = "Fine Offset Electronics WH1080 / WH3080 Weather Station"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['station_id'] = obj.get('station_id')
+        pkt['msg_type'] = Packet.get_int(obj, 'msg_type')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['wind_dir'] = Packet.get_float(obj, 'direction_deg')
+        pkt['wind_speed'] = Packet.get_float(obj, 'speed')
+        pkt['wind_gust'] = Packet.get_float(obj, 'gust')
+        pkt['rain_total'] = Packet.get_float(obj, 'rain')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['signal_type'] = 1 if obj.get('signal_type') == 'WWVB / MSF' else 0
+        pkt['hours'] = Packet.get_int(obj, 'hours')
+        pkt['minutes'] = Packet.get_int(obj, 'minutes')
+        pkt['seconds'] = Packet.get_int(obj, 'seconds')
+        pkt['year'] = Packet.get_int(obj, 'year')
+        pkt['month'] = Packet.get_int(obj, 'month')
+        pkt['day'] = Packet.get_int(obj, 'day')
+        return FOWHx080Packet.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        pkt = Packet.add_identifiers(pkt, station_id, FOWHx080Packet.__name__)
+        return pkt
+
+
 class FOWH3080Packet(Packet):
+    # 2017-05-15 11:58:08: Fine Offset Electronics WH3080 Weather Station
+    # Msg type: 2
+    # UV Sensor ID: 225
+    # Sensor Status: OK
+    # UV Index: 8
+    # Lux: 120160.5
+    # Watts / m: 175.93
+    # Foot-candles: 11167.33
+
     # {"time" : "2017-05-15 17:21:07", "model" : "Fine Offset Electronics WH3080 Weather Station", "msg_type" : 2, "uv_sensor_id" : 225, "uv_status" : "OK", "uv_index" : 1, "lux" : 7837.000, "wm" : 11.474, "fc" : 728.346}
 
     IDENTIFIER = "Fine Offset Electronics WH3080 Weather Station"
@@ -730,11 +796,12 @@ class FOWH3080Packet(Packet):
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['usUnits'] = weewx.METRIC
         pkt['station_id'] = obj.get('uv_sensor_id')
+        pkt['msg_type'] = Packet.get_int(obj, 'msg_type')
         pkt['uv_index'] = Packet.get_float(obj, 'uv_index')
-        pkt['lux'] = Packet.get_float(obj, 'lux')
-        pkt['wm'] = Packet.get_float(obj, 'wm')
-        pkt['fc'] = Packet.get_float(obj, 'fc')
-        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['luminosity'] = Packet.get_float(obj, 'lux')
+        pkt['radiation'] = Packet.get_float(obj, 'wm')
+        pkt['illumination'] = Packet.get_float(obj, 'fc')
+        pkt['uv_status'] = 0 if obj.get('uv_status') == 'OK' else 1
         return FOWH3080Packet.insert_ids(pkt)
 
     @staticmethod
@@ -1339,6 +1406,7 @@ class PacketFactory(object):
         Acurite00275MPacket,
         AmbientF007THPacket,
         CalibeurRF104Packet,
+        FOWHx080Packet,
         FOWH1080Packet,
         FOWH3080Packet,
         FOWH25Packet,
