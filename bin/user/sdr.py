@@ -87,7 +87,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.28'
+DRIVER_VERSION = '0.29'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -724,7 +724,7 @@ class FOWHx080Packet(Packet):
     # 2017-05-15 11:58:31: Fine Offset Electronics WH1080 / WH3080 Weather Station
     # Msg type: 0
     # Station ID: 236
-    # Temperature: 23.9 ° C
+    # Temperature: 23.9 C
     # Humidity: 48%
     # Wind string: NE
     # Wind degrees: 45

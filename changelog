@@ -1,3 +1,6 @@
+0.29 17may2017
+* fixed non-ascii character in the comments
+
 0.28 16may2017
 * added support for fine offset wh3080 packets
 
