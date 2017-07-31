@@ -137,7 +137,7 @@ Here are some examples:
         inHumidity = humidity.2:9.HidekiTS04Packet
         inTemp = temperature.2:9.HidekiTS04Packet
 
-# collect data from Fine Offset sensor cluster 0026
+# collect data from Fine Offset sensor cluster with serial number 0026
 [SDR]
     driver = user.sdr
     [[sensor_map]]
