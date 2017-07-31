@@ -87,7 +87,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.29'
+DRIVER_VERSION = '0.30'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -983,7 +983,7 @@ class HidekiRainPacket(Packet):
         return Hideki.insert_ids(pkt, HidekiRainPacket.__name__)
 
 
-class LaCrossWSPacket(Packet):
+class LaCrosseWSPacket(Packet):
     # 2016-09-08 00:43:52 :LaCrosse WS :9 :202
     # Temperature: 21.0 C
     # 2016-09-08 00:43:53 :LaCrosse WS :9 :202
@@ -1014,12 +1014,12 @@ class LaCrossWSPacket(Packet):
         pkt = dict()
         pkt['dateTime'] = ts
         pkt['usUnits'] = weewx.METRICWX
-        pkt.update(Packet.parse_lines(lines, LaCrossWSPacket.PARSEINFO))
+        pkt.update(Packet.parse_lines(lines, LaCrosseWSPacket.PARSEINFO))
         parts = payload.split(':')
         if len(parts) == 3:
             pkt['ws_id'] = parts[1].strip()
             pkt['hw_id'] = parts[2].strip()
-        return LaCrossWSPacket.insert_ids(pkt)
+        return LaCrosseWSPacket.insert_ids(pkt)
 
     @staticmethod
     def parse_json(obj):
@@ -1038,14 +1038,14 @@ class LaCrossWSPacket(Packet):
             pkt['wind_dir'] = Packet.get_float(obj, 'wind_direction')
         if 'rain' in obj:
             pkt['rain_total'] = Packet.get_float(obj, 'rain')
-        return LaCrossWSPacket.insert_ids(pkt)
+        return LaCrosseWSPacket.insert_ids(pkt)
 
     @staticmethod
     def insert_ids(pkt):
         ws_id = pkt.pop('ws_id', 0)
         hardware_id = pkt.pop('hw_id', 0)
         sensor_id = "%s:%s" % (ws_id, hardware_id)
-        pkt = Packet.add_identifiers(pkt, sensor_id, LaCrossWSPacket.__name__)
+        pkt = Packet.add_identifiers(pkt, sensor_id, LaCrosseWSPacket.__name__)
         return pkt
 
 
@@ -1065,6 +1065,25 @@ class LaCrosseTX141THBv2Packet(Packet):
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         pkt = Packet.add_identifiers(pkt, sensor_id, LaCrosseTX141THBv2Packet.__name__)
+        return pkt
+
+
+class LaCrosseTXPacket(Packet):
+
+    # {"time" : "2017-07-30 21:11:19", "model" : "LaCrosse TX Sensor", "id" : 127, "humidity" : 34.000}
+    # {"time" : "2017-07-30 21:11:19", "model" : "LaCrosse TX Sensor", "id" : 127, "temperature_C" : 27.100}
+
+    IDENTIFIER = "LaCrosse TX Sensor"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        sensor_id = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt = Packet.add_identifiers(pkt, sensor_id, LaCrosseTXPacket.__name__)
         return pkt
 
 
@@ -1413,8 +1432,9 @@ class PacketFactory(object):
         HidekiTS04Packet,
         HidekiWindPacket,
         HidekiRainPacket,
-        LaCrossWSPacket,
+        LaCrosseWSPacket,
         LaCrosseTX141THBv2Packet,
+        LaCrosseTXPacket,
         RubicsonTempPacket,
         OSPCR800Packet,
 	OSBTHR968Packet,
