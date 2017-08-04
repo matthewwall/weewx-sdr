@@ -87,7 +87,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.31'
+DRIVER_VERSION = '0.32'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -744,7 +744,15 @@ class FOWHx080Packet(Packet):
     # Month: 25
     # Day: 70
 
-    IDENTIFIER = "Fine Offset Electronics WH1080 / WH3080 Weather Station"
+    # apparently there are different identifiers for the same packet, depending
+    # on which version of rtl_433 is running.  one version has extra spaces,
+    # while another version does not.  so for now, and until rtl_433
+    # stabilizes, match on something unique to these packets that still matches
+    # the strings from different rtl_433 versions.
+
+    #IDENTIFIER = "Fine Offset Electronics WH1080 / WH3080 Weather Station"
+    #IDENTIFIER = "Fine Offset Electronics WH1080/WH3080 Weather Station"
+    IDENTIFIER = "Fine Offset Electronics WH1080"
 
     @staticmethod
     def parse_json(obj):

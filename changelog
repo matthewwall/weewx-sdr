@@ -1,3 +1,6 @@
+0.32 04aug17
+* deal with fine offset wh3080 output from different rtl_433 versions
+
 0.31 03aug2017
 * added support for THN802 and BTHGN129.  thanks to dartvader85!
 
