@@ -498,7 +498,7 @@ class Acurite986Packet(Packet):
     # 2016-10-31 15:23:54 Acurite 986 sensor 0x85ed - 1R: 16.7 C 62 F
 
     # The 986 hardware_id changes, so using the 2F and 1R as the hardware
-    # identifer.  As long as you only have one set of sendors and your 
+    # identifer.  As long as you only have one set of sendors and your
     # close neighbors have none.
 
     # FIXME: battery monitor
@@ -811,7 +811,7 @@ class FOWH3080Packet(Packet):
         return pkt
 
 
-class FOWH25Packet(Packet):                                                   
+class FOWH25Packet(Packet):
     # 2016-09-02 22:26:05 :   Fine Offset Electronics, WH25
     # ID:     239
     # Temperature: 19.9 C
@@ -1248,7 +1248,6 @@ class OSTHGR122NPacket(Packet):
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         return OS.insert_ids(pkt, OSTHGR122NPacket.__name__)
 
-
 class OSTHGR810Packet(Packet):
     # rtl_433 circa jul 2016 emits this
     # 2016-09-01 22:05:47 :Weather Sensor THGR810
@@ -1392,6 +1391,81 @@ class OSWGR800Packet(Packet):
         pkt.update(Packet.parse_lines(lines, OSWGR800Packet.PARSEINFO))
         return OS.insert_ids(pkt, OSWGR800Packet.__name__)
 
+class OSTHN802Packet(Packet):
+    # 2017-08-03 17:24:08     :       OS :    THN802
+    # House Code:      157
+    # Channel:         3
+    # Battery:         OK
+    # Celcius:         26.60 C
+
+    IDENTIFIER = "THN802"
+    PARSEINFO = {
+        'House Code': ['house_code', None, lambda x: int(x)],
+        'Channel': ['channel', None, lambda x: int(x)],
+        'Battery': ['battery', None, lambda x: 0 if x == 'OK' else 1],
+        'Celcius': ['temperature', re.compile('([\d.-]+) C'), lambda x: float(x)]}
+
+    @staticmethod
+    def parse_text(ts, payload, lines):
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRIC
+        pkt.update(Packet.parse_lines(lines, OSTHN802Packet.PARSEINFO))
+        return OS.insert_ids(pkt, OSTHN802Packet.__name__)
+
+    # {"time" : "2017-08-03 17:41:24", "brand" : "OS", "model" : "THN802", "id" : 157, "channel" : 3, "battery" : "OK", "temperature_C" : 26.700}
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['house_code'] = obj.get('id')
+        pkt['channel'] = obj.get('channel')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        return OS.insert_ids(pkt, OSTHN802Packet.__name__)
+
+class OSBTHGN129Packet(Packet):
+    # 2017-08-03 17:24:03     :       OS :    BTHGN129
+    # House Code:      146
+    # Channel:         5
+    # Battery:         OK
+    # Celcius:         32.00 C
+    # Humidity:        50 %
+    # Pressure:        959.36 mPa
+
+    IDENTIFIER = "BTHGN129"
+    PARSEINFO = {
+        'House Code': ['house_code', None, lambda x: int(x)],
+        'Channel': ['channel', None, lambda x: int(x)],
+        'Battery': ['battery', None, lambda x: 0 if x == 'OK' else 1],
+        'Celcius': ['temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
+        'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x: float(x)],
+		'Pressure': ['pressure', re.compile('([\d.]+) mPa'), lambda x: float(x)]}
+
+    @staticmethod
+    def parse_text(ts, payload, lines):
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRIC
+        pkt.update(Packet.parse_lines(lines, OSBTHGN129Packet.PARSEINFO))
+        return OS.insert_ids(pkt, OSBTHGN129Packet.__name__)
+
+    # {"time" : "2017-08-03 17:41:48", "brand" : "OS", "model" : "BTHGN129", "id" : 146, "channel" : 5, "battery" : "OK", "temperature_C" : 31.700, "humidity" : 52, "pressure_hPa" : 959.364}
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['house_code'] = obj.get('id')
+        pkt['channel'] = obj.get('channel')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+		pkt['pressure'] = Packet.get_float(obj, 'pressure_hPa')
+        return OS.insert_ids(pkt, OSBTHGN129Packet.__name__)
 
 class ProloguePacket(Packet):
     # 2017-03-19 : Prologue Temperature and Humidity Sensor
@@ -1443,6 +1517,8 @@ class PacketFactory(object):
         OSTHR228NPacket,
         OSUV800Packet,
         OSWGR800Packet,
+        OSTHN802Packet,
+        OSBTHGN129Packet,
         ProloguePacket]
 
     @staticmethod
