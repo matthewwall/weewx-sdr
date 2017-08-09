@@ -87,7 +87,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.32'
+DRIVER_VERSION = '0.33'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -1450,7 +1450,7 @@ class OSBTHGN129Packet(Packet):
         'Battery': ['battery', None, lambda x: 0 if x == 'OK' else 1],
         'Celcius': ['temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
         'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x: float(x)],
-		'Pressure': ['pressure', re.compile('([\d.]+) mPa'), lambda x: float(x)]}
+        'Pressure': ['pressure', re.compile('([\d.]+) mPa'), lambda x: float(x)]}
 
     @staticmethod
     def parse_text(ts, payload, lines):
@@ -1472,7 +1472,7 @@ class OSBTHGN129Packet(Packet):
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
-		pkt['pressure'] = Packet.get_float(obj, 'pressure_hPa')
+        pkt['pressure'] = Packet.get_float(obj, 'pressure_hPa')
         return OS.insert_ids(pkt, OSBTHGN129Packet.__name__)
 
 class ProloguePacket(Packet):

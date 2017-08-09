@@ -1,3 +1,6 @@
+0.33 09aug17
+* fix bogus whitespace from kk6fut pull request
+
 0.32 04aug17
 * deal with fine offset wh3080 output from different rtl_433 versions
 
