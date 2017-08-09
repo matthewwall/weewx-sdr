@@ -1191,7 +1191,7 @@ class OSBTHR968Packet(Packet):
         'Battery': ['battery', None, lambda x: 0 if x == 'OK' else 1],
         'Temperature': ['temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
         'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x: float(x)],
-	'Pressure': ['pressure', re.compile('([\d.]+) mbar'), lambda x: float(x)]}
+        'Pressure': ['pressure', re.compile('([\d.]+) mbar'), lambda x: float(x)]}
 
     @staticmethod
     def parse_text(ts, payload, lines):
@@ -1213,7 +1213,7 @@ class OSBTHR968Packet(Packet):
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
-	pkt['pressure'] = Packet.get_float(obj, 'pressure')
+        pkt['pressure'] = Packet.get_float(obj, 'pressure')
         return OS.insert_ids(pkt, OSBTHR968Packet.__name__)
 
 
@@ -1477,7 +1477,7 @@ class OSBTHGN129Packet(Packet):
 
 class ProloguePacket(Packet):
     # 2017-03-19 : Prologue Temperature and Humidity Sensor
-	# {"time" : "2017-03-15 20:14:19", "model" : "Prologue sensor", "id" : 5, "rid" : 166, "channel" : 1, "battery" : "OK", "button" : 0, "temperature_C" : -0.700, "humidity" : 49}
+    # {"time" : "2017-03-15 20:14:19", "model" : "Prologue sensor", "id" : 5, "rid" : 166, "channel" : 1, "battery" : "OK", "button" : 0, "temperature_C" : -0.700, "humidity" : 49}
 
     IDENTIFIER = "Prologue sensor"
 
@@ -1519,7 +1519,7 @@ class PacketFactory(object):
         LaCrosseTXPacket,
         RubicsonTempPacket,
         OSPCR800Packet,
-	OSBTHR968Packet,
+        OSBTHR968Packet,
         OSTHGR122NPacket,
         OSTHGR810Packet,
         OSTHR228NPacket,
