@@ -1,3 +1,6 @@
+0.34 15sep17
+* added support for acurite WT450 rain sensor
+
 0.33 09aug17
 * fix bogus whitespace from kk6fut pull request
 

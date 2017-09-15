@@ -87,7 +87,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.33'
+DRIVER_VERSION = '0.34'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -578,6 +578,25 @@ class Acurite00275MPacket(Packet):
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         return Acurite.insert_ids(pkt, Acurite00275MPacket.__name__)
+
+
+class AcuriteWT450Packet(Packet):
+    IDENTIFIER = "WT450 sensor"
+
+    # {"time" : "2017-09-14 20:24:43", "model" : "WT450 sensor", "id" : 1, "channel" : 2, "battery" : "OK", "temperature_C" : 25.090, "humidity" : 49}
+    # {"time" : "2017-09-14 20:24:44", "model" : "WT450 sensor", "id" : 1, "channel" : 2, "battery" : "OK", "temperature_C" : 25.110, "humidity" : 49}
+    # {"time" : "2017-09-14 20:24:44", "model" : "WT450 sensor", "id" : 1, "channel" : 2, "battery" : "OK", "temperature_C" : 25.120, "humidity" : 49}
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['channel'] = Packet.get_int(obj, 'channel')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        return Acurite.insert_ids(pkt, AcuriteWT450Packet.__name__)
 
 
 class AmbientF007THPacket(Packet):
@@ -1505,6 +1524,7 @@ class PacketFactory(object):
         Acurite986Packet,
         AcuriteLightningPacket,
         Acurite00275MPacket,
+        AcuriteWT450Packet,
         AmbientF007THPacket,
         CalibeurRF104Packet,
         FOWHx080Packet,
