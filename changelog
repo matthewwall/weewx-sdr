@@ -1,3 +1,6 @@
+0.35 15sep17
+* fix sensor id for acurite WT450
+
 0.34 15sep17
 * added support for acurite WT450 rain sensor
 
