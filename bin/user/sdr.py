@@ -87,7 +87,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.35'
+DRIVER_VERSION = '0.36'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -592,12 +592,12 @@ class AcuriteWT450Packet(Packet):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['usUnits'] = weewx.METRIC
-        pkt['sensor_id'] = Packet.get_int(obj, 'id')
+        pkt['sid'] = Packet.get_int(obj, 'id')
         pkt['channel'] = Packet.get_int(obj, 'channel')
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        _id = "%s:%s" % (pkt['sensor_id'], pkt['channel'])
+        _id = "%s:%s" % (pkt['sid'], pkt['channel'])
         return Packet.add_identifiers(pkt, _id, AcuriteWT450Packet.__name__)
 
 

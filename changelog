@@ -1,3 +1,6 @@
+0.36 18sep17
+* do not use id as a packet dictionary key
+
 0.35 15sep17
 * fix sensor id for acurite WT450
 
