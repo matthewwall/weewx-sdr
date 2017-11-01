@@ -87,7 +87,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.36'
+DRIVER_VERSION = '0.37'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -780,7 +780,12 @@ class FOWHx080Packet(Packet):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['usUnits'] = weewx.METRIC
-        pkt['station_id'] = obj.get('station_id')
+        # older versions of rlt_433 user 'station_id'
+        if 'station_id' in obj:
+            pkt['station_id'] = obj.get('station_id')
+        # but some newer versions of rtl_433 seem to use 'id'
+        if 'id' in obj:
+            pkt['station_id'] = obj.get('id')
         pkt['msg_type'] = Packet.get_int(obj, 'msg_type')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
