@@ -87,7 +87,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.37'
+DRIVER_VERSION = '0.38'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -1685,6 +1685,7 @@ class SDRDriver(weewx.drivers.AbstractDevice):
     def closePort(self):
         self._mgr.shutdown()
 
+    @property
     def hardware_name(self):
         return 'SDR'
 
