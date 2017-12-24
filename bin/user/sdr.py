@@ -446,10 +446,10 @@ class Acurite5n1Packet(Packet):
         lines.pop(0)
         return Acurite.insert_ids(pkt, Acurite5n1Packet.__name__)
 
-    # {"time" : "2017-01-16 02:34:12", "model" : "Acurite 5n1 sensor", "sensor_id" : 3066, "channel" : "C", "sequence_num" : 1, "battery" : "OK", "message_type" : 49, "wind_speed" : 0.000, "wind_dir_deg" : 67.500, "wind_dir" : "ENE", "rainfall_accumulation" : 0.000, "raincounter_raw" : 8978}
-    # {"time" : "2017-01-16 02:37:33", "model" : "Acurite 5n1 sensor", "sensor_id" : 3066, "channel" : "C", "sequence_num" : 1, "battery" : "OK", "message_type" : 56, "wind_speed" : 0.000, "temperature_F" : 27.500, "humidity" : 56}
+    # {"time" : "2017-12-24 02:07:00", "model" : "Acurite 5n1 sensor", "sensor_id" : 2662, "channel" : "A", "sequence_num" : 2, "battery" : "OK", "message_type" : 56, "wind_speed_mph" : 0.000, "temperature_F" : 47.500, "humidity" : 74}
+    #{"time" : "2017-12-24 02:07:18", "model" : "Acurite 5n1 sensor", "sensor_id" : 2662, "channel" : "A", "sequence_num" : 2, "battery" : "OK", "message_type" : 49, "wind_speed_mph" : 0.000, "wind_dir_deg" : 157.500, "wind_dir" : "SSE", "rainfall_accumulation_inch" : 0.000, "raincounter_raw" : 421}
 
-    # FIXME: verify that wind speed is mph
+    # FIXME: verify that wind speed is mph -- may we assume it is mph per the suffix
 
     @staticmethod
     def parse_json(obj):
@@ -462,11 +462,11 @@ class Acurite5n1Packet(Packet):
         pkt['status'] = obj.get('status')
         msg_type = obj.get('message_type')
         if msg_type == 49: # 0x31
-            pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed') # mph?
+            pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed_mph') # mph?
             pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
             pkt['rain_counter'] = Packet.get_int(obj, 'raincounter_raw')
         elif msg_type == 56: # 0x38
-            pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed') # mph?
+            pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed_mph') # mph?
             pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
             pkt['humidity'] = Packet.get_float(obj, 'humidity')
         # put some units on the rain total - each tip is 0.01 inch
