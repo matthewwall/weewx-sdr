@@ -87,7 +87,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.38'
+DRIVER_VERSION = '0.39'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -449,8 +449,6 @@ class Acurite5n1Packet(Packet):
     # {"time" : "2017-01-16 02:34:12", "model" : "Acurite 5n1 sensor", "sensor_id" : 3066, "channel" : "C", "sequence_num" : 1, "battery" : "OK", "message_type" : 49, "wind_speed" : 0.000, "wind_dir_deg" : 67.500, "wind_dir" : "ENE", "rainfall_accumulation" : 0.000, "raincounter_raw" : 8978}
     # {"time" : "2017-01-16 02:37:33", "model" : "Acurite 5n1 sensor", "sensor_id" : 3066, "channel" : "C", "sequence_num" : 1, "battery" : "OK", "message_type" : 56, "wind_speed" : 0.000, "temperature_F" : 27.500, "humidity" : 56}
 
-    # FIXME: verify that wind speed is mph
-
     @staticmethod
     def parse_json(obj):
         pkt = dict()
@@ -462,11 +460,11 @@ class Acurite5n1Packet(Packet):
         pkt['status'] = obj.get('status')
         msg_type = obj.get('message_type')
         if msg_type == 49: # 0x31
-            pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed') # mph?
+            pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed_mph')
             pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
             pkt['rain_counter'] = Packet.get_int(obj, 'raincounter_raw')
         elif msg_type == 56: # 0x38
-            pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed') # mph?
+            pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed_mph')
             pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
             pkt['humidity'] = Packet.get_float(obj, 'humidity')
         # put some units on the rain total - each tip is 0.01 inch

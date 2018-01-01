@@ -1,3 +1,6 @@
+0.39 01jan17
+* deal with change from wind_speed to wind_speed_mph for rtl433 parsing of 5in1
+
 0.38 10dec17
 * hardware_name is a property
 
