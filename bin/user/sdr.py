@@ -541,13 +541,13 @@ class AcuriteLightningPacket(Packet):
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['usUnits'] = weewx.US
         pkt['channel'] = obj.get('channel')
-        sensor_id = obj.get('sensor_id')
+        pkt['hardware_id'] = "%04x" % obj.get('sensor_id', 0)
+        pkt['sensor_id'] = obj.get('sensor_id')
         pkt['temperature'] = obj.get('temperature_F')
         pkt['humidity'] = obj.get('humidity')
         pkt['strikes_total'] = obj.get('strike_count')
         pkt['distance'] = obj.get('strike_dist')
         return Acurite.insert_ids(pkt, AcuriteLightningPacket.__name__)
-        return pkt
     
     @staticmethod
     def parse_text(ts, payload, lines):
