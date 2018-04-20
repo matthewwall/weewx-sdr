@@ -532,9 +532,23 @@ class AcuriteLightningPacket(Packet):
     # 2016-11-04 04:43:22 Acurite lightning 0x536F Ch A Msg Type 0x51: 15 C 58 % RH Strikes 55 Distance 69 - c0  53  6f  3a  d1  0f  b7  c5  18
     # 2017-01-16 02:37:39 Acurite lightning 0x526F Ch A Msg Type 0x11: 67 C 38 % RH Strikes 47 Distance 81 - dd  52* 6f  a6  11  c3  af  d1  98*
 
-    IDENTIFIER = "Acurite lightning"
+    IDENTIFIER = "Acurite Lightning 6045M"
     PATTERN = re.compile('0x([0-9a-fA-F]+) Ch (.) Msg Type 0x([0-9a-fA-F]+): ([\d.-]+) ([CF]) ([\d.]+) % RH Strikes ([\d]+) Distance ([\d.]+)')
 
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.US
+        pkt['channel'] = obj.get('channel')
+        sensor_id = obj.get('sensor_id')
+        pkt['temperature'] = obj.get('temperature_F')
+        pkt['humidity'] = obj.get('humidity')
+        pkt['strikes_total'] = obj.get('strike_count')
+        pkt['distance'] = obj.get('strike_dist')
+        return Acurite.insert_ids(pkt, AcuriteLightningPacket.__name__)
+        return pkt
+    
     @staticmethod
     def parse_text(ts, payload, lines):
         pkt = dict()
