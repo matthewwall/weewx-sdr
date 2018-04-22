@@ -541,12 +541,11 @@ class AcuriteLightningPacket(Packet):
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['usUnits'] = weewx.US
         pkt['channel'] = obj.get('channel')
-        pkt['hardware_id'] = "%04x" % obj.get('sensor_id', 0)
-        pkt['sensor_id'] = obj.get('sensor_id')
+        pkt['hardware_id'] = "%04x" % obj.get('id', 0)
         pkt['temperature'] = obj.get('temperature_F')
         pkt['humidity'] = obj.get('humidity')
         pkt['strikes_total'] = obj.get('strike_count')
-        pkt['distance'] = obj.get('strike_dist')
+        pkt['distance'] = obj.get('storm_dist')
         return Acurite.insert_ids(pkt, AcuriteLightningPacket.__name__)
     
     @staticmethod
