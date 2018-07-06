@@ -55,10 +55,12 @@ many of the rtl_433 decoders do not emit this format yet (as of January 2017).
 So this driver is designed to look for json first, then fall back to single-
 or multi-line plain text format.
 
-WARNING: Handling of units and unit systems in rtl_433 is a mess.  Although
-there is an option to request SI units, there is no indicate in the decoder
-output whether that option is respected, nor does rtl_433 specify exactly
-which SI units are used for various types of measure.
+WARNING: Handling of units and unit systems in rtl_433 is a mess, but it is
+getting better.  Although there is an option to request SI units, there is no
+indicate in the decoder output whether that option is respected, nor does
+rtl_433 specify exactly which SI units are used for various types of measure.
+There seems to be a pattern of appending a unit label to the observation name
+in the JSON data, for example 'wind_speed_mph' instead of just 'wind_speed'.
 """
 
 from __future__ import with_statement
@@ -87,7 +89,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.39'
+DRIVER_VERSION = '0.40'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -446,8 +448,8 @@ class Acurite5n1Packet(Packet):
         lines.pop(0)
         return Acurite.insert_ids(pkt, Acurite5n1Packet.__name__)
 
-    # {"time" : "2017-01-16 02:34:12", "model" : "Acurite 5n1 sensor", "sensor_id" : 3066, "channel" : "C", "sequence_num" : 1, "battery" : "OK", "message_type" : 49, "wind_speed" : 0.000, "wind_dir_deg" : 67.500, "wind_dir" : "ENE", "rainfall_accumulation" : 0.000, "raincounter_raw" : 8978}
-    # {"time" : "2017-01-16 02:37:33", "model" : "Acurite 5n1 sensor", "sensor_id" : 3066, "channel" : "C", "sequence_num" : 1, "battery" : "OK", "message_type" : 56, "wind_speed" : 0.000, "temperature_F" : 27.500, "humidity" : 56}
+    # {"time" : "2017-12-24 02:07:00", "model" : "Acurite 5n1 sensor", "sensor_id" : 2662, "channel" : "A", "sequence_num" : 2, "battery" : "OK", "message_type" : 56, "wind_speed_mph" : 0.000, "temperature_F" : 47.500, "humidity" : 74}
+    # {"time" : "2017-12-24 02:07:18", "model" : "Acurite 5n1 sensor", "sensor_id" : 2662, "channel" : "A", "sequence_num" : 2, "battery" : "OK", "message_type" : 49, "wind_speed_mph" : 0.000, "wind_dir_deg" : 157.500, "wind_dir" : "SSE", "rainfall_accumulation_inch" : 0.000, "raincounter_raw" : 421}
 
     @staticmethod
     def parse_json(obj):

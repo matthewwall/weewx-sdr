@@ -1,3 +1,8 @@
+0.40 06jul18
+* deal with acurite 5in1 changes in rtl_433.  thanks to user andylittle!
+* deal with acurite lightning sensor changes in rtl_433.  thanks to mlfreeman2!
+* added support for Nexus temperature sensor.  thanks to user vg8020!
+
 0.39 01jan17
 * deal with change from wind_speed to wind_speed_mph for rtl433 parsing of 5in1
 
