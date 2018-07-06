@@ -1518,6 +1518,39 @@ class ProloguePacket(Packet):
         pkt = Packet.add_identifiers(pkt, sensor_id, ProloguePacket.__name__)
         return pkt
 
+class NexusTemperaturePacket(Packet):
+    # 2018-06-30 01:12:12 :   Nexus Temperature
+    #         House Code:      55
+    #         Battery:         OK
+    #         Channel:         1
+    #         Temperature:     27.10 C
+
+    IDENTIFIER = "Nexus Temperature"
+    PARSEINFO = {
+        'House Code': ['house_code', None, lambda x: int(x)],
+        'Battery': ['battery', None, lambda x: 0 if x == 'OK' else 1],
+                'Channel': ['channel', None, lambda x: int(x)],
+        'Temperature':
+            ['temperature', re.compile('([\d.-]+) C'), lambda x : float(x)]}
+
+    @staticmethod
+    def parse_text(ts, payload, lines):
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRIC
+        pkt.update(Packet.parse_lines(lines, NexusTemperaturePacket.PARSEINFO))
+        return OS.insert_ids(pkt, NexusTemperaturePacket.__name__)
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['house_code'] = obj.get('id')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['channel'] = obj.get('channel')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        return OS.insert_ids(pkt, NexusTemperaturePacket.__name__)
 
 class PacketFactory(object):
 
@@ -1552,7 +1585,8 @@ class PacketFactory(object):
         OSWGR800Packet,
         OSTHN802Packet,
         OSBTHGN129Packet,
-        ProloguePacket]
+        ProloguePacket,
+        NexusTemperaturePacket]
 
     @staticmethod
     def create(lines):
