@@ -89,7 +89,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.41'
+DRIVER_VERSION = '0.42'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -739,8 +739,8 @@ class FOWH1080Packet(Packet):
 
     # {"time" : "2016-11-04 14:40:38", "model" : "Fine Offset WH1080 weather station", "msg_type" : 0, "id" : 38, "temperature_C" : 12.500, "humidity" : 68, "direction_str" : "E", "direction_deg" : "90", "speed" : 8.568, "gust" : 12.240, "rain" : 249.600, "battery" : "OK"}
 
-    # FIXME: verify that wind speed is kph
-    # FIXME: verify that rain total is cm
+    # apparently rain total is in mm, not cm
+    # apparently wind speed is m/s not kph
 
     IDENTIFIER = "Fine Offset WH1080 weather station"
     PARSEINFO = {
@@ -761,7 +761,7 @@ class FOWH1080Packet(Packet):
     def parse_text(ts, payload, lines):
         pkt = dict()
         pkt['dateTime'] = ts
-        pkt['usUnits'] = weewx.METRIC
+        pkt['usUnits'] = weewx.WXMETRIC
         pkt.update(Packet.parse_lines(lines, FOWH1080Packet.PARSEINFO))
         return FOWH1080Packet.insert_ids(pkt)
 

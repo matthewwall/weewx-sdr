@@ -1,3 +1,6 @@
+0.42 06jul18
+* fix units for FOWH1080Packet - m/s and mm not kph and cm.  thanks millallo!
+
 0.41 06jul18
 * added support for acurite 986 json format
 * try to make some acurite packet identifiers more robust
