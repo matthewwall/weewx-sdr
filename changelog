@@ -1,3 +1,7 @@
+0.41 06jul18
+* added support for acurite 986 json format
+* try to make some acurite packet identifiers more robust
+
 0.40 06jul18
 * deal with acurite 5in1 changes in rtl_433.  thanks to user andylittle!
 * deal with acurite lightning sensor changes in rtl_433.  thanks to mlfreeman2!
