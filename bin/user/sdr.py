@@ -448,6 +448,11 @@ class Acurite5n1Packet(Packet):
         lines.pop(0)
         return Acurite.insert_ids(pkt, Acurite5n1Packet.__name__)
 
+    # sample json output from rtl_433 as of jan2017
+    # {"time" : "2017-01-16 02:34:12", "model" : "Acurite 5n1 sensor", "sensor_id" : 3066, "channel" : "C", "sequence_num" : 1, "battery" : "OK", "message_type" : 49, "wind_speed" : 0.000, "wind_dir_deg" : 67.500, "wind_dir" : "ENE", "rainfall_accumulation" : 0.000, "raincounter_raw" : 8978}
+    # {"time" : "2017-01-16 02:37:33", "model" : "Acurite 5n1 sensor", "sensor_id" : 3066, "channel" : "C", "sequence_num" : 1, "battery" : "OK", "message_type" : 56, "wind_speed" : 0.000, "temperature_F" : 27.500, "humidity" : 56}
+
+    # some changes to rtl_433 as of dec2017
     # {"time" : "2017-12-24 02:07:00", "model" : "Acurite 5n1 sensor", "sensor_id" : 2662, "channel" : "A", "sequence_num" : 2, "battery" : "OK", "message_type" : 56, "wind_speed_mph" : 0.000, "temperature_F" : 47.500, "humidity" : 74}
     # {"time" : "2017-12-24 02:07:18", "model" : "Acurite 5n1 sensor", "sensor_id" : 2662, "channel" : "A", "sequence_num" : 2, "battery" : "OK", "message_type" : 49, "wind_speed_mph" : 0.000, "wind_dir_deg" : 157.500, "wind_dir" : "SSE", "rainfall_accumulation_inch" : 0.000, "raincounter_raw" : 421}
 
@@ -556,6 +561,8 @@ class AcuriteLightningPacket(Packet):
 
     # April 21, 2018 - JSON support
     # {"time" : "2018-04-21 19:12:53", "model" : "Acurite Lightning 6045M", "id" : 151, "channel" : "C", "temperature_F" : 66.900, "humidity" : 33, "strike_count" : 47, "storm_dist" : 12, "active" : 1, "rfi" : 0, "ussb1" : 1, "battery" : "LOW", "exception" : 0, "raw_msg" : "0097af2150f9afcc2b"}
+
+#    IDENTIFIER = "Acurite lightning"
     IDENTIFIER = "Acurite Lightning 6045M"
     PATTERN = re.compile('0x([0-9a-fA-F]+) Ch (.) Msg Type 0x([0-9a-fA-F]+): ([\d.-]+) ([CF]) ([\d.]+) % RH Strikes ([\d]+) Distance ([\d.]+)')
 
