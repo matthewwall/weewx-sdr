@@ -1,3 +1,6 @@
+0.44 21jul18
+* output from rtl_433 continues to be a moving target
+
 0.43 21jul18
 * fix battery status for acurite tower packets
 * fix battery status for acurite lightning packets

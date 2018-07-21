@@ -89,7 +89,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.43'
+DRIVER_VERSION = '0.44'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -363,6 +363,11 @@ class AcuriteTowerPacket(Packet):
         lines.pop(0)
         return pkt
 
+    # JSON format as of mid-2018
+    # {"time" : "2018-07-21 01:53:56", "model" : "Acurite tower sensor", "id" : 13009, "sensor_id" : 13009, "channel" : "A", "temperature_C" : 15.000, "humidity" : 16, "battery_low" : 1}
+    # {"time" : "2018-07-21 01:52:24", "model" : "Acurite tower sensor", "id" : 13009, "sensor_id" : 13009, "channel" : "A", "temperature_C" : 15.600, "humidity" : 16, "battery_low" : 0}
+
+    # JSON format as of early 2017
     # {"time" : "2017-01-12 03:43:05", "model" : "Acurite tower sensor", "id" : 521, "channel" : "A", "temperature_C" : 0.800, "humidity" : 68, "battery" : 0, "status" : 68}
     # {"time" : "2017-01-12 03:43:11", "model" : "Acurite tower sensor", "id" : 5585, "channel" : "C", "temperature_C" : 21.100, "humidity" : 32, "battery" : 0, "status" : 68}
 
@@ -373,7 +378,11 @@ class AcuriteTowerPacket(Packet):
         pkt['usUnits'] = weewx.METRIC
         pkt['hardware_id'] = "%04x" % obj.get('id', 0)
         pkt['channel'] = obj.get('channel')
-        pkt['battery'] = Packet.get_int(obj, 'battery')
+        # support both battery status keywords
+        if 'battery_low' in obj:
+            pkt['battery'] = Packet.get_int(obj, 'battery_low')
+        else:
+            pkt['battery'] = Packet.get_int(obj, 'battery')
         pkt['status'] = obj.get('status')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
