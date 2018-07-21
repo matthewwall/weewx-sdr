@@ -1,3 +1,7 @@
+0.43 21jul18
+* fix battery status for acurite tower packets
+* fix battery status for acurite lightning packets
+
 0.42 06jul18
 * fix units for FOWH1080Packet - m/s and mm not kph and cm.  thanks millallo!
 

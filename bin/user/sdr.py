@@ -89,7 +89,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.42'
+DRIVER_VERSION = '0.43'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -373,7 +373,7 @@ class AcuriteTowerPacket(Packet):
         pkt['usUnits'] = weewx.METRIC
         pkt['hardware_id'] = "%04x" % obj.get('id', 0)
         pkt['channel'] = obj.get('channel')
-        pkt['battery'] = 0 if obj.get('battery') == 0 else 1
+        pkt['battery'] = Packet.get_int(obj, 'battery')
         pkt['status'] = obj.get('status')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
@@ -574,7 +574,7 @@ class AcuriteLightningPacket(Packet):
         pkt['channel'] = obj.get('channel')
         pkt['hardware_id'] = "%04x" % obj.get('id', 0)
         pkt['temperature'] = obj.get('temperature_F')
-        pkt['battery'] = obj.get('battery')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         pkt['humidity'] = obj.get('humidity')
         pkt['active'] = obj.get('active')
         pkt['rfi'] = obj.get('rfi')
