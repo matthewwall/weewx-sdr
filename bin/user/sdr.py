@@ -1583,13 +1583,22 @@ class NexusTemperaturePacket(Packet):
     #         Channel:         1
     #         Temperature:     27.10 C
 
+    # 2018-08-01 22:03:11 :   Nexus Temperature/Humidity
+    #    House Code:      180
+    #    Battery:         OK
+    #    Channel:         1
+    #    Temperature:     20.10 C
+    #    Humidity:        42 %
+
     IDENTIFIER = "Nexus Temperature"
     PARSEINFO = {
         'House Code': ['house_code', None, lambda x: int(x)],
         'Battery': ['battery', None, lambda x: 0 if x == 'OK' else 1],
                 'Channel': ['channel', None, lambda x: int(x)],
         'Temperature':
-            ['temperature', re.compile('([\d.-]+) C'), lambda x : float(x)]}
+            ['temperature', re.compile('([\d.-]+) C'), lambda x : float(x)],
+        'Humidity':
+            ['humidity', re.compile('([\d.-]+) %'), lambda x : float(x)]}
 
     @staticmethod
     def parse_text(ts, payload, lines):
@@ -1608,6 +1617,8 @@ class NexusTemperaturePacket(Packet):
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         pkt['channel'] = obj.get('channel')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        if 'humidity' in obj:
+            pkt['humidity'] = Packet.get_float(obj, 'humidity')
         return OS.insert_ids(pkt, NexusTemperaturePacket.__name__)
 
 class PacketFactory(object):
