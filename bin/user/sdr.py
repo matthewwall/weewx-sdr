@@ -1253,6 +1253,19 @@ class OSPCR800Packet(Packet):
         pkt.update(Packet.parse_lines(lines, OSPCR800Packet.PARSEINFO))
         return OS.insert_ids(pkt, OSPCR800Packet.__name__)
 
+    # {"time" : "2018-08-04 15:29:27", "brand" : "OS", "model" : "PCR800", "id" : 236, "channel" : 0, "battery" : "OK", "rain_rate" : 0.000, "rain_total" : 109.594}
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['house_code'] = obj.get('id')
+        pkt['channel'] = obj.get('channel')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['rain_rate'] = Packet.get_float(obj, 'rain_rate')
+        pkt['rain_total'] = Packet.get_float(obj, 'rain_total')
+        return OS.insert_ids(pkt, OSPCR800Packet.__name__)
 
 # apparently rtl_433 uses BHTR968 when it should be BTHR968
 class OSBTHR968Packet(Packet):
@@ -1480,6 +1493,23 @@ class OSWGR800Packet(Packet):
         pkt['usUnits'] = weewx.METRICWX
         pkt.update(Packet.parse_lines(lines, OSWGR800Packet.PARSEINFO))
         return OS.insert_ids(pkt, OSWGR800Packet.__name__)
+
+    # {"time" : "2018-08-04 15:29:19", "brand" : "OS", "model" : "WGR800", "id" : 93, "channel" : 0, "battery" : "OK", "gust" : 0.700, "average" : 1.000, "direction" : 315.000}
+    
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['house_code'] = obj.get('id')
+        pkt['channel'] = obj.get('channel')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['wind_gust'] = Packet.get_float(obj, 'gust')
+        pkt['wind_speed'] = Packet.get_float(obj, 'average')
+        pkt['wind_dir'] = Packet.get_float(obj, 'direction')
+        return OS.insert_ids(pkt, OSWGR800Packet.__name__)
+
+
 
 class OSTHN802Packet(Packet):
     # 2017-08-03 17:24:08     :       OS :    THN802
