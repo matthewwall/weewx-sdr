@@ -1,6 +1,6 @@
 0.45 10aug18
-* new model with humidity Nexus Temperature/Humidity
-
+* new model with humidity Nexus Temperature/Humidity. thanks to user gazza (gary)!
+* fix typo swap channel and hardware_id in Acurite 986 json parse
 
 0.44 21jul18
 * output from rtl_433 continues to be a moving target

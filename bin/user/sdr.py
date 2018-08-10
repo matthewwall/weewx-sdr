@@ -545,8 +545,8 @@ class Acurite986Packet(Packet):
     def parse_json(obj):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['hardware_id'] = obj.get('id', 0)
-        pkt['channel'] = obj.get('channel')
+        pkt['channel'] = obj.get('id', 0)
+        pkt['hardware_id'] = obj.get('channel')
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         if 'temperature_F' in obj:
             pkt['usUnits'] = weewx.US
