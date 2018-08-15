@@ -89,7 +89,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.44'
+DRIVER_VERSION = '0.45'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
