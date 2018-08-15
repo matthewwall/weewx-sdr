@@ -1259,7 +1259,7 @@ class OSPCR800Packet(Packet):
     def parse_json(obj):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['usUnits'] = weewx.METRIC
+        pkt['usUnits'] = weewx.US
         pkt['house_code'] = obj.get('id')
         pkt['channel'] = obj.get('channel')
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
