@@ -1,4 +1,4 @@
-0.45 10aug18
+0.45 15aug18
 * new model with humidity Nexus Temperature/Humidity. thanks to user gazza (gary)!
 * fix typo swap channel and hardware_id in Acurite 986 json parse.
 * add json parser wind wgr800 and rain pcr800. thanks to user linda eriksson! 
