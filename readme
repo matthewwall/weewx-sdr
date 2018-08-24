@@ -179,7 +179,7 @@ sudo rtl_433 -q -U -F json -G
 If you know exactly which sensors you want to monitor, try the -R option to
 reduce the clutter.  For example,
 
-sudo rtl_433 -q -U -F json -R 9 -R -31
+sudo rtl_433 -q -U -F json -R 9 -R 31
 
 Once that is working, run the driver directly to be sure that it is collecting
 data from the rtl_433 application.
