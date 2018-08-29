@@ -657,6 +657,43 @@ class AcuriteWT450Packet(Packet):
         return Packet.add_identifiers(pkt, _id, AcuriteWT450Packet.__name__)
 
 
+class AlectoV1Packet(Packet):
+    # {"time" : "2018-08-29 17:07:34", "model" : "AlectoV1 Temperature Sensor", "id" : 88, "channel" : 2, "battery" : "OK", "temperature_C" : 27.700, "humidity" : 42, "mic" : "CHECKSUM"}
+
+    IDENTIFIER = "AlectoV1 Temperature Sensor"
+    PARSEINFO = {
+        'ID': ['station_id', None, lambda x: int(x)],
+        'Temperature':
+            ['temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
+        'Humidity':
+            ['humidity', re.compile('([\d.-]+) C'), lambda x: float(x)]
+        }
+
+    @staticmethod
+    def parse_text(ts, payload, lines):
+         pkt = dict()
+         pkt['dateTime'] = ts
+         pkt['usUnits'] = weewx.METRIC
+         pkt.update(Packet.parse_lines(lines, AlectoV1Packet.PARSEINFO))
+         return AlectoV1Packet.insert_ids(pkt)
+
+    @staticmethod
+    def parse_json(obj):
+         pkt = dict()
+         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+         pkt['usUnits'] = weewx.METRIC
+         pkt['station_id'] = obj.get('id')
+         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+         pkt['humidity'] = Packet.get_float(obj, 'humidity')
+         return AlectoV1Packet.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+         station_id = pkt.pop('station_id', '0000')
+         pkt = Packet.add_identifiers(pkt, station_id, AlectoV1Packet.__name__)
+         return pkt
+
+
 class AmbientF007THPacket(Packet):
     # 2017-01-21 18:17:16 : Ambient Weather F007TH Thermo-Hygrometer
     # House Code: 80
@@ -941,6 +978,40 @@ class FOWH25Packet(Packet):
     def insert_ids(pkt):
          station_id = pkt.pop('station_id', '0000')
          pkt = Packet.add_identifiers(pkt, station_id, FOWH25Packet.__name__)
+         return pkt
+
+
+class FOWH2Packet(Packet):
+    # {"time" : "2018-08-29 17:08:33", "model" : "Fine Offset Electronics, WH2 Temperature/Humidity sensor", "id" : 129, "temperature_C" : 24.200, "mic" : "CRC"}
+
+    IDENTIFIER = "Fine Offset Electronics, WH2"
+    PARSEINFO = {
+        'ID': ['station_id', None, lambda x: int(x)],
+        'Temperature':
+            ['temperature', re.compile('([\d.-]+) C'), lambda x: float(x)]
+        }
+
+    @staticmethod
+    def parse_text(ts, payload, lines):
+         pkt = dict()
+         pkt['dateTime'] = ts
+         pkt['usUnits'] = weewx.METRIC
+         pkt.update(Packet.parse_lines(lines, FOWH2Packet.PARSEINFO))
+         return FOWH2Packet.insert_ids(pkt)
+
+    @staticmethod
+    def parse_json(obj):
+         pkt = dict()
+         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+         pkt['usUnits'] = weewx.METRIC
+         pkt['station_id'] = obj.get('id')
+         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+         return FOWH2Packet.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+         station_id = pkt.pop('station_id', '0000')
+         pkt = Packet.add_identifiers(pkt, station_id, FOWH2Packet.__name__)
          return pkt
 
 
@@ -1621,12 +1692,14 @@ class PacketFactory(object):
         AcuriteLightningPacket,
         Acurite00275MPacket,
         AcuriteWT450Packet,
+        AlectoV1Packet,
         AmbientF007THPacket,
         CalibeurRF104Packet,
         FOWHx080Packet,
         FOWH1080Packet,
         FOWH3080Packet,
         FOWH25Packet,
+        FOWH2Packet,
         HidekiTS04Packet,
         HidekiWindPacket,
         HidekiRainPacket,
