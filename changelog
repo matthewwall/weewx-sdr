@@ -1,3 +1,8 @@
+0.46 31aug18
+* added json support for PCR800. thanks to andylittle
+* added json support for wgr800 and rain pcr800.  thanks to linda eriksson!
+* added support for humidity in Nexus.  thanks to gazza (gary)!
+
 0.45 29aug18
 * added support for AlectoV1Packets (Ventus W044 thermo/hydro).  thanks Adam!
 * added support for FOWH2Packets.  thanks to Adam Sjogren!
