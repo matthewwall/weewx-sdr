@@ -1422,6 +1422,7 @@ class OSTHGR122NPacket(Packet):
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         return OS.insert_ids(pkt, OSTHGR122NPacket.__name__)
 
+
 class OSTHGR810Packet(Packet):
     # rtl_433 circa jul 2016 emits this
     # 2016-09-01 22:05:47 :Weather Sensor THGR810
@@ -1616,6 +1617,7 @@ class OSTHN802Packet(Packet):
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         return OS.insert_ids(pkt, OSTHN802Packet.__name__)
 
+
 class OSBTHGN129Packet(Packet):
     # 2017-08-03 17:24:03     :       OS :    BTHGN129
     # House Code:      146
@@ -1657,6 +1659,7 @@ class OSBTHGN129Packet(Packet):
         pkt['pressure'] = Packet.get_float(obj, 'pressure_hPa')
         return OS.insert_ids(pkt, OSBTHGN129Packet.__name__)
 
+
 class ProloguePacket(Packet):
     # 2017-03-19 : Prologue Temperature and Humidity Sensor
     # {"time" : "2017-03-15 20:14:19", "model" : "Prologue sensor", "id" : 5, "rid" : 166, "channel" : 1, "battery" : "OK", "button" : 0, "temperature_C" : -0.700, "humidity" : 49}
@@ -1675,6 +1678,7 @@ class ProloguePacket(Packet):
         pkt['channel'] = obj.get('channel')
         pkt = Packet.add_identifiers(pkt, sensor_id, ProloguePacket.__name__)
         return pkt
+
 
 class NexusTemperaturePacket(Packet):
     # 2018-06-30 01:12:12 :   Nexus Temperature
@@ -1719,6 +1723,7 @@ class NexusTemperaturePacket(Packet):
         if 'humidity' in obj:
             pkt['humidity'] = Packet.get_float(obj, 'humidity')
         return OS.insert_ids(pkt, NexusTemperaturePacket.__name__)
+
 
 class PacketFactory(object):
 
