@@ -89,7 +89,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.46'
+DRIVER_VERSION = '0.47'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -971,7 +971,7 @@ class FOWH25Packet(Packet):
          pkt['station_id'] = obj.get('id')
          pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
          pkt['humidity'] = Packet.get_float(obj, 'humidity')
-         pkt['pressure'] = Packet.get_float(obj, 'pressure')
+         pkt['pressure'] = Packet.get_float(obj, 'pressure_hPa')
          return FOWH25Packet.insert_ids(pkt)
 
     @staticmethod

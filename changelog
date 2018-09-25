@@ -1,3 +1,6 @@
+0.47 25sep18
+* rtl_433 now emits 'pressure_hPa' not 'pressure' for FOWH25 packets
+
 0.46 31aug18
 * added json support for PCR800. thanks to andylittle
 * added json support for wgr800 and rain pcr800.  thanks to linda eriksson!
