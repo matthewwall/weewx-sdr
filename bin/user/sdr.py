@@ -89,7 +89,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.47'
+DRIVER_VERSION = '0.48'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -944,8 +944,17 @@ class FOWH25Packet(Packet):
     # Temperature: 19.9 C
     # Humidity: 78 %
     # Pressure: 1007.9 hPa
+    #
+    # 2018-10-09 19:45:12 :   Fine Offset Electronics, WH25
+    # id : 21
+    # temperature_C : 20.900
+    # humidity : 65
+    # pressure_hPa : 980.400
+    # battery : OK
+    # mic : CHECKSUM
 
     # {"time" : "2017-03-25 05:33:57", "model" : "Fine Offset Electronics, WH25", "id" : 239, "temperature_C" : 30.200, "humidity" : 68, "pressure" : 1008.000}
+    # {"time" : "2018-10-10 13:37:11", "model" : "Fine Offset Electronics, WH25", "id" : 21, "temperature_C" : 21.600, "humidity" : 66, "pressure_hPa" : 972.800, "battery" : "OK", "mic" : "CHECKSUM"}
     IDENTIFIER = "Fine Offset Electronics, WH25"
     PARSEINFO = {
         'ID': ['station_id', None, lambda x: int(x)],
@@ -972,6 +981,7 @@ class FOWH25Packet(Packet):
          pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
          pkt['humidity'] = Packet.get_float(obj, 'humidity')
          pkt['pressure'] = Packet.get_float(obj, 'pressure_hPa')
+         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
          return FOWH25Packet.insert_ids(pkt)
 
     @staticmethod

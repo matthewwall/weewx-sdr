@@ -1,3 +1,6 @@
+0.48 20dec18
+* added support for WH25 battery bit (thanks to StephenRO)
+
 0.47 25sep18
 * rtl_433 now emits 'pressure_hPa' not 'pressure' for FOWH25 packets
 
