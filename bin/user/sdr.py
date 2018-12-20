@@ -1025,6 +1025,52 @@ class FOWH2Packet(Packet):
          return pkt
 
 
+class FOWH65BPacket(Packet):
+    # 2018-10-10 13:37:02 :   Fine Offset WH65B
+    # id : 89
+    # temperature_C : 17.600
+    # humidity : 93
+    # wind_dir_deg : 224
+    # wind_speed_ms : 1.540
+    # gust_speed_ms : 2.240
+    # rainfall_mm : 325.500
+    # uv : 130
+    # uvi : 0
+    # light_lux : 13454.000
+    # battery : OK
+    # mic : CRC
+
+    # This is for a WH65B which is the sensor array for an Ambient Weather
+    # WS-2902A. The same sensor array is used for several models.
+
+    # {"time" : "2018-10-10 13:37:02", "model" : "Fine Offset WH65B", "id" : 89, "temperature_C" : 17.600, "humidity" : 93, "wind_dir_deg" : 224, "wind_speed_ms" : 1.540, "gust_speed_ms" : 2.240, "rainfall_mm" : 325.500, "uv" : 130, "uvi" : 0, "light_lux" : 13454.000, "battery" : "OK", "mic" : "CRC"}
+    IDENTIFIER = "Fine Offset WH65B"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRICWX
+        pkt['station_id'] = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+        pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed_ms')
+        pkt['wind_gust'] = Packet.get_float(obj, 'gust_speed_ms')
+        pkt['rain_total'] = Packet.get_float(obj, 'rainfall_mm')
+        pkt['uv'] = Packet.get_float(obj, 'uv')
+        pkt['uv_index'] = Packet.get_float(obj, 'uvi')
+        pkt['light'] = Packet.get_float(obj, 'light_lux') * 0.007893
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        return FOWH65BPacket.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        pkt = Packet.add_identifiers(pkt, station_id, FOWH65BPacket.__name__)
+        return pkt
+
+
 class Hideki(object):
     @staticmethod
     def insert_ids(pkt, pkt_type):
@@ -1754,6 +1800,7 @@ class PacketFactory(object):
         FOWH3080Packet,
         FOWH25Packet,
         FOWH2Packet,
+        FOWH65BPacket,
         HidekiTS04Packet,
         HidekiWindPacket,
         HidekiRainPacket,
