@@ -327,7 +327,7 @@ class Acurite(object):
     def insert_ids(pkt, pkt_type):
         # there should be a sensor_id field in the packet to identify sensor.
         # ensure the sensor_id is upper-case - it should be 4 hex characters.
-        sensor_id = pkt.pop('hardware_id', '0000').upper()
+        sensor_id = str(pkt.pop('hardware_id', '0000')).upper()
         return Packet.add_identifiers(pkt, sensor_id, pkt_type)
 
 

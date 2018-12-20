@@ -1,6 +1,7 @@
 0.48 20dec18
 * added support for WH25 battery bit (thanks to StephenRO)
 * added support for FOWH65B (ambient WS2902A) (thanks to StephenRO)
+* ensure that sensor_id is rendered as a string (issue #32 by user dbrb2)
 
 0.47 25sep18
 * rtl_433 now emits 'pressure_hPa' not 'pressure' for FOWH25 packets
