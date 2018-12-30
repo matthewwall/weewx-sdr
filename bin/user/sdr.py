@@ -484,7 +484,7 @@ class Acurite5n1Packet(Packet):
             pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
             pkt['humidity'] = Packet.get_float(obj, 'humidity')
         # put some units on the rain total - each tip is 0.01 inch
-        if 'rain_counter' in pkt:
+        if 'rain_counter' in pkt and pkt['rain_counter'] is not None:
             pkt['rain_total'] = pkt['rain_counter'] * 0.01 # inch
         return Acurite.insert_ids(pkt, Acurite5n1Packet.__name__)
 
