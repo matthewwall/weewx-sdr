@@ -1,3 +1,6 @@
+0.49 30dec18
+* added support for bresser 5in1 (thanks to user mercurystorm)
+
 0.48 20dec18
 * added support for WH25 battery bit (thanks to StephenRO)
 * added support for FOWH65B (ambient WS2902A) (thanks to StephenRO)

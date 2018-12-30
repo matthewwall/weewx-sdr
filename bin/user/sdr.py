@@ -89,7 +89,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.48'
+DRIVER_VERSION = '0.49'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages
@@ -1781,6 +1781,50 @@ class NexusTemperaturePacket(Packet):
         return OS.insert_ids(pkt, NexusTemperaturePacket.__name__)
 
 
+class Bresser5in1Packet(Packet):
+    #  'time' => '2018-12-15 16:04:04',
+    #  'model' => 'Bresser-5in1',
+    #  'id' => 118,
+    #  'temperature_C' => 6.4000000000000003552713678800500929355621337890625,
+    #  'humidity' => 87,
+    #  'wind_gust' => 2.79999999999999982236431605997495353221893310546875,
+    #  'wind_speed' => 2.899999999999999911182158029987476766109466552734375,
+    #  'wind_dir_deg' => 315,
+    #  'rain_mm' => 10.800000000000000710542735760100185871124267578125,
+    #  'data' => 'e7897fd71fd6ef9bff78f7feff18768028e02910640087080100',
+    #  'mic' => 'CHECKSUM',
+
+    # {“time" : "2018-12-15 16:04:04", "model" : "Bresser-5in1", "id" : 118,
+    # "temperature_C" : 6.400, "humidity" : 87, "wind_gust" : 2.800,
+    # "wind_speed" : 2.900, "wind_dir_deg" : 315.000, "rain_mm" : 10.800,
+    # "data" : "e7897fd71fd6ef9bff78f7feff18768028e02910640087080100",
+    # "mic" : "CHECKSUM"}#012
+
+    IDENTIFIER = "Bresser-5in1"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRICWX
+        pkt['station_id'] = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['wind_gust'] = Packet.get_float(obj, 'gust_speed_ms') 
+        pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed_ms')  
+        pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+        pkt['rain_total'] = Packet.get_float(obj, 'rainfall_mm')
+        pkt['uv'] = Packet.get_float(obj, 'uv')
+        pkt['uv_index'] = Packet.get_float(obj, 'uvi')
+        return Bresser5in1Packet.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        pkt = Packet.add_identifiers(pkt, station_id, Bresser5in1Packet.__name__)
+        return pkt
+
+
 class PacketFactory(object):
 
     # FIXME: do this with class introspection
@@ -1794,6 +1838,7 @@ class PacketFactory(object):
         AcuriteWT450Packet,
         AlectoV1Packet,
         AmbientF007THPacket,
+        Bresser5in1Packet,
         CalibeurRF104Packet,
         FOWHx080Packet,
         FOWH1080Packet,
