@@ -89,15 +89,17 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.49'
+DRIVER_VERSION = '0.50'
 
 # The default command requests json output from every decoder
-# -q - suppress non-data messages
-# -U - print timestamps in UTC
+# -q - suppress non-data messages (for older versions of rtl_433)
+# -M utc - print timestamps in UTC (-U for older versions of rtl_433)
 # -F json - emit data in json format (not all rtl_433 decoders support this)
-# -G - emit data for all rtl decoder (only available in newer rtl_433)
+# -G - emit data for all rtl decoders (only available in newer rtl_433)
 # Use the -R option instead of -G to indicate specific decoders.
-DEFAULT_CMD = 'rtl_433 -q -U -F json -G'
+#DEFAULT_CMD = 'rtl_433 -q -U -F json -G'
+# as of 18.12-60-gccbc568 branch master at 201812311225
+DEFAULT_CMD = 'rtl_433 -M utc -F json -G'
 
 
 def loader(config_dict, _):
@@ -397,6 +399,9 @@ class Acurite5n1Packet(Packet):
     # the 'rain fall since last reset' seems to be emitted once when rtl_433
     # starts up, then never again.  the rain measure in the type 31 messages
     # is a cumulative value, but not the same as rain since last reset.
+    #
+    # rtl_433 keeps using different labels and calculations for the rain
+    # counter, so try to deal with the variants we have seen.
 
     IDENTIFIER = "Acurite 5n1 sensor"
     PATTERN = re.compile('0x([0-9a-fA-F]+) Ch ([A-C]), (.*)')
@@ -465,6 +470,10 @@ class Acurite5n1Packet(Packet):
     # {"time" : "2017-12-24 02:07:00", "model" : "Acurite 5n1 sensor", "sensor_id" : 2662, "channel" : "A", "sequence_num" : 2, "battery" : "OK", "message_type" : 56, "wind_speed_mph" : 0.000, "temperature_F" : 47.500, "humidity" : 74}
     # {"time" : "2017-12-24 02:07:18", "model" : "Acurite 5n1 sensor", "sensor_id" : 2662, "channel" : "A", "sequence_num" : 2, "battery" : "OK", "message_type" : 49, "wind_speed_mph" : 0.000, "wind_dir_deg" : 157.500, "wind_dir" : "SSE", "rainfall_accumulation_inch" : 0.000, "raincounter_raw" : 421}
 
+    # more changes to rtl_433 as of dec2018
+    # {"time" : "2019-01-04 02:37:10", "model" : "Acurite 5n1 sensor", "sensor_id" : 2662, "channel" : "A", "sequence_num" : 1, "battery" : "OK", "message_type" : 56, "wind_speed_kph" : 0.000, "temperature_F" : 42.400, "humidity" : 83}
+    # {"time" : "2019-01-04 02:37:28", "model" : "Acurite 5n1 sensor", "sensor_id" : 2662, "channel" : "A", "sequence_num" : 0, "battery" : "LOW", "message_type" : 49, "wind_speed_kph" : 0.000, "wind_dir_deg" : 180.000, "rain_inch" : 28.970}
+
     @staticmethod
     def parse_json(obj):
         pkt = dict()
@@ -478,14 +487,17 @@ class Acurite5n1Packet(Packet):
         if msg_type == 49: # 0x31
             pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed_mph')
             pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
-            pkt['rain_counter'] = Packet.get_int(obj, 'raincounter_raw')
+            if 'raincounter_raw' in obj:
+                pkt['rain_counter'] = Packet.get_int(obj, 'raincounter_raw')
+                # put some units on the rain total - each tip is 0.01 inch
+                if pkt['rain_counter'] is not None:
+                    pkt['rain_total'] = pkt['rain_counter'] * 0.01 # inch
+            elif 'rain_inch' in obj:
+                pkt['rain_counter'] = Packet.get_float(obj, 'rain_inch')
         elif msg_type == 56: # 0x38
             pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed_mph')
             pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
             pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        # put some units on the rain total - each tip is 0.01 inch
-        if 'rain_counter' in pkt and pkt['rain_counter'] is not None:
-            pkt['rain_total'] = pkt['rain_counter'] * 0.01 # inch
         return Acurite.insert_ids(pkt, Acurite5n1Packet.__name__)
 
 

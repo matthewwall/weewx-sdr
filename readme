@@ -52,7 +52,7 @@ sudo wee_config --reconfigure --driver=user.sdr --no-prompt
 4) run the driver directly to identify the packets you want to capture
 
 cd /home/weewx
-sudo PYTHONPATH=bin python bin/user/sdr.py --cmd="rtl_433 -q -U -F json -G"
+sudo PYTHONPATH=bin python bin/user/sdr.py --cmd="rtl_433 -M utc -F json -G"
 
 5) modify the [SDR] section of weewx.conf using a text editor
 
@@ -86,13 +86,13 @@ adjust the driver configuration.
 
 The default configuration uses this command:
 
-rtl_433 -q -U -F json -G
+rtl_433 -M utc -F json -G
 
 Specify different options using the cmd parameter.  For example:
 
 [SDR]
     driver = user.sdr
-    cmd = rtl_433 -q -U -F json -R 17 -R 44 -R 50
+    cmd = rtl_433 -M utc -F json -R 17 -R 44 -R 50
 
 The rtl_433 executable emits data for many different types of sensors, some of
 which have similar output.  Use the sensor_map to distinguish between sensors
@@ -172,14 +172,14 @@ sudo rtl_433
 Be sure that you are capturing data from the sensors you care about.  To do
 this, you might want to experiment with some of the options to rtl_433.  For
 example, this will eliminate extraneous output (-q), use UTC for timestamps
-(-U), and register all rtl_433 drivers (-G):
+(-M utc), and register all rtl_433 drivers (-G):
 
-sudo rtl_433 -q -U -F json -G
+sudo rtl_433 -M utc -F json -G
 
 If you know exactly which sensors you want to monitor, try the -R option to
 reduce the clutter.  For example,
 
-sudo rtl_433 -q -U -F json -R 9 -R 31
+sudo rtl_433 -M utc -F json -R 9 -R 31
 
 Once that is working, run the driver directly to be sure that it is collecting
 data from the rtl_433 application.
@@ -241,7 +241,7 @@ the LD_LIBRARY_PATH and PATH in the weewx-sdr driver itself.  For example:
 
 [SDR]
     driver = user.sdr
-    cmd = rlt_433 -q -U -F json -G
+    cmd = rlt_433 -M utc -F json -G
     path = /opt/rtl-433/bin
     ld_library_path = /opt/libusb-1.0.20/lib:/opt/rtl-sdr/lib
     [[sensor_map]]
@@ -265,7 +265,7 @@ Support for new sensors
 To add support for new sensors, capture the output from rtl_433.  To capture
 output, run the driver directly and hide known packets:
 
-PYTHONPATH=bin python bin/user/sdr.py --cmd "rtl_433 -q -U -F json -G" --hide parsed,out,empty
+PYTHONPATH=bin python bin/user/sdr.py --cmd "rtl_433 -M utc -F json -G" --hide parsed,out,empty
 
 This should emit a line for each unparsed type.  For example:
 
