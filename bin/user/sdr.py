@@ -1794,7 +1794,7 @@ class Bresser5in1Packet(Packet):
     #  'data' => 'e7897fd71fd6ef9bff78f7feff18768028e02910640087080100',
     #  'mic' => 'CHECKSUM',
 
-    # {“time" : "2018-12-15 16:04:04", "model" : "Bresser-5in1", "id" : 118,
+    # {"time" : "2018-12-15 16:04:04", "model" : "Bresser-5in1", "id" : 118,
     # "temperature_C" : 6.400, "humidity" : 87, "wind_gust" : 2.800,
     # "wind_speed" : 2.900, "wind_dir_deg" : 315.000, "rain_mm" : 10.800,
     # "data" : "e7897fd71fd6ef9bff78f7feff18768028e02910640087080100",
