@@ -85,6 +85,7 @@ except (ImportError, AttributeError):
         import json
 
 import weewx.drivers
+import weewx.units
 from weeutil.weeutil import tobool
 
 
@@ -485,20 +486,37 @@ class Acurite5n1Packet(Packet):
         pkt['status'] = obj.get('status')
         msg_type = obj.get('message_type')
         if msg_type == 49: # 0x31
-            pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed_mph')
+            pkt['wind_speed'] = Acurite5n1Packet.get_wind_speed(obj)
             pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
-            if 'raincounter_raw' in obj:
-                pkt['rain_counter'] = Packet.get_int(obj, 'raincounter_raw')
-                # put some units on the rain total - each tip is 0.01 inch
-                if pkt['rain_counter'] is not None:
-                    pkt['rain_total'] = pkt['rain_counter'] * 0.01 # inch
-            elif 'rain_inch' in obj:
-                pkt['rain_counter'] = Packet.get_float(obj, 'rain_inch')
+            pkt['rain_total'] = Acurite5n1Packet.get_rain_total(obj)
         elif msg_type == 56: # 0x38
-            pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed_mph')
+            pkt['wind_speed'] = get_wind_speed(obj)
             pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
             pkt['humidity'] = Packet.get_float(obj, 'humidity')
         return Acurite.insert_ids(pkt, Acurite5n1Packet.__name__)
+
+    @staticmethod
+    def get_wind_speed(obj):
+        ws = None
+        if 'wind_speed_mph' in obj:
+            ws = Packet.get_float(obj, 'wind_speed_mph')
+        if 'wind_speed_kph' in obj:
+            ws = Packet.get_float(obj, 'wind_speed_kph')
+            if ws is not None:
+                ws = weewx.units.kph_to_mph(ws)
+        return ws
+
+    @staticmethod
+    def get_rain_total(obj):
+        rain_total = None
+        if 'raincounter_raw' in obj:
+            rain_counter = Packet.get_int(obj, 'raincounter_raw')
+            # put some units on the rain total - each tip is 0.01 inch
+            if rain_counter is not None:
+                rain_total = rain_counter * 0.01 # inch
+        elif 'rain_inch' in obj:
+            rain_total = Packet.get_float(obj, 'rain_inch')
+        return rain_total
 
 
 class Acurite606TXPacket(Packet):
