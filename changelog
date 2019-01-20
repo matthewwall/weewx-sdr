@@ -1,3 +1,7 @@
+0.51 20jan19
+* added support for AlectoV1 wind packets.  thanks Roberto Verrelli!
+* added support for Springfied temperature/moisture sensors
+
 0.50 03jan19
 * attempt to deal with the ever-chaning acurite5n1 packet labels
 

@@ -90,7 +90,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.50'
+DRIVER_VERSION = '0.51'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages (for older versions of rtl_433)
@@ -687,40 +687,40 @@ class AcuriteWT450Packet(Packet):
         return Packet.add_identifiers(pkt, _id, AcuriteWT450Packet.__name__)
 
 
-class AlectoV1Packet(Packet):
+class AlectoV1TemperaturePacket(Packet):
     # {"time" : "2018-08-29 17:07:34", "model" : "AlectoV1 Temperature Sensor", "id" : 88, "channel" : 2, "battery" : "OK", "temperature_C" : 27.700, "humidity" : 42, "mic" : "CHECKSUM"}
 
     IDENTIFIER = "AlectoV1 Temperature Sensor"
-    PARSEINFO = {
-        'ID': ['station_id', None, lambda x: int(x)],
-        'Temperature':
-            ['temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
-        'Humidity':
-            ['humidity', re.compile('([\d.-]+) C'), lambda x: float(x)]
-        }
-
-    @staticmethod
-    def parse_text(ts, payload, lines):
-         pkt = dict()
-         pkt['dateTime'] = ts
-         pkt['usUnits'] = weewx.METRIC
-         pkt.update(Packet.parse_lines(lines, AlectoV1Packet.PARSEINFO))
-         return AlectoV1Packet.insert_ids(pkt)
 
     @staticmethod
     def parse_json(obj):
          pkt = dict()
          pkt['dateTime'] = Packet.parse_time(obj.get('time'))
          pkt['usUnits'] = weewx.METRIC
-         pkt['station_id'] = obj.get('id')
+         station_id = obj.get('id')
          pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
          pkt['humidity'] = Packet.get_float(obj, 'humidity')
-         return AlectoV1Packet.insert_ids(pkt)
+         pkt = Packet.add_identifiers(pkt, station_id, AlectoV1TemperaturePacket.__name__)
+         return pkt
+
+
+class AlectoV1WindPacket(Packet):
+    # {"time" : "2019-01-20 11:14:00", "model" : "AlectoV1 Wind Sensor", "id" : 7, "channel" : 0, "battery" : "OK", "wind_speed" : 0.000, "wind_gust" : 0.000, "wind_direction" : 270, "mic" : "CHECKSUM"}
+
+    IDENTIFIER = "AlectoV1 Wind Sensor"
 
     @staticmethod
-    def insert_ids(pkt):
-         station_id = pkt.pop('station_id', '0000')
-         pkt = Packet.add_identifiers(pkt, station_id, AlectoV1Packet.__name__)
+    def parse_json(obj):
+         pkt = dict()
+         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+         pkt['usUnits'] = weewx.METRIC # FIXME: units have not been verified
+         station_id = obj.get('id')
+         pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed')
+         pkt['wind_gust'] = Packet.get_float(obj, 'wind_gust')
+         pkt['wind_dir'] = Packet.get_int(obj, 'wind_direction')
+         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+         pkt['channel'] = obj.get('channel')
+         pkt = Packet.add_identifiers(pkt, station_id, AlectoV1WindPacket.__name__)
          return pkt
 
 
@@ -1855,6 +1855,26 @@ class Bresser5in1Packet(Packet):
         return pkt
 
 
+class SpringfieldTMPacket(Packet):
+    # {"time" : "2019-01-20 11:14:00", "model" : "Springfield Temperature & Moisture", "sid" : 224, "channel" : 3, "battery" : "OK", "transmit" : "MANUAL", "temperature_C" : -204.800, "moisture" : 0, "mic" : "CHECKSUM"}
+
+    IDENTIFIER = "Springfield Temperature & Moisture"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        sensor_id = obj.get('sid')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['moisture'] = Packet.get_float(obj, 'moisture')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['channel'] = obj.get('channel')
+        pkt['transmit'] = obj.get('transmit')
+        pkt = Packet.add_identifiers(pkt, sensor_id, SpringfieldTMPacket.__name__)
+        return pkt
+
+
 class PacketFactory(object):
 
     # FIXME: do this with class introspection
@@ -1866,7 +1886,8 @@ class PacketFactory(object):
         AcuriteLightningPacket,
         Acurite00275MPacket,
         AcuriteWT450Packet,
-        AlectoV1Packet,
+        AlectoV1TemperaturePacket,
+        AlectoV1WindPacket,
         AmbientF007THPacket,
         Bresser5in1Packet,
         CalibeurRF104Packet,
@@ -1882,7 +1903,7 @@ class PacketFactory(object):
         LaCrosseWSPacket,
         LaCrosseTX141THBv2Packet,
         LaCrosseTXPacket,
-        RubicsonTempPacket,
+        NexusTemperaturePacket,
         OSPCR800Packet,
         OSBTHR968Packet,
         OSTHGR122NPacket,
@@ -1893,7 +1914,8 @@ class PacketFactory(object):
         OSTHN802Packet,
         OSBTHGN129Packet,
         ProloguePacket,
-        NexusTemperaturePacket]
+        RubicsonTempPacket,
+        SpringfieldTMPacket]
 
     @staticmethod
     def create(lines):
