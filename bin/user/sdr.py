@@ -1840,12 +1840,18 @@ class Bresser5in1Packet(Packet):
         pkt['station_id'] = obj.get('id')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        pkt['wind_gust'] = Packet.get_float(obj, 'gust_speed_ms') 
-        pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed_ms')  
         pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
-        pkt['rain_total'] = Packet.get_float(obj, 'rainfall_mm')
         pkt['uv'] = Packet.get_float(obj, 'uv')
         pkt['uv_index'] = Packet.get_float(obj, 'uvi')
+        # deal with different labels from rtl_433
+        for dst, src in [('wind_speed', 'wind_speed_ms'),
+                         ('gust_speed', 'gust_speed_ms'),
+                         ('rain_total', 'rainfall_mm'),
+                         ('wind_speed', 'wind_speed'),
+                         ('gust_speed', 'gust_speed'),
+                         ('rain_total', 'rain_mm')]:
+            if src in obj:
+                pkt[dst] = Packet.get_float(obj, src)
         return Bresser5in1Packet.insert_ids(pkt)
 
     @staticmethod
