@@ -90,7 +90,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.53'
+DRIVER_VERSION = '0.54'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages (for older versions of rtl_433)
@@ -490,7 +490,7 @@ class Acurite5n1Packet(Packet):
             pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
             pkt['rain_total'] = Acurite5n1Packet.get_rain_total(obj)
         elif msg_type == 56: # 0x38
-            pkt['wind_speed'] = get_wind_speed(obj)
+            pkt['wind_speed'] = Acurite5n1Packet.get_wind_speed(obj)
             pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
             pkt['humidity'] = Packet.get_float(obj, 'humidity')
         return Acurite.insert_ids(pkt, Acurite5n1Packet.__name__)

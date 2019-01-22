@@ -1,3 +1,6 @@
+0.54 22jan19
+* fixed typo in acurite 5n1 parsing
+
 0.53 20jan19
 * added support for Alecto rain packets.  thanks Roberto Verrelli!
 
