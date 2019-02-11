@@ -1,3 +1,6 @@
+0.55 10feb19
+* added support for fine offset WH24 sensors
+
 0.54 22jan19
 * fixed typo in acurite 5n1 parsing
 
