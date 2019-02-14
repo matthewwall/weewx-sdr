@@ -1,3 +1,6 @@
+0.57 14feb19
+* support the WH31 sensor.  thanks to user phinnay!
+
 0.56 14feb19
 * remove the light_lux multiplier.  if you can to convert to radiation, do it
   using StdWXCalculate, and beware that there is no way to properly convert

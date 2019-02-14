@@ -90,7 +90,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.56'
+DRIVER_VERSION = '0.57'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages (for older versions of rtl_433)
@@ -784,6 +784,34 @@ class AmbientF007THPacket(Packet):
         sensor_id = "%s:%s" % (channel, house_code)
         pkt = Packet.add_identifiers(
             pkt, sensor_id, AmbientF007THPacket.__name__)
+        return pkt
+
+
+class AmbientWH31Packet(Packet):
+
+    # {"time" : "2019-02-14 17:24:41.259441", "protocol" : 113, "model" : "AmbientWeather-WH31E", "id" : 24, "channel" : 1, "battery" : "OK", "temperature_C" : 6.000, "humidity" : 42, "data" :"2f00000000", "mic" : "CRC", "mod" : "FSK", "freq1" : 914.984, "freq2" : 914.906, "rssi" : -13.328, "snr" : 13.197, "noise" : -26.525}
+
+    IDENTIFIER = "AmbientWeather-WH31E"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRICWX
+        pkt['station_id'] = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['channel'] = obj.get_int('channel')
+        pkt['rssi'] = obj.get_int('rssi')
+        pkt['snr'] = obj.get_float('snr')
+        pkt['noise'] = obj.get_float('noise')
+        return AmbientWH31EPacket.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        pkt = Packet.add_identifiers(pkt, station_id, AmbientWH31EPacket.__name__)
         return pkt
 
 
@@ -1946,6 +1974,7 @@ class PacketFactory(object):
         AlectoV1WindPacket,
         AlectoV1RainPacket,
         AmbientF007THPacket,
+        AmbientWH31Packet,
         Bresser5in1Packet,
         CalibeurRF104Packet,
         FOWHx080Packet,
