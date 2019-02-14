@@ -90,7 +90,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.55'
+DRIVER_VERSION = '0.56'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages (for older versions of rtl_433)
@@ -987,7 +987,7 @@ class FOWH3080Packet(Packet):
 
 
 class FOWH24Packet(Packet):
-    # This is for a WH45 which is the sensor array for several station models
+    # This is for a WH24 which is the sensor array for several station models
 
     # {"time" : "2019-02-11 03:44:32", "model" : "Fine Offset WH24", "id" : 140, "temperature_C" : 12.600, "humidity" : 80, "wind_dir_deg" : 111, "wind_speed_ms" : 0.280, "gust_speed_ms" : 1.120, "rainfall_mm" : 1150.800, "uv" : 1, "uvi" : 0, "light_lux" : 0.000, "battery" : "OK", "mic" : "CRC"}
     # {"time" : "2019-02-11 03:44:48", "model" : "Fine Offset WH24", "id" : 140, "temperature_C" : 12.600, "humidity" : 80, "wind_dir_deg" : 109, "wind_speed_ms" : 0.980, "gust_speed_ms" : 1.120, "rainfall_mm" : 1150.800, "uv" : 1, "uvi" : 0, "light_lux" : 0.000, "battery" : "OK", "mic" : "CRC"}
@@ -1007,7 +1007,7 @@ class FOWH24Packet(Packet):
         pkt['wind_gust'] = Packet.get_float(obj, 'gust_speed_ms')
         pkt['rain_total'] = Packet.get_float(obj, 'rainfall_mm')
         pkt['uv_index'] = Packet.get_float(obj, 'uvi')
-        pkt['light'] = Packet.get_float(obj, 'light_lux') * 0.007893
+        pkt['light'] = Packet.get_float(obj, 'light_lux')
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         return FOWH24Packet.insert_ids(pkt)
 
@@ -1140,7 +1140,7 @@ class FOWH65BPacket(Packet):
         pkt['rain_total'] = Packet.get_float(obj, 'rainfall_mm')
         pkt['uv'] = Packet.get_float(obj, 'uv')
         pkt['uv_index'] = Packet.get_float(obj, 'uvi')
-        pkt['light'] = Packet.get_float(obj, 'light_lux') * 0.007893
+        pkt['light'] = Packet.get_float(obj, 'light_lux')
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         return FOWH65BPacket.insert_ids(pkt)
 

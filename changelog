@@ -1,3 +1,8 @@
+0.56 14feb19
+* remove the light_lux multiplier.  if you can to convert to radiation, do it
+  using StdWXCalculate, and beware that there is no way to properly convert
+  lux to solar radiation
+
 0.55 10feb19
 * added support for fine offset WH24 sensors
 
