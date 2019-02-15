@@ -1,3 +1,7 @@
+0.58 15feb19
+* added support for OSRGR968 and OSTHGR968 packets.  thanks to user chaoschris!
+* fixed improper invocation of get_int for WH31 sensor
+
 0.57 14feb19
 * support the WH31 sensor.  thanks to user phinnay!
 

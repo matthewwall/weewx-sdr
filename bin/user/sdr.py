@@ -90,7 +90,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.57'
+DRIVER_VERSION = '0.58'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages (for older versions of rtl_433)
@@ -802,10 +802,10 @@ class AmbientWH31Packet(Packet):
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
-        pkt['channel'] = obj.get_int('channel')
-        pkt['rssi'] = obj.get_int('rssi')
-        pkt['snr'] = obj.get_float('snr')
-        pkt['noise'] = obj.get_float('noise')
+        pkt['channel'] = Packet.get_int(obj, 'channel')
+        pkt['rssi'] = Packet.get_int(obj, 'rssi')
+        pkt['snr'] = Packet.get_float(obj, 'snr')
+        pkt['noise'] = Packet.get_float(obj, 'noise')
         return AmbientWH31EPacket.insert_ids(pkt)
 
     @staticmethod
@@ -1824,6 +1824,46 @@ class OSBTHGN129Packet(Packet):
         return OS.insert_ids(pkt, OSBTHGN129Packet.__name__)
 
 
+class OSTHGR968Packet(Packet):
+
+    IDENTIFIER = "THGR968"
+
+    # {"time" : "2019-02-15 13:43:25", "brand" : "OS", "model" : "THGR968", "id" : 187, "channel" : 1, "battery" : "OK", "temperature_C" : 16.500, "humidity" : 11}
+    # '{"time" : "2019-02-15 13:43:26", "brand" : "OS", "model" : "THGR968", "id" : 187, "channel" : 1, "battery" : "OK", "temperature_C" : 16.500, "humidity" : 11}
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['house_code'] = obj.get('id')
+        pkt['channel'] = Packet.get_int(obj, 'channel')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        return OS.insert_ids(pkt, OSTHGR968Packet.__name__)
+
+
+class OSRGR968Packet(Packet):
+
+    IDENTIFIER = "RGR968"
+
+    # {"time" : "2019-02-15 14:32:51", "brand" : "OS", "model" : "RGR968", "id" : 48, "channel" : 0, "battery" : "OK", "rain_rate" : 0.000, "total_rain" : 6935.100}
+    # {"time" : "2019-02-15 14:32:51", "brand" : "OS", "model" : "RGR968", "id" : 48, "channel" : 0, "battery" : "OK", "rain_rate" : 0.000, "total_rain" : 6935.100}
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['house_code'] = obj.get('id')
+        pkt['channel'] = Packet.get_int(obj, 'channel')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['rain_rate'] = Packet.get_float(obj, 'rain_rate')
+        pkt['total_rain'] = Packet.get_float(obj, 'total_rain')
+        return OS.insert_ids(pkt, OSRGR968Packet.__name__)
+
+
 class ProloguePacket(Packet):
     # 2017-03-19 : Prologue Temperature and Humidity Sensor
     # {"time" : "2017-03-15 20:14:19", "model" : "Prologue sensor", "id" : 5, "rid" : 166, "channel" : 1, "battery" : "OK", "button" : 0, "temperature_C" : -0.700, "humidity" : 49}
@@ -2000,6 +2040,8 @@ class PacketFactory(object):
         OSWGR800Packet,
         OSTHN802Packet,
         OSBTHGN129Packet,
+        OSTHGR968Packet,
+        OSRGR968Packet,
         ProloguePacket,
         RubicsonTempPacket,
         SpringfieldTMPacket]
