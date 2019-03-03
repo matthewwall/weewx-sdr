@@ -177,7 +177,8 @@ class ProcManager():
                 self._process.stderr, self.stderr_queue, 'stderr-thread')
             self.stderr_reader.start()
         except (OSError, ValueError), e:
-            raise weewx.WeeWxIOError("failed to start process: %s" % e)
+            raise weewx.WeeWxIOError("failed to start process '%s': %s" %
+                                     (cmd, e))
 
     def shutdown(self):
         loginf('shutdown process %s' % self._cmd)
