@@ -90,7 +90,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.58'
+DRIVER_VERSION = '0.59'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages (for older versions of rtl_433)
@@ -2184,15 +2184,15 @@ class SDRDriver(weewx.drivers.AbstractDevice):
             for lines in self._mgr.get_stdout():
                 for packet in PacketFactory.create(lines):
                     if packet:
-                        packet = self.map_to_fields(packet, self._sensor_map)
-                        if packet:
-                            if packet != self._last_pkt:
-                                logdbg("packet=%s" % packet)
-                                self._last_pkt = packet
-                                self._calculate_deltas(packet)
-                                yield packet
+                        pkt = self.map_to_fields(packet, self._sensor_map)
+                        if pkt:
+                            if pkt != self._last_pkt:
+                                logdbg("packet=%s" % pkt)
+                                self._last_pkt = pkt
+                                self._calculate_deltas(pkt)
+                                yield pkt
                             else:
-                                logdbg("ignoring duplicate packet %s" % packet)
+                                logdbg("ignoring duplicate packet %s" % pkt)
                         elif self._log_unmapped:
                             loginf("unmapped: %s (%s)" % (lines, packet))
                     elif self._log_unknown:
