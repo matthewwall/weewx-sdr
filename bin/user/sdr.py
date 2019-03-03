@@ -2268,7 +2268,7 @@ class SDRDriver(weewx.drivers.AbstractDevice):
         return True if matches else False
 
 
-if __name__ == '__main__':
+def main():
     import optparse
 
     usage = """%prog [--debug] [--help] [--version]
@@ -2352,3 +2352,6 @@ Hide:
                         print "unparsed:", lines
         for lines in mgr.get_stderr():
             print "err:", lines
+
+if __name__ == '__main__':
+    main()
