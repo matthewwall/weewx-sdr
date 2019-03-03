@@ -1,5 +1,7 @@
 0.59 03mar19
 * report packet that resulted in unmapped lines.  thanks to user wjcarpenter!
+* provide better feedback when rtl_433 not found
+* formatting changes to keep PEP happy
 
 0.58 15feb19
 * added support for OSRGR968 and OSTHGR968 packets.  thanks to user chaoschris!
