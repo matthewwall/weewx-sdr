@@ -694,14 +694,14 @@ class AlectoV1TemperaturePacket(Packet):
 
     @staticmethod
     def parse_json(obj):
-         pkt = dict()
-         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-         pkt['usUnits'] = weewx.METRIC
-         station_id = obj.get('id')
-         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
-         pkt['humidity'] = Packet.get_float(obj, 'humidity')
-         pkt = Packet.add_identifiers(pkt, station_id, AlectoV1TemperaturePacket.__name__)
-         return pkt
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        station_id = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt = Packet.add_identifiers(pkt, station_id, AlectoV1TemperaturePacket.__name__)
+        return pkt
 
 
 class AlectoV1WindPacket(Packet):
@@ -711,17 +711,17 @@ class AlectoV1WindPacket(Packet):
 
     @staticmethod
     def parse_json(obj):
-         pkt = dict()
-         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-         pkt['usUnits'] = weewx.METRIC # FIXME: units have not been verified
-         station_id = obj.get('id')
-         pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed')
-         pkt['wind_gust'] = Packet.get_float(obj, 'wind_gust')
-         pkt['wind_dir'] = Packet.get_int(obj, 'wind_direction')
-         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
-         pkt['channel'] = obj.get('channel')
-         pkt = Packet.add_identifiers(pkt, station_id, AlectoV1WindPacket.__name__)
-         return pkt
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC # FIXME: units have not been verified
+        station_id = obj.get('id')
+        pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed')
+        pkt['wind_gust'] = Packet.get_float(obj, 'wind_gust')
+        pkt['wind_dir'] = Packet.get_int(obj, 'wind_direction')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['channel'] = obj.get('channel')
+        pkt = Packet.add_identifiers(pkt, station_id, AlectoV1WindPacket.__name__)
+        return pkt
 
 
 class AlectoV1RainPacket(Packet):
@@ -731,15 +731,15 @@ class AlectoV1RainPacket(Packet):
 
     @staticmethod
     def parse_json(obj):
-         pkt = dict()
-         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-         pkt['usUnits'] = weewx.METRIC # FIXME: units have not been verified
-         station_id = obj.get('id')
-         pkt['rain_total'] = Packet.get_float(obj, 'rain_total')
-         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
-         pkt['channel'] = obj.get('channel')
-         pkt = Packet.add_identifiers(pkt, station_id, AlectoV1RainPacket.__name__)
-         return pkt
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC # FIXME: units have not been verified
+        station_id = obj.get('id')
+        pkt['rain_total'] = Packet.get_float(obj, 'rain_total')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['channel'] = obj.get('channel')
+        pkt = Packet.add_identifiers(pkt, station_id, AlectoV1RainPacket.__name__)
+        return pkt
 
 
 class AmbientF007THPacket(Packet):
@@ -1074,29 +1074,29 @@ class FOWH25Packet(Packet):
 
     @staticmethod
     def parse_text(ts, payload, lines):
-         pkt = dict()
-         pkt['dateTime'] = ts
-         pkt['usUnits'] = weewx.METRIC
-         pkt.update(Packet.parse_lines(lines, FOWH25Packet.PARSEINFO))
-         return FOWH25Packet.insert_ids(pkt)
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRIC
+        pkt.update(Packet.parse_lines(lines, FOWH25Packet.PARSEINFO))
+        return FOWH25Packet.insert_ids(pkt)
 
     @staticmethod
     def parse_json(obj):
-         pkt = dict()
-         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-         pkt['usUnits'] = weewx.METRIC
-         pkt['station_id'] = obj.get('id')
-         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
-         pkt['humidity'] = Packet.get_float(obj, 'humidity')
-         pkt['pressure'] = Packet.get_float(obj, 'pressure_hPa')
-         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
-         return FOWH25Packet.insert_ids(pkt)
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['station_id'] = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['pressure'] = Packet.get_float(obj, 'pressure_hPa')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        return FOWH25Packet.insert_ids(pkt)
 
     @staticmethod
     def insert_ids(pkt):
-         station_id = pkt.pop('station_id', '0000')
-         pkt = Packet.add_identifiers(pkt, station_id, FOWH25Packet.__name__)
-         return pkt
+        station_id = pkt.pop('station_id', '0000')
+        pkt = Packet.add_identifiers(pkt, station_id, FOWH25Packet.__name__)
+        return pkt
 
 
 class FOWH2Packet(Packet):
@@ -1111,26 +1111,26 @@ class FOWH2Packet(Packet):
 
     @staticmethod
     def parse_text(ts, payload, lines):
-         pkt = dict()
-         pkt['dateTime'] = ts
-         pkt['usUnits'] = weewx.METRIC
-         pkt.update(Packet.parse_lines(lines, FOWH2Packet.PARSEINFO))
-         return FOWH2Packet.insert_ids(pkt)
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRIC
+        pkt.update(Packet.parse_lines(lines, FOWH2Packet.PARSEINFO))
+        return FOWH2Packet.insert_ids(pkt)
 
     @staticmethod
     def parse_json(obj):
-         pkt = dict()
-         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-         pkt['usUnits'] = weewx.METRIC
-         pkt['station_id'] = obj.get('id')
-         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
-         return FOWH2Packet.insert_ids(pkt)
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['station_id'] = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        return FOWH2Packet.insert_ids(pkt)
 
     @staticmethod
     def insert_ids(pkt):
-         station_id = pkt.pop('station_id', '0000')
-         pkt = Packet.add_identifiers(pkt, station_id, FOWH2Packet.__name__)
-         return pkt
+        station_id = pkt.pop('station_id', '0000')
+        pkt = Packet.add_identifiers(pkt, station_id, FOWH2Packet.__name__)
+        return pkt
 
 
 class FOWH65BPacket(Packet):
@@ -2321,7 +2321,7 @@ Hide:
                     ld_library_path=options.ld_library_path)
         detected = dict()
         for lines in mgr.get_stdout():
-#            print "out:", lines
+            # print "out:", lines
             for p in PacketFactory.create(lines):
                 if p:
                     del p['usUnits']
