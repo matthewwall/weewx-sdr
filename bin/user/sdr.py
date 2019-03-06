@@ -90,7 +90,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.59'
+DRIVER_VERSION = '0.60'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages (for older versions of rtl_433)
@@ -1532,7 +1532,10 @@ class OSBTHR968Packet(Packet):
         pkt.update(Packet.parse_lines(lines, OSBTHR968Packet.PARSEINFO))
         return OS.insert_ids(pkt, OSBTHR968Packet.__name__)
 
+    # original rtl_433 output
     # {"time" : "2017-01-18 14:56:03", "brand" : "OS", "model" :"BHTR968", "id" : 111, "channel" : 0, "battery" : "OK", "temperature_C" : 27.200, "temperature_F" : 80.960,  "humidity" : 46, "pressure" : 1013}
+    # by 06mar2019
+    # {"time" : "2019-03-06 13:27:23", "brand" : "OS", "model" : "BHTR968", "id" : 179, "channel" : 0, "battery" : "LOW", "temperature_C" : 19.800, "humidity" : 54, "pressure_hPa" : 974.000}
 
     @staticmethod
     def parse_json(obj):
@@ -1544,7 +1547,10 @@ class OSBTHR968Packet(Packet):
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        pkt['pressure'] = Packet.get_float(obj, 'pressure')
+        if 'pressure' in obj:
+            pkt['pressure'] = Packet.get_float(obj, 'pressure_hPa')
+        elif 'pressure_hPa' in obj:
+            pkt['pressure'] = Packet.get_float(obj, 'pressure_hPa')
         return OS.insert_ids(pkt, OSBTHR968Packet.__name__)
 
 

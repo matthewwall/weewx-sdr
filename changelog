@@ -1,3 +1,6 @@
+0.60 06mar19
+* deal with rtl_433 output changes to OSBHTR968 packets
+
 0.59 03mar19
 * report packet that resulted in unmapped lines.  thanks to user wjcarpenter!
 * provide better feedback when rtl_433 not found
