@@ -788,7 +788,7 @@ class AmbientF007THPacket(Packet):
         return pkt
 
 
-class AmbientWH31Packet(Packet):
+class AmbientWH31EPacket(Packet):
 
     # {"time" : "2019-02-14 17:24:41.259441", "protocol" : 113, "model" : "AmbientWeather-WH31E", "id" : 24, "channel" : 1, "battery" : "OK", "temperature_C" : 6.000, "humidity" : 42, "data" :"2f00000000", "mic" : "CRC", "mod" : "FSK", "freq1" : 914.984, "freq2" : 914.906, "rssi" : -13.328, "snr" : 13.197, "noise" : -26.525}
 
@@ -2021,7 +2021,7 @@ class PacketFactory(object):
         AlectoV1WindPacket,
         AlectoV1RainPacket,
         AmbientF007THPacket,
-        AmbientWH31Packet,
+        AmbientWH31EPacket,
         Bresser5in1Packet,
         CalibeurRF104Packet,
         FOWHx080Packet,
