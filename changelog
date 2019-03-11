@@ -1,3 +1,6 @@
+0.61 11mar19
+* fix packet name for WH31E
+
 0.60 06mar19
 * deal with rtl_433 output changes to OSBHTR968 packets
 
