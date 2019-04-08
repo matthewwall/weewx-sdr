@@ -1,3 +1,6 @@
+0.62 08apr19
+* added support for WH32B sensor.  thanks to user steepleian!
+
 0.61 11mar19
 * fix packet name for WH31E
 

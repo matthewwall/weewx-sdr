@@ -90,7 +90,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.61'
+DRIVER_VERSION = '0.62'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages (for older versions of rtl_433)
@@ -907,8 +907,7 @@ class FOWH1080Packet(Packet):
     @staticmethod
     def insert_ids(pkt):
         station_id = pkt.pop('station_id', '0000')
-        pkt = Packet.add_identifiers(pkt, station_id, FOWH1080Packet.__name__)
-        return pkt
+        return Packet.add_identifiers(pkt, station_id, FOWH1080Packet.__name__)
 
 
 class FOWHx080Packet(Packet):
@@ -976,8 +975,7 @@ class FOWHx080Packet(Packet):
     @staticmethod
     def insert_ids(pkt):
         station_id = pkt.pop('station_id', '0000')
-        pkt = Packet.add_identifiers(pkt, station_id, FOWHx080Packet.__name__)
-        return pkt
+        return Packet.add_identifiers(pkt, station_id, FOWHx080Packet.__name__)
 
 
 class FOWH3080Packet(Packet):
@@ -1011,8 +1009,7 @@ class FOWH3080Packet(Packet):
     @staticmethod
     def insert_ids(pkt):
         station_id = pkt.pop('station_id', '0000')
-        pkt = Packet.add_identifiers(pkt, station_id, FOWH3080Packet.__name__)
-        return pkt
+        return Packet.add_identifiers(pkt, station_id, FOWH3080Packet.__name__)
 
 
 class FOWH24Packet(Packet):
@@ -1043,8 +1040,7 @@ class FOWH24Packet(Packet):
     @staticmethod
     def insert_ids(pkt):
         station_id = pkt.pop('station_id', '0000')
-        pkt = Packet.add_identifiers(pkt, station_id, FOWH24Packet.__name__)
-        return pkt
+        return Packet.add_identifiers(pkt, station_id, FOWH24Packet.__name__)
 
 
 class FOWH25Packet(Packet):
@@ -1096,8 +1092,7 @@ class FOWH25Packet(Packet):
     @staticmethod
     def insert_ids(pkt):
         station_id = pkt.pop('station_id', '0000')
-        pkt = Packet.add_identifiers(pkt, station_id, FOWH25Packet.__name__)
-        return pkt
+        return Packet.add_identifiers(pkt, station_id, FOWH25Packet.__name__)
 
 
 class FOWH2Packet(Packet):
@@ -1130,11 +1125,48 @@ class FOWH2Packet(Packet):
     @staticmethod
     def insert_ids(pkt):
         station_id = pkt.pop('station_id', '0000')
-        pkt = Packet.add_identifiers(pkt, station_id, FOWH2Packet.__name__)
-        return pkt
+        return Packet.add_identifiers(pkt, station_id, FOWH2Packet.__name__)
+
+
+class FOWH32BPacket(Packet):
+    # This is for a WH32B which is the indoors sensor array for an Ambient
+    # Weather WS-2902A. The same sensor array is used for several models.
+
+    # time      : 2019-04-08 00:48:02
+    # model     : Fineoffset-WH32B                       
+    # ID        : 146
+    # Temperature: 17.5 C      
+    # Humidity  : 60 %          
+    # Pressure  : 1001.2 hPa    
+    # Battery   : OK            
+    # Integrity : CHECKSUM
+
+    # {"time" : "2019-04-08 07:06:03", "model" : "Fineoffset-WH32B", "id" : 146, "temperature_C" : 16.900, "humidity" : 59, "pressure_hPa" : 1001.300, "battery" : "OK", "mic" : "CHECKSUM"}
+
+    IDENTIFIER = "Fineoffset-WH32B"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['station_id'] = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['pressure'] = Packet.get_float(obj, 'pressure_hPa')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        return FOWH32BPacket.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        return Packet.add_identifiers(pkt, station_id, FOWH32BPacket.__name__)
 
 
 class FOWH65BPacket(Packet):
+    # This is for a WH65B which is the sensor array for an Ambient Weather
+    # WS-2902A. The same sensor array is used for several models.
+
     # 2018-10-10 13:37:02 :   Fine Offset WH65B
     # id : 89
     # temperature_C : 17.600
@@ -1148,9 +1180,6 @@ class FOWH65BPacket(Packet):
     # light_lux : 13454.000
     # battery : OK
     # mic : CRC
-
-    # This is for a WH65B which is the sensor array for an Ambient Weather
-    # WS-2902A. The same sensor array is used for several models.
 
     # {"time" : "2018-10-10 13:37:02", "model" : "Fine Offset WH65B", "id" : 89, "temperature_C" : 17.600, "humidity" : 93, "wind_dir_deg" : 224, "wind_speed_ms" : 1.540, "gust_speed_ms" : 2.240, "rainfall_mm" : 325.500, "uv" : 130, "uvi" : 0, "light_lux" : 13454.000, "battery" : "OK", "mic" : "CRC"}
     IDENTIFIER = "Fine Offset WH65B"
@@ -1176,8 +1205,7 @@ class FOWH65BPacket(Packet):
     @staticmethod
     def insert_ids(pkt):
         station_id = pkt.pop('station_id', '0000')
-        pkt = Packet.add_identifiers(pkt, station_id, FOWH65BPacket.__name__)
-        return pkt
+        return Packet.add_identifiers(pkt, station_id, FOWH65BPacket.__name__)
 
 
 class Hideki(object):
@@ -2030,6 +2058,7 @@ class PacketFactory(object):
         FOWH24Packet,
         FOWH25Packet,
         FOWH2Packet,
+        FOWH32BPacket,
         FOWH65BPacket,
         HidekiTS04Packet,
         HidekiWindPacket,
