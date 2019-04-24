@@ -90,7 +90,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.62'
+DRIVER_VERSION = '0.63'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages (for older versions of rtl_433)
@@ -2034,6 +2034,23 @@ class SpringfieldTMPacket(Packet):
         return pkt
 
 
+class WT0124Packet(Packet):
+    # 2019-04-23: WT0124 Pool Thermometer
+    # {"time" : "2019-04-23 12:28:52", "model" : "WT0124 Pool Thermometer", "rid" : 122, "channel" : 1, "temperature_C" : 22.800, "mic" : "CHECKSUM", "data" : 172}
+
+    IDENTIFIER = "WT0124 Pool Thermometer"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        sensor_id = obj.get('rid')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt = Packet.add_identifiers(pkt, sensor_id, WT0124Packet.__name__)
+        return pkt
+
+
 class PacketFactory(object):
 
     # FIXME: do this with class introspection
@@ -2080,7 +2097,9 @@ class PacketFactory(object):
         OSRGR968Packet,
         ProloguePacket,
         RubicsonTempPacket,
-        SpringfieldTMPacket]
+        SpringfieldTMPacket,
+        WT0124Packet,
+        ]
 
     @staticmethod
     def create(lines):

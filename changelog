@@ -1,3 +1,6 @@
+0.63 23apr19
+* added support for WT0124 pool sensor
+
 0.62 08apr19
 * added support for WH32B sensor.  thanks to user steepleian!
 
