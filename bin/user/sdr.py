@@ -90,7 +90,7 @@ from weeutil.weeutil import tobool
 
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.63'
+DRIVER_VERSION = '0.63.1'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages (for older versions of rtl_433)
@@ -1675,6 +1675,43 @@ class OSTHGR810Packet(Packet):
         return OS.insert_ids(pkt, OSTHGR810Packet.__name__)
 
 
+class OSTHR128Packet(Packet):
+    # 2019-04-30:   Thermo Sensor THR128
+    # House Code:      5
+    # Channel:         1
+    # Battery:         OK
+    # Temperature:     18.800 C
+
+
+    IDENTIFIER = "OSv1 Temperature Sensor"
+    PARSEINFO = {
+        'House Code': ['house_code', None, lambda x: int(x)],
+        'Channel': ['channel', None, lambda x: int(x)],
+        'Battery': ['battery', None, lambda x: 0 if x == 'OK' else 1],
+        'Temperature':
+            ['temperature', re.compile('([\d.-]+) C'), lambda x : float(x)]}
+
+    @staticmethod
+    def parse_text(ts, payload, lines):
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRIC
+        pkt.update(Packet.parse_lines(lines, OSTHR128Packet.PARSEINFO))
+        return OS.insert_ids(pkt, OSTHR128Packet.__name__)
+
+    # {"time" : "2019-04-30 20:44:00", "brand" : "OS", "model" : "OSv1 Temperature Sensor", "sid" : 5, "channel" : 1, "battery" : "OK", "temperature_C" : 18.800}
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['house_code'] = obj.get('sid')
+        pkt['channel'] = obj.get('channel')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        return OS.insert_ids(pkt, OSTHR128Packet.__name__)
+
+
 class OSTHR228NPacket(Packet):
     # 2016-09-09 11:59:10 :   Thermo Sensor THR228N
     # House Code:      111
@@ -2088,6 +2125,7 @@ class PacketFactory(object):
         OSBTHR968Packet,
         OSTHGR122NPacket,
         OSTHGR810Packet,
+        OSTHR128Packet,
         OSTHR228NPacket,
         OSUV800Packet,
         OSWGR800Packet,
