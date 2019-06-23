@@ -1210,7 +1210,7 @@ class FOWH65BPacket(Packet):
 class FOWH0290Packet(Packet):
     # This is for a WH0290 Air Quality Monitor
 
-    #out: ['{"time" : "2019-05-26 20:05:19", "model" : "Fine Offset Electronics, WH0290", "id" : 204, "25_particles" : 33, "100_particles" : 35, "mic" : "CHECKSUM"}\n']
+    #{"time" : "@0.084044s", "model" : "Fine Offset Electronics, WH0290", "id" : 204, "pm2_5_ug_m3" : 9, "pm10_ug_m3" : 10, "mic" : "CHECKSUM"}
 
     IDENTIFIER = "Fine Offset Electronics, WH0290"
 
