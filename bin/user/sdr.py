@@ -623,7 +623,7 @@ class AcuriteLightningPacket(Packet):
         pkt['strikes_total'] = obj.get('strike_count')
         pkt['distance'] = obj.get('storm_dist')
         return Acurite.insert_ids(pkt, AcuriteLightningPacket.__name__)
-    
+
     @staticmethod
     def parse_text(ts, payload, lines):
         pkt = dict()
@@ -1133,12 +1133,12 @@ class FOWH32BPacket(Packet):
     # Weather WS-2902A. The same sensor array is used for several models.
 
     # time      : 2019-04-08 00:48:02
-    # model     : Fineoffset-WH32B                       
+    # model     : Fineoffset-WH32B
     # ID        : 146
-    # Temperature: 17.5 C      
-    # Humidity  : 60 %          
-    # Pressure  : 1001.2 hPa    
-    # Battery   : OK            
+    # Temperature: 17.5 C
+    # Humidity  : 60 %
+    # Pressure  : 1001.2 hPa
+    # Battery   : OK
     # Integrity : CHECKSUM
 
     # {"time" : "2019-04-08 07:06:03", "model" : "Fineoffset-WH32B", "id" : 146, "temperature_C" : 16.900, "humidity" : 59, "pressure_hPa" : 1001.300, "battery" : "OK", "mic" : "CHECKSUM"}
@@ -1207,6 +1207,27 @@ class FOWH65BPacket(Packet):
         station_id = pkt.pop('station_id', '0000')
         return Packet.add_identifiers(pkt, station_id, FOWH65BPacket.__name__)
 
+class FOWH0290Packet(Packet):
+    # This is for a WH0290 Air Quality Monitor
+
+    #{"time" : "@0.084044s", "model" : "Fine Offset Electronics, WH0290", "id" : 204, "pm2_5_ug_m3" : 9, "pm10_ug_m3" : 10, "mic" : "CHECKSUM"}
+
+    IDENTIFIER = "Fine Offset Electronics, WH0290"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['usUnits'] = weewx.METRIC
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['station_id'] = obj.get('id')
+        pkt['pm2_5_atm'] = Packet.get_float(obj, 'pm2_5_ug_m3')
+        pkt['pm10_0_atm'] = Packet.get_float(obj, 'pm10_ug_m3')
+        return FOWH0290Packet.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        return Packet.add_identifiers(pkt, station_id, FOWH0290Packet.__name__)
 
 class Hideki(object):
     @staticmethod
@@ -1803,7 +1824,7 @@ class OSWGR800Packet(Packet):
         return OS.insert_ids(pkt, OSWGR800Packet.__name__)
 
     # {"time" : "2018-08-04 15:29:19", "brand" : "OS", "model" : "WGR800", "id" : 93, "channel" : 0, "battery" : "OK", "gust" : 0.700, "average" : 1.000, "direction" : 315.000}
-    
+
     @staticmethod
     def parse_json(obj):
         pkt = dict()
@@ -2114,6 +2135,7 @@ class PacketFactory(object):
         FOWH2Packet,
         FOWH32BPacket,
         FOWH65BPacket,
+        FOWH0290Packet,
         HidekiTS04Packet,
         HidekiWindPacket,
         HidekiRainPacket,
