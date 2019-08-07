@@ -1358,6 +1358,30 @@ class HidekiRainPacket(Packet):
         return Hideki.insert_ids(pkt, HidekiRainPacket.__name__)
 
 
+class HolmanWS5029Packet(Packet):
+    # {"time" : "2019-08-07 10:35:07", "model" : "Holman Industries WS5029 weather station", "id" : 53761, "temperature_C" : 9.100, "humidity" : 102, "rain_mm" : 39.500, "wind_avg_km_h" : 0, "direction_deg" : 338}
+
+    IDENTIFIER = "Holman Industries WS5029 weather station"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRICWX
+        pkt['station_id'] = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['wind_dir'] = Packet.get_float(obj, 'direction_deg')
+        pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
+        pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
+        return HolmanWS5029Packet.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        return Packet.add_identifiers(pkt, station_id, HolmanWS5029Packet.__name__)
+
+
 class LaCrosseWSPacket(Packet):
     # 2016-09-08 00:43:52 :LaCrosse WS :9 :202
     # Temperature: 21.0 C
@@ -2139,6 +2163,7 @@ class PacketFactory(object):
         HidekiTS04Packet,
         HidekiWindPacket,
         HidekiRainPacket,
+        HolmanWS5029Packet,
         LaCrosseWSPacket,
         LaCrosseTX141THBv2Packet,
         LaCrosseTXPacket,
