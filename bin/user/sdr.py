@@ -168,7 +168,7 @@ class AsyncReader(threading.Thread):
         self._running = False
 
 
-class ProcManager():
+class ProcManager(object):
     TS = re.compile('^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d[\s]+')
 
     def __init__(self):
@@ -239,7 +239,9 @@ class ProcManager():
         lines = []
         while self.running():
             try:
-                line = self.stdout_queue.get(True, 3)
+                # Fetch the output line. For it to be searched, Python 3 requires that
+                # it be decoded to unicode. Decoding does no harm under Python 2:
+                line = self.stdout_queue.get(True, 3).decode()
                 m = ProcManager.TS.search(line)
                 if m and lines:
                     yield lines
