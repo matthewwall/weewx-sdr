@@ -1,3 +1,6 @@
+0.70 27aug19
+* ported to Python 3
+
 0.64 01may19
 * added support for OS THR128. thanks to user douglassd!
 

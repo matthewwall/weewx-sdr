@@ -65,12 +65,16 @@ in the JSON data, for example 'wind_speed_mph' instead of just 'wind_speed'.
 
 from __future__ import with_statement
 from calendar import timegm
-import Queue
+try:
+    # Python 3
+    import queue
+except ImportError:
+    # Python 2:
+    import Queue as queue
 import fnmatch
 import os
 import re
 import subprocess
-import syslog
 import threading
 import time
 
@@ -88,9 +92,41 @@ import weewx.drivers
 import weewx.units
 from weeutil.weeutil import tobool
 
+try:
+    # New-style weewx logging
+    import weewx.logger
+    import logging
+
+    log = logging.getLogger(__name__)
+
+    def logdbg(msg):
+        log.debug(msg)
+
+    def loginf(msg):
+        log.info(msg)
+
+    def logerr(msg):
+        log.error(msg)
+
+except ImportError:
+    # Old-style weewx logging
+    import syslog
+
+    def logmsg(level, msg):
+        syslog.syslog(level, 'sdr: %s: %s' %
+                      (threading.currentThread().getName(), msg))
+
+    def logdbg(msg):
+        logmsg(syslog.LOG_DEBUG, msg)
+
+    def loginf(msg):
+        logmsg(syslog.LOG_INFO, msg)
+
+    def logerr(msg):
+        logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.64'
+DRIVER_VERSION = '0.70'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages (for older versions of rtl_433)
@@ -108,20 +144,6 @@ def loader(config_dict, _):
 
 def confeditor_loader():
     return SDRConfigurationEditor()
-
-
-def logmsg(level, msg):
-    syslog.syslog(level, 'sdr: %s: %s' %
-                  (threading.currentThread().getName(), msg))
-
-def logdbg(msg):
-    logmsg(syslog.LOG_DEBUG, msg)
-
-def loginf(msg):
-    logmsg(syslog.LOG_INFO, msg)
-
-def logerr(msg):
-    logmsg(syslog.LOG_ERR, msg)
 
 
 class AsyncReader(threading.Thread):
@@ -152,9 +174,9 @@ class ProcManager():
     def __init__(self):
         self._cmd = None
         self._process = None
-        self.stdout_queue = Queue.Queue()
+        self.stdout_queue = queue.Queue()
         self.stdout_reader = None
-        self.stderr_queue = Queue.Queue()
+        self.stderr_queue = queue.Queue()
         self.stderr_reader = None
 
     def startup(self, cmd, path=None, ld_library_path=None):
@@ -176,7 +198,7 @@ class ProcManager():
             self.stderr_reader = AsyncReader(
                 self._process.stderr, self.stderr_queue, 'stderr-thread')
             self.stderr_reader.start()
-        except (OSError, ValueError), e:
+        except (OSError, ValueError) as e:
             raise weewx.WeeWxIOError("failed to start process '%s': %s" %
                                      (cmd, e))
 
@@ -223,7 +245,7 @@ class ProcManager():
                     yield lines
                     lines = []
                 lines.append(line)
-            except Queue.Empty:
+            except queue.Empty:
                 yield lines
                 lines = []
         yield lines
@@ -252,7 +274,7 @@ class Packet:
             if m:
                 utc = time.strptime(m.group(1), "%Y-%m-%d %H:%M:%S")
                 ts = timegm(utc)
-        except Exception, e:
+        except Exception as e:
             logerr("parse timestamp failed for '%s': %s" % (line, e))
         return ts
 
@@ -303,7 +325,7 @@ class Packet:
                         packet[name] = value
                     else:
                         logdbg("ignoring %s:%s" % (name, value))
-                except Exception, e:
+                except Exception as e:
                     logerr("parse failed for line '%s': %s" % (line, e))
             else:
                 logdbg("skip line '%s'" % line)
@@ -2186,7 +2208,7 @@ class PacketFactory(object):
                     if obj['model'].find(parser.IDENTIFIER) >= 0:
                         return parser.parse_json(obj)
                 logdbg("parse_json: unknown model %s" % obj['model'])
-        except ValueError, e:
+        except ValueError as e:
             logdbg("parse_json failed: %s" % e)
         return None
 
@@ -2218,7 +2240,7 @@ class PacketFactory(object):
                 utc = time.strptime(m.group(1), "%Y-%m-%d %H:%M:%S")
                 ts = timegm(utc)
                 payload = m.group(2).strip()
-        except Exception, e:
+        except Exception as e:
             logerr("parse timestamp failed for '%s': %s" % (line, e))
         return ts, payload
 
@@ -2385,6 +2407,7 @@ class SDRDriver(weewx.drivers.AbstractDevice):
 
 def main():
     import optparse
+    import syslog
 
     usage = """%prog [--debug] [--help] [--version]
         [--action=(show-packets | show-detected | list-supported)]
@@ -2420,7 +2443,7 @@ Hide:
     (options, args) = parser.parse_args()
 
     if options.version:
-        print "sdr driver version %s" % DRIVER_VERSION
+        print("sdr driver version %s" % DRIVER_VERSION)
         exit(1)
 
     if options.debug:
@@ -2428,7 +2451,7 @@ Hide:
 
     if options.action == 'list-supported':
         for pt in PacketFactory.KNOWN_PACKETS:
-            print pt.IDENTIFIER
+            print(pt.IDENTIFIER)
     elif options.action == 'show-detected':
         # display identifiers for detected sensors
         mgr = ProcManager()
@@ -2446,7 +2469,7 @@ Hide:
                     if label not in detected:
                         detected[label] = 0
                     detected[label] += 1
-                print detected
+                print(detected)
     else:
         # display output and parsed/unparsed packets
         hidden = [x.strip() for x in options.hidden.split(',')]
@@ -2455,18 +2478,18 @@ Hide:
                     ld_library_path=options.ld_library_path)
         for lines in mgr.get_stdout():
             if 'out' not in hidden and (
-                'empty' not in hidden or len(lines)):
-                print "out:", lines
+                    'empty' not in hidden or len(lines)):
+                print("out:%s" % lines)
             for p in PacketFactory.create(lines):
                 if p:
                     if 'parsed' not in hidden:
-                        print 'parsed: %s' % p
+                        print('parsed: %s' % p)
                 else:
                     if 'unparsed' not in hidden and (
-                        'empty' not in hidden or len(lines)):
-                        print "unparsed:", lines
+                            'empty' not in hidden or len(lines)):
+                        print("unparsed:%s" % lines)
         for lines in mgr.get_stderr():
-            print "err:", lines
+            print("err:%s" % lines)
 
 if __name__ == '__main__':
     main()
