@@ -94,9 +94,8 @@ from weeutil.weeutil import tobool
 
 try:
     # New-style weewx logging
-    import weewx.logger
+    import weeutil.logger
     import logging
-
     log = logging.getLogger(__name__)
 
     def logdbg(msg):
