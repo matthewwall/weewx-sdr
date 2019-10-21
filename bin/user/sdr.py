@@ -1210,7 +1210,7 @@ class FOWH65BPacket(Packet):
 class FOWH0290Packet(Packet):
     # This is for a WH0290 Air Quality Monitor
 
-    #{"time" : "@0.084044s", "model" : "Fine Offset Electronics, WH0290", "id" : 204, "pm2_5_ug_m3" : 9, "pm10_ug_m3" : 10, "mic" : "CHECKSUM"}
+    #{"time" : "@0.084044s", "model" : "Fine Offset Electronics, WH0290", "id" : 204, "pm2_5_ug_m3" : 9, "pm10_0_ug_m3" : 10, "mic" : "CHECKSUM"}
 
     IDENTIFIER = "Fine Offset Electronics, WH0290"
 
@@ -1221,7 +1221,7 @@ class FOWH0290Packet(Packet):
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['station_id'] = obj.get('id')
         pkt['pm2_5_atm'] = Packet.get_float(obj, 'pm2_5_ug_m3')
-        pkt['pm10_0_atm'] = Packet.get_float(obj, 'pm10_ug_m3')
+        pkt['pm10_0_atm'] = Packet.get_float(obj, 'pm10_0_ug_m3')
         return FOWH0290Packet.insert_ids(pkt)
 
     @staticmethod
