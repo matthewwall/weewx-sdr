@@ -563,8 +563,8 @@ class Acurite986Packet(Packet):
         if m:
             pkt['dateTime'] = ts
             pkt['usUnits'] = weewx.METRIC
-            pkt['hardware_id'] = m.group(2)
-            pkt['channel'] = m.group(1)
+            pkt['hardware_id'] = m.group(1)
+            pkt['channel'] = m.group(2)
             pkt['temperature'] = float(m.group(3))
             pkt['temperature_F'] = float(m.group(4))
         else:
