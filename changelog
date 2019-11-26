@@ -1,6 +1,7 @@
 0.71 26Nov19
 * rtl or sensor change HIDEKI Wind and HIDEKI Rain sensors. thanks to user 
   giuseppe saia/farmabeps! issue #67
+* change 986 parse text to match parse json for id 
 
 0.64 01may19
 * added support for OS THR128. thanks to user douglassd!
