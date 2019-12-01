@@ -1,6 +1,9 @@
 0.71 01dec19
 * added support for HolmanWS5029. thanks to user rmounce!
 * changed labels for pm10 from pm10_ug_m3 to pm10_0_ug_m3
+* added support for rain_mm, wind_speed_mph, wind_direction, wind_gust in
+   Hideki rain and wind packets.  thanks to user giuseppe saia/farmabeps,
+   and user andylittle.  fixes issue #67
 
 0.70 27aug19
 * ported to Python 3

@@ -1312,6 +1312,7 @@ class HidekiWindPacket(Packet):
     # Direction: 45.0 \xc2\xb0
 
     # {"time" : "2017-01-16 04:38:39", "model" : "HIDEKI Wind sensor", "rc" : 0, "channel" : 4, "battery" : "OK", "temperature_C" : -4.400, "windstrength" : 2.897, "winddirection" : 292.500}
+    # {"time" : "2019-11-24 19:13:41", "model" : "HIDEKI Wind sensor", "rc" : 3, "channel" : 4, "battery" : "OK", "temperature_C" : 11.000, "wind_speed_mph" : 1.300, "gust_speed_mph" : 0.100, "wind_approach" : 1, "wind_direction" : 270.000, "mic" : "CRC"}
 
     IDENTIFIER = "HIDEKI Wind sensor"
     PARSEINFO = {
@@ -1339,8 +1340,16 @@ class HidekiWindPacket(Packet):
         pkt['rolling_code'] = obj.get('rc')
         pkt['channel'] = obj.get('channel')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
-        pkt['wind_speed'] = Packet.get_float(obj, 'windstrength')
-        pkt['wind_dir'] = Packet.get_float(obj, 'winddirection')
+        if 'wind_speed_mph' in obj:
+            pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed_mph')
+        else:
+            pkt['wind_speed'] = Packet.get_float(obj, 'windstrength')
+        if 'wind_direction' in obj:
+            pkt['wind_dir'] = Packet.get_float(obj, 'wind_direction')
+        else:
+            pkt['wind_dir'] = Packet.get_float(obj, 'winddirection')
+        if 'gust_speed_mph' in obj:
+            pkt['wind_gust'] = Packet.get_float(obj, 'gust_speed_mph')
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         return Hideki.insert_ids(pkt, HidekiWindPacket.__name__)
 
@@ -1353,7 +1362,8 @@ class HidekiRainPacket(Packet):
     # Rain: 2622.900
 
     # {"time" : "2017-01-16 04:38:50", "model" : "HIDEKI Rain sensor", "rc" : 0, "channel" : 4, "battery" : "OK", "rain" : 2622.900}
-
+    # {"time" : "2019-11-24 19:13:52", "model" : "HIDEKI Rain sensor", "rc" : 0, "channel" : 4, "battery" : "OK", "rain_mm" : 274.400, "mic" : "CRC"}
+    
     IDENTIFIER = "HIDEKI Rain sensor"
     PARSEINFO = {
         'Rolling Code': ['rolling_code', None, lambda x: int(x)],
@@ -1376,7 +1386,10 @@ class HidekiRainPacket(Packet):
         pkt['usUnits'] = weewx.METRIC
         pkt['rolling_code'] = obj.get('rc')
         pkt['channel'] = obj.get('channel')
-        pkt['rain_total'] = Packet.get_float(obj, 'rain')
+        if 'rain_mm' in obj:
+            pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
+        else:
+            pkt['rain_total'] = Packet.get_float(obj, 'rain')
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         return Hideki.insert_ids(pkt, HidekiRainPacket.__name__)
 
