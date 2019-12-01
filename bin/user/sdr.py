@@ -125,7 +125,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.70'
+DRIVER_VERSION = '0.71'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages (for older versions of rtl_433)
