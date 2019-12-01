@@ -5,6 +5,7 @@
    Hideki rain and wind packets.  thanks to user giuseppe saia/farmabeps,
    and user andylittle.  fixes issue #67
 * change acurite 986 parse text to match parse json.  thanks to andylittle!
+* added support for OSUVR128.  thanks to user sirrated!
 
 0.70 27aug19
 * ported to Python 3

@@ -1860,6 +1860,40 @@ class OSUV800Packet(Packet):
         return OS.insert_ids(pkt, OSUV800Packet.__name__)
 
 
+class OSUVR128Packet(Packet):
+    # 2019-11-05 07:07:07 : Oregon Scientific UVR128
+    # House Code: 116
+    # UV Index: 0
+    # Battery: OK
+
+    IDENTIFIER = "Oregon Scientific UVR128"
+    PARSEINFO = {
+        'House Code': ['house_code', None, lambda x: int(x)],
+        'UV Index': ['uv_index', re.compile('([\d.-]+) C'), lambda x: float(x)],
+        'Battery': ['battery', None, lambda x: 0 if x == 'OK' else 1]}
+
+    @staticmethod
+    def parse_text(ts, payload, lines):
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRIC
+        pkt.update(Packet.parse_lines(lines, OSUVR128Packet.PARSEINFO))
+        return OS.insert_ids(pkt, OSUVR128Packet.__name__)
+
+    # {"time" : "2019-11-05 07:07:07", "model" : "Oregon Scientific UVR128", "id" : 116, "uv" : 0, "battery" : "OK"}
+    # {"time" : "2019-11-19 06:44:53", "model" : "Oregon Scientific UVR128", "id" : 116, "uv" : 0, "battery" : "OK"}
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['house_code'] = obj.get('id')
+        pkt['uv_index'] = Packet.get_float(obj, 'uv')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        return OS.insert_ids(pkt, OSUVR128Packet.__name__)
+
+
 class OSWGR800Packet(Packet):
     # 2016-11-03 04:36:34 : OS : WGR800
     # House Code: 85
@@ -2217,6 +2251,7 @@ class PacketFactory(object):
         OSTHR128Packet,
         OSTHR228NPacket,
         OSUV800Packet,
+        OSUVR128Packet,
         OSWGR800Packet,
         OSTHN802Packet,
         OSBTHGN129Packet,
