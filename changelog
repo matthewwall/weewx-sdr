@@ -6,6 +6,8 @@
    and user andylittle.  fixes issue #67
 * change acurite 986 parse text to match parse json.  thanks to andylittle!
 * added support for OSUVR128.  thanks to user sirrated!
+* added support for unsupported acurite tower and 5in1 packets that include
+   rssi, frequency, and snr.  thanks to user networkname!  issue #59
 
 0.70 27aug19
 * ported to Python 3
