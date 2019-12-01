@@ -1249,6 +1249,39 @@ class FOWH32BPacket(Packet):
         return Packet.add_identifiers(pkt, station_id, FOWH32BPacket.__name__)
 
 
+class FOWH5Packet(Packet):
+    # {"time" : "2019-10-27 14:51:21", "model" : "Fine Offset WH5 sensor", "id" : 48, "temperature_C" : 11.700, "humidity" : 62, "mic" : "CRC"}
+
+    IDENTIFIER = "Fine Offset WH5 sensor"
+    PARSEINFO = {
+        'ID': ['station_id', None, lambda x: int(x)],
+        'Temperature': ['temperature', re.compile('([\d.-]+) C'), lambda x: float(x)]
+    }
+
+    @staticmethod
+    def parse_text(ts, payload, lines):
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRIC
+        pkt.update(Packet.parse_lines(lines, FOWH5Packet.PARSEINFO))
+        return FOWH5Packet.insert_ids(pkt)
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['station_id'] = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        return FOWH5Packet.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        return Packet.add_identifiers(pkt, station_id, FOWH5Packet.__name__)
+
+
 class FOWH65BPacket(Packet):
     # This is for a WH65B which is the sensor array for an Ambient Weather
     # WS-2902A. The same sensor array is used for several models.
@@ -2299,6 +2332,7 @@ class PacketFactory(object):
         FOWH25Packet,
         FOWH2Packet,
         FOWH32BPacket,
+        FOWH5Packet,
         FOWH65BPacket,
         FOWH0290Packet,
         HidekiTS04Packet,

@@ -8,6 +8,7 @@
 * added support for OSUVR128.  thanks to user sirrated!
 * added support for unsupported acurite tower and 5in1 packets that include
    rssi, frequency, and snr.  thanks to user networkname!  issue #59
+* added support for FOWH5 sensors.  thanks to user starvald!  issue #65
 
 0.70 27aug19
 * ported to Python 3
