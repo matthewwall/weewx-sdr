@@ -1341,7 +1341,10 @@ class HidekiWindPacket(Packet):
         pkt['channel'] = obj.get('channel')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         if 'wind_speed_mph' in obj:
-            pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed_mph')
+            v = Packet.get_float(obj, 'wind_speed_mph')
+            if v is not None:
+                v /= weewx.units.MILE_PER_KM
+            pkt['wind_speed'] = v
         else:
             pkt['wind_speed'] = Packet.get_float(obj, 'windstrength')
         if 'wind_direction' in obj:
@@ -1349,7 +1352,10 @@ class HidekiWindPacket(Packet):
         else:
             pkt['wind_dir'] = Packet.get_float(obj, 'winddirection')
         if 'gust_speed_mph' in obj:
-            pkt['wind_gust'] = Packet.get_float(obj, 'gust_speed_mph')
+            v = Packet.get_float(obj, 'gust_speed_mph')
+            if v is not None:
+                v /= weewx.units.MILE_PER_KM
+            pkt['wind_gust'] = v
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         return Hideki.insert_ids(pkt, HidekiWindPacket.__name__)
 
