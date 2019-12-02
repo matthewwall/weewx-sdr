@@ -133,8 +133,8 @@ DRIVER_VERSION = '0.71'
 # -F json - emit data in json format (not all rtl_433 decoders support this)
 # -G - emit data for all rtl decoders (only available in newer rtl_433)
 # Use the -R option instead of -G to indicate specific decoders.
-#DEFAULT_CMD = 'rtl_433 -q -U -F json -G'
-# as of 18.12-60-gccbc568 branch master at 201812311225
+# DEFAULT_CMD = 'rtl_433 -q -U -F json -G'
+# as of dec2018:
 DEFAULT_CMD = 'rtl_433 -M utc -F json -G'
 
 
@@ -396,20 +396,20 @@ class Acurite5n1PacketV2(Packet):
         pkt = dict()
         pkt['usUnits'] = weewx.US
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['protocol'] = Packet.get_int(obj, 'protocol') # 56 apparently
+        pkt['protocol'] = Packet.get_int(obj, 'protocol')  # 56 apparently
         pkt['model'] = obj.get('model')
         pkt['hardware_id'] = "%04x" % obj.get('id', 0)
         pkt['channel'] = obj.get('channel')
         pkt['sequence_num'] = Packet.get_int(obj, 'sequence_num')
         pkt['battery'] = Packet.get_int(obj, 'battery_ok')
-        pkt['msg_type'] = Packet.get_int(obj, 'message_type') # 56 apparently
+        pkt['msg_type'] = Packet.get_int(obj, 'message_type')  # 56 apparently
         if 'wind_avg_km_h' in obj:
             pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
         if 'wind_dir_deg' in obj:
             pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
         if 'rain_mm' in obj:
             pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')/25.4
-        pkt['mod'] = obj.get('mod') # apparently is ASK
+        pkt['mod'] = obj.get('mod')  # apparently is ASK
         pkt['freq'] = Packet.get_float(obj, 'freq')
         pkt['rssi'] = Packet.get_float(obj, 'rssi')
         pkt['snr'] = Packet.get_float(obj, 'snr')
@@ -637,8 +637,8 @@ class Acurite986Packet(Packet):
     # versions use 'Acurite 986 Sensor'.  So we try to be compatible by
     # matching on the least that we can.
 
-#    IDENTIFIER = "Acurite 986 sensor"
-#    IDENTIFIER = "Acurite 986 Sensor"
+    # IDENTIFIER = "Acurite 986 sensor"
+    # IDENTIFIER = "Acurite 986 Sensor"
     IDENTIFIER = "Acurite 986"
     PATTERN = re.compile('0x([0-9a-fA-F]+) - (1R|2F): ([\d.-]+) C ([\d.-]+) F')
 
@@ -800,7 +800,7 @@ class AlectoV1WindPacket(Packet):
     def parse_json(obj):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['usUnits'] = weewx.METRIC # FIXME: units have not been verified
+        pkt['usUnits'] = weewx.METRIC  # FIXME: units have not been verified
         station_id = obj.get('id')
         pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed')
         pkt['wind_gust'] = Packet.get_float(obj, 'wind_gust')
@@ -1865,7 +1865,6 @@ class OSTHR128Packet(Packet):
     # Battery:         OK
     # Temperature:     18.800 C
 
-
     IDENTIFIER = "OSv1 Temperature Sensor"
     PARSEINFO = {
         'House Code': ['house_code', None, lambda x: int(x)],
@@ -2553,7 +2552,7 @@ class SDRDriver(weewx.drivers.AbstractDevice):
                             loginf("unmapped: %s (%s)" % (lines, packet))
                     elif self._log_unknown:
                         loginf("unparsed: %s" % lines)
-            self._mgr.get_stderr() # flush the stderr queue
+            self._mgr.get_stderr()  # flush the stderr queue
         else:
             logerr("err: %s" % self._mgr.get_stderr())
             raise weewx.WeeWxIOError("rtl_433 process is not running")
@@ -2709,6 +2708,7 @@ Hide:
                         print("unparsed:%s" % lines)
         for lines in mgr.get_stderr():
             print("err:%s" % lines)
+
 
 if __name__ == '__main__':
     main()
