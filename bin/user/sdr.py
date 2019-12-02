@@ -1327,7 +1327,7 @@ class FOWH65BPacket(Packet):
         return Packet.add_identifiers(pkt, station_id, FOWH65BPacket.__name__)
 
 class FOWH0290Packet(Packet):
-    # This is for a WH0290 Air Quality Monitor
+    # This is for a WH0290 Air Quality Monitor (Ambient Weather PM25)
 
     #{"time" : "@0.084044s", "model" : "Fine Offset Electronics, WH0290", "id" : 204, "pm2_5_ug_m3" : 9, "pm10_0_ug_m3" : 10, "mic" : "CHECKSUM"}
 
