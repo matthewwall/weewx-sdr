@@ -2288,6 +2288,45 @@ class SpringfieldTMPacket(Packet):
         return pkt
 
 
+class TFATwinPlus303049Packet(Packet):
+    # 2019-09-25 17:15:12 :   TFA-Twin-Plus-30.3049
+    # Channel: 1
+    # Battery: OK
+    # Temperature: 8.40 C
+    # Humidity: 91 %
+
+    # {"time" : "2019-09-25 17:15:12", "model" : "TFA-Twin-Plus-30.3049", "id" : 13, "channel" : 1, "battery" : "OK", "temperature_C" : 8.400, "humidity" : 91, "mic" : "CHECK  SUM"} 
+
+    IDENTIFIER = "TFA-Twin-Plus-30.3049"
+    PARSEINFO = {
+        'Rolling Code': ['rolling_code', None, lambda x: int(x)],
+        'Channel': ['channel', None, lambda x: int(x)],
+        'Battery': ['battery', None, lambda x: 0 if x == 'OK' else 1],
+        'Temperature': [
+            'temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
+        'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x: float(x)]}
+
+    @staticmethod
+    def parse_text(ts, payload, lines):
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRIC
+        pkt.update(Packet.parse_lines(lines, TFATwinPlus303049Packet.PARSEINFO))
+        return Hideki.insert_ids(pkt, TFATwinPlus303049Packet.__name__)
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['rolling_code'] = obj.get('rc')
+        pkt['channel'] = obj.get('channel')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        return Hideki.insert_ids(pkt, TFATwinPlus303049Packet.__name__)
+
+
 class WT0124Packet(Packet):
     # 2019-04-23: WT0124 Pool Thermometer
     # {"time" : "2019-04-23 12:28:52", "model" : "WT0124 Pool Thermometer", "rid" : 122, "channel" : 1, "temperature_C" : 22.800, "mic" : "CHECKSUM", "data" : 172}
@@ -2359,6 +2398,7 @@ class PacketFactory(object):
         ProloguePacket,
         RubicsonTempPacket,
         SpringfieldTMPacket,
+        TFATwinPlus303049Packet,
         WT0124Packet,
         ]
 

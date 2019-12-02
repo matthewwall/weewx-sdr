@@ -1,3 +1,6 @@
+0.72 02dec19
+* added support for TFATwinPlus303049.  thanks to user weezul!
+
 0.71 01dec19
 * added support for HolmanWS5029. thanks to user rmounce!
 * changed labels for pm10 from pm10_ug_m3 to pm10_0_ug_m3
