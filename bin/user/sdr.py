@@ -125,7 +125,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.71'
+DRIVER_VERSION = '0.72'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages (for older versions of rtl_433)
@@ -622,6 +622,28 @@ class Acurite606TXPacket(Packet):
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         pkt = Packet.add_identifiers(pkt, sensor_id, Acurite606TXPacket.__name__)
         return pkt
+
+
+class AcuriteRain899Packet(Packet):
+    # Sample data:
+    # {"time" : "2019-12-05 16:32:20", "model" : "Acurite-Rain899", "id" : 1699, "channel" : 0, "battery_ok" : 0, "rain_mm" : 6.096}
+    # {"time" : "2019-12-05 16:32:20", "model" : "Acurite-Rain899", "id" : 1699, "channel" : 0, "battery_ok" : 0, "rain_mm" : 6.096}
+    # {"time" : "2019-12-05 16:32:20", "model" : "Acurite-Rain899", "id" : 1699, "channel" : 0, "battery_ok" : 0, "rain_mm" : 6.096}
+
+    IDENTIFIER = "Acurite-Rain899"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['usUnits'] = weewx.US
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['model'] = obj.get('model')
+        pkt['hardware_id'] = "%04x" % obj.get('id', 0)
+        pkt['channel'] = obj.get('channel')
+        pkt['battery'] = Packet.get_int(obj, 'battery_ok')
+        if 'rain_mm' in obj:
+            pkt['rain_total'] = Packet.get_float(obj, 'rain_mm') / 25.4
+        return Acurite.insert_ids(pkt, AcuriteRain899Packet.__name__)
 
 
 class Acurite986Packet(Packet):
@@ -2352,6 +2374,7 @@ class PacketFactory(object):
         AcuriteTowerPacketV2,
         Acurite5n1PacketV2,
         Acurite606TXPacket,
+        AcuriteRain899Packet,
         Acurite986Packet,
         AcuriteLightningPacket,
         Acurite00275MPacket,

@@ -1,5 +1,6 @@
 0.72 02dec19
 * added support for TFATwinPlus303049.  thanks to user weezul!
+* added support for acurite rain 899.  thanks to user rknobbe!
 
 0.71 01dec19
 * added support for HolmanWS5029. thanks to user rmounce!
