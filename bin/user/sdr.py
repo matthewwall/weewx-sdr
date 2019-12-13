@@ -992,7 +992,7 @@ class FOWH1080Packet(Packet):
     def parse_text(ts, payload, lines):
         pkt = dict()
         pkt['dateTime'] = ts
-        pkt['usUnits'] = weewx.WXMETRIC
+        pkt['usUnits'] = weewx.METRICWX
         pkt.update(Packet.parse_lines(lines, FOWH1080Packet.PARSEINFO))
         return FOWH1080Packet.insert_ids(pkt)
 
@@ -1000,7 +1000,7 @@ class FOWH1080Packet(Packet):
     def parse_json(obj):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['usUnits'] = weewx.METRIC
+        pkt['usUnits'] = weewx.METRICWX
         pkt['station_id'] = obj.get('id')
         pkt['msg_type'] = Packet.get_int(obj, 'msg_type')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
@@ -1048,6 +1048,9 @@ class FOWHx080Packet(Packet):
     # stabilizes, match on something unique to these packets that still matches
     # the strings from different rtl_433 versions.
 
+    # apparently rain total is in mm, not cm (as of dec 2019)
+    # apparently wind speed is m/s not kph (as of dec 2019)
+
     #IDENTIFIER = "Fine Offset Electronics WH1080 / WH3080 Weather Station"
     #IDENTIFIER = "Fine Offset Electronics WH1080/WH3080 Weather Station"
     IDENTIFIER = "Fine Offset Electronics WH1080"
@@ -1056,7 +1059,7 @@ class FOWHx080Packet(Packet):
     def parse_json(obj):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['usUnits'] = weewx.METRIC
+        pkt['usUnits'] = weewx.METRICWX
         # older versions of rlt_433 user 'station_id'
         if 'station_id' in obj:
             pkt['station_id'] = obj.get('station_id')
