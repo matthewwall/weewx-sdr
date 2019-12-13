@@ -970,8 +970,8 @@ class FOWH1080Packet(Packet):
 
     # {"time" : "2016-11-04 14:40:38", "model" : "Fine Offset WH1080 weather station", "msg_type" : 0, "id" : 38, "temperature_C" : 12.500, "humidity" : 68, "direction_str" : "E", "direction_deg" : "90", "speed" : 8.568, "gust" : 12.240, "rain" : 249.600, "battery" : "OK"}
 
-    # apparently rain total is in mm, not cm
-    # apparently wind speed is m/s not kph
+    # this assumes rain total is in mm
+    # this assumes wind speed is kph
 
     IDENTIFIER = "Fine Offset WH1080 weather station"
     PARSEINFO = {
@@ -992,7 +992,7 @@ class FOWH1080Packet(Packet):
     def parse_text(ts, payload, lines):
         pkt = dict()
         pkt['dateTime'] = ts
-        pkt['usUnits'] = weewx.METRICWX
+        pkt['usUnits'] = weewx.METRIC
         pkt.update(Packet.parse_lines(lines, FOWH1080Packet.PARSEINFO))
         return FOWH1080Packet.insert_ids(pkt)
 
@@ -1000,7 +1000,7 @@ class FOWH1080Packet(Packet):
     def parse_json(obj):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['usUnits'] = weewx.METRICWX
+        pkt['usUnits'] = weewx.METRIC
         pkt['station_id'] = obj.get('id')
         pkt['msg_type'] = Packet.get_int(obj, 'msg_type')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
@@ -1008,7 +1008,9 @@ class FOWH1080Packet(Packet):
         pkt['wind_dir'] = Packet.get_float(obj, 'direction_deg')
         pkt['wind_speed'] = Packet.get_float(obj, 'speed')
         pkt['wind_gust'] = Packet.get_float(obj, 'gust')
-        pkt['rain_total'] = Packet.get_float(obj, 'rain')
+        rain_total = Packet.get_float(obj, 'rain')
+        if rain_total is not None:
+            pkt['rain_total'] = rain_total / 10.0 # convert to cm
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         return FOWH1080Packet.insert_ids(pkt)
 
@@ -1048,8 +1050,8 @@ class FOWHx080Packet(Packet):
     # stabilizes, match on something unique to these packets that still matches
     # the strings from different rtl_433 versions.
 
-    # apparently rain total is in mm, not cm (as of dec 2019)
-    # apparently wind speed is m/s not kph (as of dec 2019)
+    # this assumes rain total is in mm (as of dec 2019)
+    # this assumes wind speed is kph (as of dec 2019)
 
     #IDENTIFIER = "Fine Offset Electronics WH1080 / WH3080 Weather Station"
     #IDENTIFIER = "Fine Offset Electronics WH1080/WH3080 Weather Station"
@@ -1059,7 +1061,7 @@ class FOWHx080Packet(Packet):
     def parse_json(obj):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['usUnits'] = weewx.METRICWX
+        pkt['usUnits'] = weewx.METRIC
         # older versions of rlt_433 user 'station_id'
         if 'station_id' in obj:
             pkt['station_id'] = obj.get('station_id')
@@ -1072,7 +1074,9 @@ class FOWHx080Packet(Packet):
         pkt['wind_dir'] = Packet.get_float(obj, 'direction_deg')
         pkt['wind_speed'] = Packet.get_float(obj, 'speed')
         pkt['wind_gust'] = Packet.get_float(obj, 'gust')
-        pkt['rain_total'] = Packet.get_float(obj, 'rain')
+        rain_total = Packet.get_float(obj, 'rain')
+        if rain_total is not None:
+            pkt['rain_total'] = rain_total / 10.0 # convert to cm
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         pkt['signal_type'] = 1 if obj.get('signal_type') == 'WWVB / MSF' else 0
         pkt['hours'] = Packet.get_int(obj, 'hours')
