@@ -358,6 +358,47 @@ class Acurite(object):
         return Packet.add_identifiers(pkt, sensor_id, pkt_type)
 
 
+class AcuriteAtlasPacket(Packet):
+    # {"time": "2019-12-14 16:56:57", "model": "Acurite-Atlas", "id": 896, "channel": "A", "sequence_num": 0, "battery_ok": 1, "message_type": 37, "wind_avg_mi_h": 5.000, "temperature_F": 40.000, "humidity": 76, "byte8": 0, "byte9": 37, "byte89": 37}
+    # {"time": "2019-12-14 16:57:07", "model": "Acurite-Atlas", "id": 896, "channel": "A", "sequence_num": 0, "battery_ok": 1, "message_type": 38, "wind_avg_mi_h": 6.000, "wind_dir_deg": 291.000, "rain_in": 0.290, "byte8": 0, "byte9": 37, "byte89": 37}}
+    # {"time": "2019-12-14 16:57:58", "model": "Acurite-Atlas", "id": 896, "channel": "A", "sequence_num": 0, "battery_ok": 1, "message_type": 39, "wind_avg_mi_h": 6.000, "uv": 0, "lux": 22900, "byte8": 0, "byte9": 37, "byte89": 37}
+
+    # for battery, 0 means OK (assuming that 1 for battery_ok means OK)
+    # message types: 37, 38, 39
+    #   37: wind_avg_mi_h, temperature_F, humidity
+    #   38: wind_avg_mi_h, wind_dir_deg, rain_in
+    #   39: wind_avg_mi_h, uv, lux
+
+    IDENTIFIER = "Acurite-Atlas"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['usUnits'] = weewx.US
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['model'] = obj.get('model')
+        pkt['hardware_id'] = "%04x" % obj.get('id', 0)
+        pkt['channel'] = obj.get('channel')
+        pkt['sequence_num'] = Packet.get_int(obj, 'sequence_num')
+        pkt['message_type'] = Packet.get_int(obj, 'message_type')
+        if 'temperature_F' in obj:
+            pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
+        if 'humidity' in obj:
+            pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        if 'wind_avg_mi_h' in obj:
+            pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_mi_h')
+        if 'wind_dir_deg' in obj:
+            pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+        if 'rain_in' in obj:
+            pkt['rain_total'] = Packet.get_float(obj, 'rain_in')
+        if 'uv' in obj:
+            pkt['uv'] = Packet.get_int(obj, 'uv')
+        if 'lux' in obj:
+            pkt['lux'] = Packet.get_int(obj, 'lux')
+        pkt['battery'] = 1 if Packet.get_int(obj, 'battery_ok') == 0 else 0
+        return Acurite.insert_ids(pkt, AcuriteAtlasPacket.__name__)
+
+
 class AcuriteTowerPacketV2(Packet):
     # Based on AcuriteTowerPacket type, but implemented for unsupported format
     IDENTIFIER = "Acurite-Tower"
@@ -2376,6 +2417,7 @@ class PacketFactory(object):
 
     # FIXME: do this with class introspection
     KNOWN_PACKETS = [
+        AcuriteAtlasPacket,
         AcuriteTowerPacket,
         Acurite5n1Packet,
         AcuriteTowerPacketV2,
