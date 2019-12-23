@@ -125,7 +125,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.72'
+DRIVER_VERSION = '0.74'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages (for older versions of rtl_433)
@@ -2396,6 +2396,29 @@ class TFATwinPlus303049Packet(Packet):
         return Hideki.insert_ids(pkt, TFATwinPlus303049Packet.__name__)
 
 
+class TSFT002Packet(Packet):
+    # time : 2019-12-22 16:57:58
+    # model : TS-FT002 Id : 127
+    # Depth : 186 Temperature: 20.9 C Transmit Interval: 180 Battery Flag?: 8 MIC : CHECKSUM
+
+    # {"time" : "2019-12-22 22:54:58", "model" : "TS-FT002", "id" : 127, "depth_cm" : 186, "temperature_C" : 20.700, "transmit_s" : 180, "flags" : 8, "mic" : "CHECKSUM"}
+
+    IDENTIFIER = "TS-FT002"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['depth'] = Packet.get_float(obj, 'depth_cm')
+        pkt['transmit'] = Packet.get_float(obj, 'transmit_s')
+        pkt['flags'] = Packet.get_int(obj, 'transmit_s')
+        sensor_id = pkt.pop('id', '0000')
+        pkt = Packet.add_identifiers(pkt, sensor_id, TSFT002Packet.__name__)
+        return pkt
+
+
 class WT0124Packet(Packet):
     # 2019-04-23: WT0124 Pool Thermometer
     # {"time" : "2019-04-23 12:28:52", "model" : "WT0124 Pool Thermometer", "rid" : 122, "channel" : 1, "temperature_C" : 22.800, "mic" : "CHECKSUM", "data" : 172}
@@ -2470,6 +2493,7 @@ class PacketFactory(object):
         RubicsonTempPacket,
         SpringfieldTMPacket,
         TFATwinPlus303049Packet,
+        TSFT002Packet,
         WT0124Packet,
         ]
 

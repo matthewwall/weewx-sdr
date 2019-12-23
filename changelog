@@ -1,3 +1,6 @@
+0.74 22dec19
+* added support for TS-FT002.  thanks to user splobsterman!
+
 0.73 14dec19
 * added support for acurite atlas packets.  thanks to user Chris Morris!
 
