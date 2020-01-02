@@ -1,3 +1,6 @@
+0.75 02jan2020
+* fixed unit system bug in OSWGR800 packet.  thanks to user olivier!
+
 0.74 22dec19
 * added support for TS-FT002.  thanks to user splobsterman!
 

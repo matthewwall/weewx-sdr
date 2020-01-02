@@ -125,7 +125,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.74'
+DRIVER_VERSION = '0.75'
 
 # The default command requests json output from every decoder
 # -q - suppress non-data messages (for older versions of rtl_433)
@@ -2094,7 +2094,7 @@ class OSWGR800Packet(Packet):
     def parse_json(obj):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['usUnits'] = weewx.METRIC
+        pkt['usUnits'] = weewx.METRICWX
         pkt['house_code'] = obj.get('id')
         pkt['channel'] = obj.get('channel')
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
