@@ -2,7 +2,7 @@
 # Copyright 2016-2019 Matthew Wall
 # Distributed under the terms of the GNU Public License (GPLv3)
 
-from setup import ExtensionInstaller
+from weecfg.extension import ExtensionInstaller
 
 def loader():
     return SDRInstaller()
