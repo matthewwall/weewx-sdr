@@ -1,3 +1,8 @@
+0.76 04feb2020
+* use rtl instead of rtl_433 to match rtl_433 project change
+* stop using -G in default command, since it is now officially just for testing
+* encourage use of -R instead of -G, as requested by rtl_433 project
+
 0.75 02jan2020
 * fixed unit system bug in OSWGR800 packet.  thanks to user olivier!
 

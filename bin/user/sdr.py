@@ -125,18 +125,23 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.75'
+DRIVER_VERSION = '0.76'
 
 # The default command requests json output from every decoder
-# -q - suppress non-data messages (for older versions of rtl_433)
-# -M utc - print timestamps in UTC (-U for older versions of rtl_433)
-# -F json - emit data in json format (not all rtl_433 decoders support this)
-# -G - emit data for all rtl decoders (only available in newer rtl_433)
-# Use the -R option instead of -G to indicate specific decoders.
-# DEFAULT_CMD = 'rtl_433 -q -U -F json -G'
-# as of dec2018:
-DEFAULT_CMD = 'rtl_433 -M utc -F json -G'
+# Use the -R option to indicate specific decoders
 
+# -q      - suppress non-data messages (for older versions of rtl_433)
+# -M utc  - print timestamps in UTC (-U for older versions of rtl_433)
+# -F json - emit data in json format (not all rtl_433 decoders support this)
+# -G      - emit data for all rtl decoders (only available in newer rtl_433)
+#           as of early 2020, the syntax is '-G4', but use only for testing
+
+# very old implmentations:
+#DEFAULT_CMD = 'rtl_433 -q -U -F json -G'
+# as of dec2018:
+#DEFAULT_CMD = 'rtl_433 -M utc -F json -G'
+# as of feb2020:
+DEFAULT_CMD = 'rtl -M utc -F json'
 
 def loader(config_dict, _):
     return SDRDriver(**config_dict[DRIVER_NAME])
@@ -2744,7 +2749,7 @@ Hide:
     parser.add_option('--debug', dest='debug', action='store_true',
                       help='display diagnostic information while running')
     parser.add_option('--cmd', dest='cmd', default=DEFAULT_CMD,
-                      help='rtl_433 command with options')
+                      help='rtl command with options')
     parser.add_option('--path', dest='path',
                       help='value for PATH')
     parser.add_option('--ld_library_path', dest='ld_library_path',
