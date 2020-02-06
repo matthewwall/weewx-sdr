@@ -125,7 +125,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.76'
+DRIVER_VERSION = '0.77'
 
 # The default command requests json output from every decoder
 # Use the -R option to indicate specific decoders
@@ -141,7 +141,7 @@ DRIVER_VERSION = '0.76'
 # as of dec2018:
 #DEFAULT_CMD = 'rtl_433 -M utc -F json -G'
 # as of feb2020:
-DEFAULT_CMD = 'rtl -M utc -F json'
+DEFAULT_CMD = 'rtl_433 -M utc -F json'
 
 def loader(config_dict, _):
     return SDRDriver(**config_dict[DRIVER_NAME])

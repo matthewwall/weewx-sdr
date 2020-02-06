@@ -1,3 +1,6 @@
+0.77 06feb2020
+* revert the rtl_433 to rtl changes
+
 0.76 04feb2020
 * use rtl instead of rtl_433 to match rtl_433 project change
 * stop using -G in default command, since it is now officially just for testing

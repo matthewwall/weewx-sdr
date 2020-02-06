@@ -15,14 +15,14 @@ Hardware
 
 Tested with the Realtek RTL2838UHIDIR.  Should work with any software-defined
 radio that is compatible with the rtl-sdr software.  Uses the modules in
-rtl to recognize packets.
+rtl_433 to recognize packets.
 
 Output from many different sensors is supported.  To see the list of supported
 sensors, run the driver directly with the list-supported action.
 
-If a sensor is supported by rtl but not by weewx-sdr, it is a fairly simple
+If a sensor is supported by rtl_433 but not by weewx-sdr, it is a fairly simple
 matter of writing a parser for that sensor within weewx-sdr.  Things are a bit
-more complicated if a sensor is not supported by rtl.
+more complicated if a sensor is not supported by rtl_433.
 
 
 ===============================================================================
@@ -52,7 +52,7 @@ sudo wee_config --reconfigure --driver=user.sdr --no-prompt
 4) run the driver directly to identify the packets you want to capture
 
 cd /home/weewx
-sudo PYTHONPATH=bin python bin/user/sdr.py --cmd="rtl -M utc -F json"
+sudo PYTHONPATH=bin python bin/user/sdr.py --cmd="rtl_433 -M utc -F json"
 
 5) modify the [SDR] section of weewx.conf using a text editor
 
@@ -86,17 +86,17 @@ adjust the driver configuration.
 
 The default configuration uses this command:
 
-rtl -M utc -F json
+rtl_433 -M utc -F json
 
 Specify different options using the cmd parameter.  For example:
 
 [SDR]
     driver = user.sdr
-    cmd = rtl -M utc -F json -R 17 -R 44 -R 50
+    cmd = rtl_433 -M utc -F json -R 17 -R 44 -R 50
 
-The rtl executable emits data for many different types of sensors, some of
+The rtl_433 executable emits data for many different types of sensors, some of
 which have similar output.  Use the sensor_map to distinguish between sensors
-and map the output from rtl to the database fields in weewx.
+and map the output from rtl_433 to the database fields in weewx.
 
 Here are some examples:
 
@@ -151,8 +151,8 @@ Here are some examples:
 
 To figure out the sensor identifiers, run the driver directly, possibly with
 the --debug option.  Another option is to run weewx with the logging options
-for [SDR] enabled to display the sensors found by rtl, the sensor identifiers
-used by weewx, and the sensors actually recognized by weewx.
+for [SDR] enabled to display the sensors found by rtl_433, the sensor
+identifiers used by weewx, and the sensors actually recognized by weewx.
 
 [SDR]
     driver = user.sdr
@@ -165,24 +165,24 @@ By default the logging options are False.
 ===============================================================================
 How to diagnose problems
 
-First try running the rtl application to be sure that it works properly:
+First try running the rtl_433 application to be sure that it works properly:
 
-sudo rtl
+sudo rtl_433
 
 Be sure that you are capturing data from the sensors you care about.  To do
-this, you might want to experiment with some of the options to rtl.  For
+this, you might want to experiment with some of the options to rtl_433.  For
 example, this will eliminate extraneous output (-q), and use UTC for timestamps
 (-M utc):
 
-sudo rtl -M utc -F json
+sudo rtl_433 -M utc -F json
 
 If you know exactly which sensors you want to monitor, try the -R option to
 reduce the clutter.  For example,
 
-sudo rtl -M utc -F json -R 9 -R 31
+sudo rtl_433 -M utc -F json -R 9 -R 31
 
 Once that is working, run the driver directly to be sure that it is collecting
-data from the rtl application.
+data from the rtl_433 application.
 
 cd /home/weewx
 sudo PYTHONPATH=bin python bin/user/sdr.py
@@ -192,7 +192,7 @@ consisting of the observation, sensor id, and rf packet type, separated by
 periods.  You need these in the sensor map to tell weewx the association
 between sensors and database fields.
 
-In the weewx configuration file, enter the rtl options (if necessary) and
+In the weewx configuration file, enter the rtl_433 options (if necessary) and
 the sensor map.  Then run weewx directly in one shell while you monitor the
 weewx log in a separate shell:
 
@@ -218,11 +218,11 @@ sudo /etc/init.d/weewx start
 ===============================================================================
 Environment
 
-The driver invokes the rtl executable, so the path to that executable and
+The driver invokes the rtl_433 executable, so the path to that executable and
 any shared library linkage must be defined in the environment in which weewx
 runs.
 
-For example, with rtl-433 and rtl-sdr installed like this:
+For example, with rtl_433 and rtl-sdr installed like this:
 
 /opt/rtl-433/
 /opt/rtl-sdr/
@@ -232,7 +232,7 @@ one would set the path like this:
 export PATH=/opt/rtl-433/bin:${PATH}
 export LD_LIBRARY_PATH=/opt/rtl-sdr/lib
 
-Typically this would be done in the rc script that starts weewx.  If rtl-433
+Typically this would be done in the rc script that starts weewx.  If rtl_433
 and rtl-sdr are install to /usr/local or /usr, then there should be no need
 to set the PATH or LD_LIBRARY_PATH before invoking weewx.
 
@@ -251,7 +251,7 @@ the LD_LIBRARY_PATH and PATH in the weewx-sdr driver itself.  For example:
 ===============================================================================
 libusb
 
-I have had problems running rtl-sdr on systems with libusb 1.0.11.  The rtl
+I have had problems running rtl-sdr on systems with libusb 1.0.11.  The rtl_433
 command craps out with a segmentation fault, and the rtl_test command sometimes
 leaves the dongle in a weird state that can be cleared only by unplugging then
 replugging the dongle.
@@ -262,10 +262,10 @@ Using a more recent version of libusb (e.g., 1.0.20) seems to clear things up.
 ===============================================================================
 Support for new sensors
 
-To add support for new sensors, capture the output from rtl.  To capture
+To add support for new sensors, capture the output from rtl_433.  To capture
 output, run the driver directly and hide known packets:
 
-PYTHONPATH=bin python bin/user/sdr.py --cmd "rtl -M utc -F json" --hide parsed,out,empty
+PYTHONPATH=bin python bin/user/sdr.py --cmd "rtl_433 -M utc -F json" --hide parsed,out,empty
 
 This should emit a line for each unparsed type.  For example:
 
