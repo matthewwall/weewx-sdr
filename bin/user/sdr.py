@@ -436,31 +436,43 @@ class Acurite5n1PacketV2(Packet):
     IDENTIFIER = "Acurite-5n1"
     # sample json output from rtl_433
     # {"time" : "2019-07-29 07:46:22.482883", "protocol" : 40, "model" : "Acurite-5n1", "id" : 1234, "channel" : "B", "sequence_num" : 1, "battery_ok" : 1, "message_type" : 56, "wind_avg_km_h" : 0.000, "temperature_C" : 20.500, "humidity" : 93, "mod" : "ASK", "freq" : 433.934, "rssi" : -1.719, "snr" : 24.404, "noise" : -26.124}
+    # {"time" : "2020-02-05 02:20:54", "model" : "Acurite-5n1", "subtype" : 56, "id" : 956, "channel" : "A", "sequence_num" : 2, "battery_ok" : 1, "wind_avg_km_h" : 3.483, "temperature_F" : 31.300, "humidity" : 66}
 
     @staticmethod
     def parse_json(obj):
         pkt = dict()
         pkt['usUnits'] = weewx.US
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['protocol'] = Packet.get_int(obj, 'protocol')  # 56 apparently
+        pkt['protocol'] = Packet.get_int(obj, 'protocol')
         pkt['model'] = obj.get('model')
         pkt['hardware_id'] = "%04x" % obj.get('id', 0)
         pkt['channel'] = obj.get('channel')
         pkt['sequence_num'] = Packet.get_int(obj, 'sequence_num')
         pkt['battery'] = Packet.get_int(obj, 'battery_ok')
-        pkt['msg_type'] = Packet.get_int(obj, 'message_type')  # 56 apparently
-        if 'wind_avg_km_h' in obj:
-            pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
-        if 'wind_dir_deg' in obj:
-            pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
-        if 'rain_mm' in obj:
-            pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')/25.4
+        # connection diagnostics depend on the version of rtl_433
         pkt['mod'] = obj.get('mod')  # apparently is ASK
         pkt['freq'] = Packet.get_float(obj, 'freq')
         pkt['rssi'] = Packet.get_float(obj, 'rssi')
         pkt['snr'] = Packet.get_float(obj, 'snr')
         pkt['noise'] = Packet.get_float(obj, 'noise')
-        if 'temperature_C' in obj:
+        # the label for message type has changed in rtl_433
+        if 'subtype' in obj:
+            pkt['msg_type'] = Packet.get_int(obj, 'subtype')
+        elif 'message_type' in obj:
+            pkt['msg_type'] = Packet.get_int(obj, 'message_type')
+        # each message type contains different information.  units vary
+        # depending on the rtl_433 configuration, so be ready for anything.
+        #   49 has wind_speed, wind_dir, and rain
+        #   56 has wind_speed, temperature, humidity
+        if 'wind_avg_km_h' in obj:
+            pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
+        if 'wind_dir_deg' in obj:
+            pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+        if 'rain_mm' in obj:
+            pkt['rain_total'] = Packet.get_float(obj, 'rain_mm') / 25.4
+        if 'temperature_F' in obj:
+            pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
+        elif 'temperature_C' in obj:
             pkt['temperature'] = Packet.get_float(obj, 'temperature_C') * 1.8 + 32
         if 'humidity' in obj:
             pkt['humidity'] = Packet.get_float(obj, 'humidity')
