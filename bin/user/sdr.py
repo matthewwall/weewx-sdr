@@ -904,7 +904,8 @@ class AmbientF007THPacket(Packet):
     # Temperature: 61.8
     # Humidity: 13 %
 
-    IDENTIFIER = "Ambient Weather F007TH Thermo-Hygrometer"
+#    IDENTIFIER = "Ambient Weather F007TH Thermo-Hygrometer"
+    IDENTIFIER = "Ambientweather-F007TH"
     PARSEINFO = {
         'House Code': ['house_code', None, lambda x: int(x)],
         'Channel': ['channel', None, lambda x: int(x)],
@@ -926,6 +927,8 @@ class AmbientF007THPacket(Packet):
         return pkt
 
     # {"time" : "2017-01-21 13:01:30", "model" : "Ambient Weather F007TH Thermo-Hygrometer", "device" : 80, "channel" : 1, "temperature_F" : 61.800, "humidity" : 10}
+    # as of 06feb2020:
+    # {"time" : "2020-02-05 19:33:11", "model" : "Ambientweather-F007TH", "id" : 201, "channel" : 5, "battery_ok" : 1, "temperature_F" : 39.400, "humidity" : 60, "mic" : "CRC"}
 
     @staticmethod
     def parse_json(obj):
