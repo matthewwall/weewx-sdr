@@ -1004,6 +1004,28 @@ class CalibeurRF104Packet(Packet):
         return pkt
 
 
+class EcoWittWH40Packet(Packet):
+    # This is for a WH40 rain sensor
+
+    # {"time" : "2020-02-05 12:37:05", "model" : "EcoWitt-WH40", "id" : 52591, "rain_mm" : 0.800, "data" : "0002ed0000", "mic" : "CRC"}
+
+    IDENTIFIER = "EcoWitt-WH40"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRICWX
+        pkt['station_id'] = obj.get('id')
+        pkt['rain'] = Packet.get_float(obj, 'rain_mm')
+        return FOWH32BPacket.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', 0)
+        return Packet.add_identifiers(pkt, station_id, EcoWittWH40Packet.__name__)
+
+
 class FOWH1080Packet(Packet):
     # 2016-09-02 22:26:05 :Fine Offset WH1080 weather station
     # Msg type: 0
@@ -2466,6 +2488,7 @@ class PacketFactory(object):
         AmbientWH31EPacket,
         Bresser5in1Packet,
         CalibeurRF104Packet,
+        EcoWittWH40Packet,
         FOWHx080Packet,
         FOWH1080Packet,
         FOWH3080Packet,

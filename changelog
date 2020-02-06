@@ -1,6 +1,7 @@
 0.77 06feb2020
 * revert the rtl_433 to rtl changes
 * update identifier for Ambient Weather F007TH
+* added support for fine offset rain gauge (rtl_433 calls it EcoWitt-WH40)
 
 0.76 04feb2020
 * use rtl instead of rtl_433 to match rtl_433 project change
