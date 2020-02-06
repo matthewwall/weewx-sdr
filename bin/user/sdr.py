@@ -1030,7 +1030,7 @@ class EcoWittWH40Packet(Packet):
         pkt['usUnits'] = weewx.METRICWX
         pkt['station_id'] = obj.get('id')
         pkt['rain'] = Packet.get_float(obj, 'rain_mm')
-        return FOWH32BPacket.insert_ids(pkt)
+        return EcoWittWH40Packet.insert_ids(pkt)
 
     @staticmethod
     def insert_ids(pkt):
