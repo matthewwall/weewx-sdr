@@ -1029,7 +1029,7 @@ class EcoWittWH40Packet(Packet):
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['usUnits'] = weewx.METRICWX
         pkt['station_id'] = obj.get('id')
-        pkt['rain'] = Packet.get_float(obj, 'rain_mm')
+        pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
         return EcoWittWH40Packet.insert_ids(pkt)
 
     @staticmethod
