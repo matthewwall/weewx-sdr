@@ -37,6 +37,8 @@ b) install rtl-sdr
 c) install rtl_433
     https://github.com/merbanan/rtl_433
 
+Note: As of Feburary 2020, the bits of rtl_433 code, which recognize packets from the Atlas, are contained in a feature branch named feat-atlas. Checkout this branch before building rtl_433.
+
 1) download the driver
 
 wget -O weewx-sdr.zip https://github.com/matthewwall/weewx-sdr/archive/master.zip
