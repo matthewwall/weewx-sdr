@@ -1736,6 +1736,26 @@ class LaCrosseTXPacket(Packet):
         return pkt
 
 
+class LaCrosseTX18Packet(Packet):
+
+    # {"time" : "2020-04-21 05:21:19", "model" : "LaCrosse-WS3600", "id" : 184, "temperature_C" : 9.400}
+    # {"time" : "2020-04-21 05:21:19", "model" : "LaCrosse-WS3600", "id" : 184, "humidity" : 52}
+    # {"time" : "2020-04-21 05:21:20", "model" : "LaCrosse-WS3600", "id" : 184, "rain_mm" : 0.000}
+
+    IDENTIFIER = "LaCrosse-WS3600"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        sensor_id = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt = Packet.add_identifiers(pkt, sensor_id, LaCrosseTX18Packet.__name__)
+        return pkt
+
+
 class RubicsonTempPacket(Packet):
     # 2017-01-15 14:49:03 : Rubicson Temperature Sensor
     # House Code: 14
@@ -2518,6 +2538,7 @@ class PacketFactory(object):
         LaCrosseWSPacket,
         LaCrosseTX141THBv2Packet,
         LaCrosseTXPacket,
+        LaCrosseTX18Packet,
         NexusTemperaturePacket,
         OSPCR800Packet,
         OSBTHR968Packet,
