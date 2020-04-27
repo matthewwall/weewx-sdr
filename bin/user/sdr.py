@@ -1438,6 +1438,54 @@ class FOWH65BPacket(Packet):
         station_id = pkt.pop('station_id', '0000')
         return Packet.add_identifiers(pkt, station_id, FOWH65BPacket.__name__)
 
+class FOWH65BAltPacket(Packet):
+    # This is for a WH65B sensor array that identifies itself as Fineoffset-WH65B. Several 
+    # mappings are also different from the other WH65B. This configuration was tested 
+    # on an Ambient Weather WS-2902A kit.
+
+    # time : 2020-04-26 23:21:42 
+    # model : Fineoffset-WH65B
+    # id : 16
+    # temperature_C : 15.400
+    # humidity : 51
+    # wind_dir_deg : 323
+    # wind_avg_m_s : 1.020
+    # wind_max_m_s : 2.040
+    # rain_mm : 76.453
+    # uv : 701
+    # uvi : 2
+    # light_lux : 14616.000
+    # battery_ok : OK
+    # mic : CRC
+
+    # {"time" : "2020-04-26 19:41:10", "model" : "Fineoffset-WH65B", "id" : 16, "battery_ok" : 1, "temperature_C" : 14.800, "humidity" : 50, "wind_dir_deg" : 336, "wind_avg_m_s" : 1.658, "wind_max_m_s" : 3.060, "rain_mm" : 76.454, "uv" : 1982, "uvi" : 4, "light_lux" : 69130.000, "mic" : "CRC"}
+
+    IDENTIFIER = "Fineoffset-WH65B" 
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRICWX
+        pkt['station_id'] = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+        pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_m_s')
+        pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_m_s')
+        pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')            
+        pkt['uv'] = Packet.get_float(obj, 'uv')                         # superfluous?
+        pkt['uv_index'] = Packet.get_float(obj, 'uvi')                  
+        pkt['light'] = Packet.get_float(obj, 'light_lux')               # superfluous?       
+        pkt['battery'] = 0 if obj.get('battery_ok') == 'OK' else 1
+        return FOWH65BAltPacket.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        return Packet.add_identifiers(pkt, station_id, FOWH65BAltPacket.__name__)
+
+
 class FOWH0290Packet(Packet):
     # This is for a WH0290 Air Quality Monitor (Ambient Weather PM25)
 
@@ -2510,6 +2558,7 @@ class PacketFactory(object):
         FOWH32BPacket,
         FOWH5Packet,
         FOWH65BPacket,
+        FOWH65BAltPacket,
         FOWH0290Packet,
         HidekiTS04Packet,
         HidekiWindPacket,
