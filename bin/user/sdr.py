@@ -2348,6 +2348,10 @@ class Bresser5in1Packet(Packet):
     # "data" : "e7897fd71fd6ef9bff78f7feff18768028e02910640087080100",
     # "mic" : "CHECKSUM"}#012
 
+    # {"time" : "2020-04-20 20:58:46", "model" : "Bresser-5in1", "id" : 182,
+    # "battery_ok" : 1, "temperature_C" : 17.000, "humidity" : 92, "wind_max_m_s" : 4.000,
+    # "wind_avg_m_s" : 2.400, "wind_dir_deg" : 67.500, "rain_mm" : 0.800, "mic" : "CHECKSUM"}
+
     IDENTIFIER = "Bresser-5in1"
 
     @staticmethod
@@ -2361,12 +2365,16 @@ class Bresser5in1Packet(Packet):
         pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
         pkt['uv'] = Packet.get_float(obj, 'uv')
         pkt['uv_index'] = Packet.get_float(obj, 'uvi')
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
         # deal with different labels from rtl_433
         for dst, src in [('wind_speed', 'wind_speed_ms'),
-                         ('gust_speed', 'gust_speed_ms'),
-                         ('rain_total', 'rainfall_mm'),
                          ('wind_speed', 'wind_speed'),
-                         ('gust_speed', 'gust_speed'),
+                         ('wind_speed', 'wind_avg_m_s'),
+                         ('wind_gust', 'gust_speed_ms'),
+                         ('wind_gust', 'wind_gust'),
+                         ('wind_gust', 'gust_speed'),
+                         ('wind_gust', 'wind_max_m_s'),
+                         ('rain_total', 'rainfall_mm'),
                          ('rain_total', 'rain_mm')]:
             if src in obj:
                 pkt[dst] = Packet.get_float(obj, src)
