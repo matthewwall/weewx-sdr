@@ -1,7 +1,9 @@
+0.02 dbd57ef
+* Fork renamed to "weewx-sdr-jds" to avoid confusion.
 
 Fork: https://github.com/jdormansteele/weewx-sdr
 0.01 606d799
-*  Section added for alternative WH65B identifying itself as Fineoffset-WH65B
+* Section added for alternative WH65B identifying itself as Fineoffset-WH65B
 
 0.77 06feb2020
 * revert the rtl_433 to rtl changes
