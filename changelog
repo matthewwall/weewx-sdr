@@ -1,3 +1,6 @@
+0.78 06jun2020
+* updated packet formats for Oregon Scientific WMR100N. -tk
+
 0.77 06feb2020
 * revert the rtl_433 to rtl changes
 * update identifier for Ambient Weather F007TH
