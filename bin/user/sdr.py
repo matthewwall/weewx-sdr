@@ -1056,7 +1056,7 @@ class FOWH1080Packet(Packet):
     # this assumes rain total is in mm
     # this assumes wind speed is kph
 
-    IDENTIFIER = "Fine Offset WH1080 weather station"
+    IDENTIFIER = "Fineoffset-WHx080"
     PARSEINFO = {
 #        'Msg type': ['msg_type', None, None],
         'StationID': ['station_id', None, None],
@@ -1088,10 +1088,10 @@ class FOWH1080Packet(Packet):
         pkt['msg_type'] = Packet.get_int(obj, 'msg_type')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        pkt['wind_dir'] = Packet.get_float(obj, 'direction_deg')
-        pkt['wind_speed'] = Packet.get_float(obj, 'speed')
-        pkt['wind_gust'] = Packet.get_float(obj, 'gust')
-        rain_total = Packet.get_float(obj, 'rain')
+        pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+        pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
+        pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_km_h')
+        rain_total = Packet.get_float(obj, 'rain_mm')
         if rain_total is not None:
             pkt['rain_total'] = rain_total / 10.0 # convert to cm
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
