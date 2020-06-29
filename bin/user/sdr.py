@@ -401,6 +401,16 @@ class AcuriteAtlasPacket(Packet):
             pkt['uv'] = Packet.get_int(obj, 'uv')
         if 'lux' in obj:
             pkt['lux'] = Packet.get_int(obj, 'lux')
+        if 'strike_count' in obj:
+            pkt['strike_count'] = Packet.get_int(obj, 'strike_count')
+        if 'strike_distance' in obj:
+            pkt['strike_distance'] = Packet.get_int(obj, 'strike_distance')
+        if 'snr' in obj:
+            pkt['snr'] = obj.get('snr')
+        if 'rssi' in obj:
+            pkt['rssi'] = obj.get('rssi')
+        if 'noise' in obj:
+            pkt['noise'] = obj.get('noise')
         pkt['battery'] = 1 if Packet.get_int(obj, 'battery_ok') == 0 else 0
         return Acurite.insert_ids(pkt, AcuriteAtlasPacket.__name__)
 
