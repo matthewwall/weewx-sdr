@@ -423,7 +423,7 @@ class AcuriteTowerPacketV2(Packet):
         pkt['channel'] = obj.get('channel')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        pkt['battery'] = Packet.get_int(obj, 'battery_ok') # 1 means battery OK, 0 means not low apparently
+        pkt['battery'] = 1 if Packet.get_int(obj, 'battery_ok') == 0 else 0   # 1 means battery OK, 0 means not low apparently
         pkt['mod'] = obj.get('mod') # apparently mod = ASK
         pkt['freq'] = Packet.get_float(obj, 'freq')
         pkt['rssi'] = Packet.get_float(obj, 'rssi')
