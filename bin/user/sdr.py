@@ -77,6 +77,7 @@ import re
 import subprocess
 import threading
 import time
+import copy
 
 try:
     import cjson as json
@@ -2682,7 +2683,7 @@ class SDRDriver(weewx.drivers.AbstractDevice):
                         if pkt:
                             if pkt != self._last_pkt:
                                 logdbg("packet=%s" % pkt)
-                                self._last_pkt = pkt
+                                self._last_pkt = copy.deepcopy(pkt)
                                 self._calculate_deltas(pkt)
                                 yield pkt
                             else:
