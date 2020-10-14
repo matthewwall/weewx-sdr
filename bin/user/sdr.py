@@ -767,9 +767,11 @@ class AcuriteLightningPacket(Packet):
 
     # April 21, 2018 - JSON support
     # {"time" : "2018-04-21 19:12:53", "model" : "Acurite Lightning 6045M", "id" : 151, "channel" : "C", "temperature_F" : 66.900, "humidity" : 33, "strike_count" : 47, "storm_dist" : 12, "active" : 1, "rfi" : 0, "ussb1" : 1, "battery" : "LOW", "exception" : 0, "raw_msg" : "0097af2150f9afcc2b"}
+    # {"time" : "2020-10-13 22:49:34", "model" : "Acurite-6045M", "id" : 15431, "channel" : "A", "battery_ok" : 0, "temperature_F" : 91.800, "humidity" : 21, "strike_count" : 171, "storm_dist" : 12, "active" : 1, "rfi" : 0, "exception" : 0, "raw_msg" : "fc47af95d2de55cc58"}
 
 #    IDENTIFIER = "Acurite lightning"
-    IDENTIFIER = "Acurite Lightning 6045M"
+#    IDENTIFIER = "Acurite Lightning 6045M"
+    IDENTIFIER = "Acurite-6045M"
     PATTERN = re.compile('0x([0-9a-fA-F]+) Ch (.) Msg Type 0x([0-9a-fA-F]+): ([\d.-]+) ([CF]) ([\d.]+) % RH Strikes ([\d]+) Distance ([\d.]+)')
 
     @staticmethod
@@ -780,7 +782,8 @@ class AcuriteLightningPacket(Packet):
         pkt['channel'] = obj.get('channel')
         pkt['hardware_id'] = "%04x" % obj.get('id', 0)
         pkt['temperature'] = obj.get('temperature_F')
-        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        #pkt['battery'] = 1 if obj.get('battery_ok') == '0' else 0
+        pkt['battery'] = Packet.get_int(obj, 'battery_ok')
         pkt['humidity'] = obj.get('humidity')
         pkt['active'] = obj.get('active')
         pkt['rfi'] = obj.get('rfi')
@@ -1166,7 +1169,8 @@ class FOWHx080Packet(Packet):
         rain_total = Packet.get_float(obj, 'rain_mm')
         if rain_total is not None:
             pkt['rain_total'] = rain_total / 10.0 # convert to cm
-        pkt['battery'] = 0 if obj.get('battery_ok') == '1' else 1
+        #pkt['battery'] = 1 if obj.get('battery_ok') == 0 else 0
+        pkt['battery'] = Packet.get_int(obj, 'battery_ok')
         pkt['signal_type'] = 1 if obj.get('signal_type') == 'WWVB / MSF' else 0
         pkt['hours'] = Packet.get_int(obj, 'hours')
         pkt['minutes'] = Packet.get_int(obj, 'minutes')
@@ -1264,7 +1268,8 @@ class FOWH25Packet(Packet):
 
     # {"time" : "2017-03-25 05:33:57", "model" : "Fine Offset Electronics, WH25", "id" : 239, "temperature_C" : 30.200, "humidity" : 68, "pressure" : 1008.000}
     # {"time" : "2018-10-10 13:37:11", "model" : "Fine Offset Electronics, WH25", "id" : 21, "temperature_C" : 21.600, "humidity" : 66, "pressure_hPa" : 972.800, "battery" : "OK", "mic" : "CHECKSUM"}
-    IDENTIFIER = "Fine Offset Electronics, WH25"
+    # {"time" : "2020-10-13 23:29:35", "model" : "Fineoffset-WH25", "id" : 170, "battery_ok" : 0, "temperature_C" : 26.200, "humidity" : 36, "pressure_hPa" : 1009.900, "mic" : "CRC"}
+    IDENTIFIER = "Fineoffset-WH25"
     PARSEINFO = {
         'ID': ['station_id', None, lambda x: int(x)],
         'Temperature':
@@ -1290,7 +1295,8 @@ class FOWH25Packet(Packet):
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         pkt['pressure'] = Packet.get_float(obj, 'pressure_hPa')
-        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        #pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
+        pkt['battery'] = Packet.get_int(obj, 'battery_ok')
         return FOWH25Packet.insert_ids(pkt)
 
     @staticmethod
