@@ -2,7 +2,10 @@
 * update Fine Offset Electronics WH1080/WH3080 Weather Station to 
    Fineoffset-WHx080 for latest version of rtl_433   
 * update identifier for Acurite-6045M
-* update identifier for Fineoffset-WH25
+* update identifier for Fineoffset-WHx080
+* update identifier for HIDEKI-TS04
+* update identifier for Acurite-986
+* also some battery updates for these
 
 0.77 06feb2020
 * revert the rtl_433 to rtl changes

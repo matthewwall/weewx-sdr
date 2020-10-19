@@ -708,6 +708,7 @@ class Acurite986Packet(Packet):
     # 2016-10-31 15:24:29 Acurite 986 sensor 0x2c87 - 2F: 16.7 C 62 F
     # 2016-10-31 15:23:54 Acurite 986 sensor 0x85ed - 1R: 16.7 C 62 F
     # {"time" : "2018-04-22 18:01:03", "model" : "Acurite 986 Sensor", "id" : 43248, "channel" : "1R", "temperature_F" : 69, "battery" : "OK", "status" : 0}
+    # {"time" : "2020-10-19 07:00:32", "model" : "Acurite-986", "id" : 9534, "channel" : "2F", "battery_ok" : 1, "temperature_F" : -10.000, "status" : 0, "mic" : "CRC"}
 
     # The 986 hardware_id changes, so using the 2F and 1R as the hardware
     # identifer.  As long as you only have one set of sendors and your
@@ -719,7 +720,7 @@ class Acurite986Packet(Packet):
 
     # IDENTIFIER = "Acurite 986 sensor"
     # IDENTIFIER = "Acurite 986 Sensor"
-    IDENTIFIER = "Acurite 986"
+    IDENTIFIER = "Acurite-986"
     PATTERN = re.compile('0x([0-9a-fA-F]+) - (1R|2F): ([\d.-]+) C ([\d.-]+) F')
 
     @staticmethod
@@ -744,7 +745,7 @@ class Acurite986Packet(Packet):
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['hardware_id'] = obj.get('id', 0)
         pkt['channel'] = obj.get('channel')
-        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['battery'] = Packet.get_int(obj, 'battery_ok')
         if 'temperature_F' in obj:
             pkt['usUnits'] = weewx.US
             pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
