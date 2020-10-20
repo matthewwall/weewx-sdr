@@ -1808,7 +1808,8 @@ class OSPCR800Packet(Packet):
     # Rain Rate: 0.0 in/hr
     # Total Rain: 41.0 in
 
-    IDENTIFIER = "PCR800"
+    #IDENTIFIER = "PCR800"
+    IDENTIFIER = "Oregon-PCR800"
     PARSEINFO = {
         'House Code': ['house_code', None, lambda x: int(x)],
         'Channel': ['channel', None, lambda x: int(x)],
@@ -1826,7 +1827,8 @@ class OSPCR800Packet(Packet):
         pkt.update(Packet.parse_lines(lines, OSPCR800Packet.PARSEINFO))
         return OS.insert_ids(pkt, OSPCR800Packet.__name__)
 
-    # {"time" : "2018-08-04 15:29:27", "brand" : "OS", "model" : "PCR800", "id" : 236, "channel" : 0, "battery" : "OK", "rain_rate" : 0.000, "rain_total" : 109.594}
+    # {"time" : "2018-08-04 15:29:27", "brand" : "OS", "model" : "PCR800",        "id" : 236, "channel" : 0, "battery" : "OK", "rain_rate" : 0.000, "rain_total" : 109.594}
+    # {"time" : "2020-08-19 19:31:13", "brand" : "OS", "model" : "Oregon-PCR800", "id" : 80, "channel" : 0, "battery_ok" : 1, "rain_rate_in_h" : 0.000, "rain_in" : 27.741}
     @staticmethod
     def parse_json(obj):
         pkt = dict()
@@ -1834,9 +1836,10 @@ class OSPCR800Packet(Packet):
         pkt['usUnits'] = weewx.US
         pkt['house_code'] = obj.get('id')
         pkt['channel'] = obj.get('channel')
-        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
-        pkt['rain_rate'] = Packet.get_float(obj, 'rain_rate')
-        pkt['rain_total'] = Packet.get_float(obj, 'rain_total')
+        #pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['battery'] = Packet.get_int(obj, 'battery_ok')
+        pkt['rain_rate'] = Packet.get_float(obj, 'rain_rate_in_h')
+        pkt['rain_total'] = Packet.get_float(obj, 'rain_in')
         return OS.insert_ids(pkt, OSPCR800Packet.__name__)
 
 
