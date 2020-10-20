@@ -783,12 +783,10 @@ class AcuriteLightningPacket(Packet):
         pkt['channel'] = obj.get('channel')
         pkt['hardware_id'] = "%04x" % obj.get('id', 0)
         pkt['temperature'] = obj.get('temperature_F')
-        #pkt['battery'] = 1 if obj.get('battery_ok') == '0' else 0
         pkt['battery'] = Packet.get_int(obj, 'battery_ok')
         pkt['humidity'] = obj.get('humidity')
         pkt['active'] = obj.get('active')
         pkt['rfi'] = obj.get('rfi')
-        pkt['ussb1'] = obj.get('ussb1')
         pkt['exception'] = obj.get('exception')
         pkt['strikes_total'] = obj.get('strike_count')
         pkt['distance'] = obj.get('storm_dist')

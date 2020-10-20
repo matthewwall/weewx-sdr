@@ -2,6 +2,7 @@
 0.77.2 19oct2020
 * update identifier for Acurite-986
 * update Oregon-PCR800 to the new style SDR. thanks to luchmhor #94
+* remove ussb1 from Acurite-6045M. thanks to rct/n7qnm #81
 
 0.77.1 13oct2020
 * update identifier for Acurite-6045M to the new style SDR.
