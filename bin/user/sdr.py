@@ -125,7 +125,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.77.1'
+DRIVER_VERSION = '0.77.2'
 
 # The default command requests json output from every decoder
 # Use the -R option to indicate specific decoders
@@ -437,6 +437,8 @@ class Acurite5n1PacketV2(Packet):
     # sample json output from rtl_433
     # {"time" : "2019-07-29 07:46:22.482883", "protocol" : 40, "model" : "Acurite-5n1", "id" : 1234, "channel" : "B", "sequence_num" : 1, "battery_ok" : 1, "message_type" : 56, "wind_avg_km_h" : 0.000, "temperature_C" : 20.500, "humidity" : 93, "mod" : "ASK", "freq" : 433.934, "rssi" : -1.719, "snr" : 24.404, "noise" : -26.124}
     # {"time" : "2020-02-05 02:20:54", "model" : "Acurite-5n1", "subtype" : 56, "id" : 956, "channel" : "A", "sequence_num" : 2, "battery_ok" : 1, "wind_avg_km_h" : 3.483, "temperature_F" : 31.300, "humidity" : 66}
+    # {"time" : "2020-10-26 22:09:12", "model" : "Acurite-5n1", "message_type" : 49, "id" : 2662, "channel" : "A", "sequence_num" : 0, "battery_ok" : 1, "wind_avg_km_h" : 15.900, "wind_dir_deg" : 337.500, "rain_in" : 7.290, "mic" : "CHECKSUM"}
+    # {"time" : "2020-10-26 22:08:54", "model" : "Acurite-5n1", "message_type" : 56, "id" : 2662, "channel" : "A", "sequence_num" : 2, "battery_ok" : 1, "wind_avg_km_h" : 9.278, "temperature_F" : 76.100, "humidity" : 15, "mic" : "CHECKSUM"}
 
     @staticmethod
     def parse_json(obj):
@@ -468,6 +470,8 @@ class Acurite5n1PacketV2(Packet):
             pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
         if 'wind_dir_deg' in obj:
             pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+        if 'rain_in' in obj:
+            pkt['rain_total'] = Packet.get_float(obj, 'rain_in')
         if 'rain_mm' in obj:
             pkt['rain_total'] = Packet.get_float(obj, 'rain_mm') / 25.4
         if 'temperature_F' in obj:
@@ -2476,6 +2480,27 @@ class TSFT002Packet(Packet):
         return pkt
 
 
+class WS2032Packet(Packet):
+    #{"time" : "2020-10-19 22:41:24", "model" : "WS2032", "id" : 11768, "temperature_C" : 3.800, "humidity" : 48, "wind_dir_deg" : 315.000, "wind_avg_km_h" : 7.740, "wind_max_km_h" : 15.480, "maybe_flags" : 0, "maybe_rain" : 256, "mic" : "CRC"}
+    
+    IDENTIFIER = "WS2032"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        sensor_id = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_km_h')
+        pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
+        pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+        pkt['total_rain'] = Packet.get_float(obj, 'maybe_rain')
+        pkt = Packet.add_identifiers(pkt, sensor_id, WS2032Packet.__name__)
+        return pkt
+
+
 class WT0124Packet(Packet):
     # 2019-04-23: WT0124 Pool Thermometer
     # {"time" : "2019-04-23 12:28:52", "model" : "WT0124 Pool Thermometer", "rid" : 122, "channel" : 1, "temperature_C" : 22.800, "mic" : "CHECKSUM", "data" : 172}
@@ -2553,6 +2578,7 @@ class PacketFactory(object):
         TFATwinPlus303049Packet,
         TSFT002Packet,
         WT0124Packet,
+        WS2032Packet,
         ]
 
     @staticmethod

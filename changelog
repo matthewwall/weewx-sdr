@@ -3,7 +3,8 @@
 * update identifier for Acurite-986
 * update Oregon-PCR800 to the new style SDR. thanks to luchmhor #94
 * remove ussb1 from Acurite-6045M. thanks to rct/n7qnm #81
-
+* add support for WS2032. rain may not be correct. thanks to raadi...@gmail.com 
+  
 0.77.1 13oct2020
 * update identifier for Acurite-6045M to the new style SDR.
 * update identifier for Fineoffset-WHx080 to the new style SDR. thanks to W11T #97
