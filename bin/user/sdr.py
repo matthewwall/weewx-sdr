@@ -1717,18 +1717,18 @@ class LaCrosseWSPacket(Packet):
 class LaCrosseTX141THBv2Packet(Packet):
 
     # {"time" : "2017-01-16 15:24:43", "temperature" : 54.140, "humidity" : 34, "id" : 221, "model" : "LaCrosse TX141TH-Bv2 sensor", "battery" : "OK", "test" : "Yes"}
-
-    IDENTIFIER = "LaCrosse TX141TH-Bv2 sensor"
+    # {"time" : "2020-10-28 00:22:25", "model" : "LaCrosse-TX141THBv2", "id" : 50, "channel" : 0, "battery_ok" : 1, "temperature_C" : -0.600, "humidity" : 60, "test" : "No"}
+    IDENTIFIER = "LaCrosse-TX141THBv2"
 
     @staticmethod
     def parse_json(obj):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['usUnits'] = weewx.US
+        pkt['usUnits'] = weewx.METRICWX
         sensor_id = obj.get('id')
-        pkt['temperature'] = Packet.get_float(obj, 'temperature')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['battery'] = Packet.get_int(obj, 'battery_ok') 
         pkt = Packet.add_identifiers(pkt, sensor_id, LaCrosseTX141THBv2Packet.__name__)
         return pkt
 

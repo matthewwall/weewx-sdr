@@ -1,4 +1,7 @@
 
+0.77.3 19oct2020
+* update LaCrosse-TX141THBv2 to the new style SDR. thanks to Mario St-Gelais
+
 0.77.2 19oct2020
 * update identifier for Acurite-986
 * update Oregon-PCR800 to the new style SDR. thanks to luchmhor #94
