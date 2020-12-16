@@ -1736,6 +1736,27 @@ class LaCrosseTXPacket(Packet):
         return pkt
 
 
+class LaCrosseBreezeProPacket(Packet):
+    IDENTIFIER = "LaCrosse-BreezePro"
+    # sample json output from rtl_433
+    # {"time" : "2020-12-14 22:22:21", "model" : "LaCrosse-BreezePro", "id" : 561556, "seq" : 2, "flags" : 0, "temperature_C" : 19.800, "humidity" : 50, "wind_avg_km_h" : 0.000, "wind_dir_deg" : 262, "mic" : "CRC"}\n']
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['usUnits'] = weewx.METRIC
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['model'] = obj.get('model')
+        pkt['hardware_id'] = "%d" % obj.get('id', 0)
+        pkt['sequence_num'] = Packet.get_int(obj, 'seq')
+        pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
+        pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        sensor_id = str(pkt.pop('hardware_id', '0000')).upper()
+        return Packet.add_identifiers(pkt, sensor_id, LaCrosseBreezeProPacket.__name__)
+
+
 class RubicsonTempPacket(Packet):
     # 2017-01-15 14:49:03 : Rubicson Temperature Sensor
     # House Code: 14
@@ -2518,6 +2539,7 @@ class PacketFactory(object):
         LaCrosseWSPacket,
         LaCrosseTX141THBv2Packet,
         LaCrosseTXPacket,
+        LaCrosseBreezeProPacket,
         NexusTemperaturePacket,
         OSPCR800Packet,
         OSBTHR968Packet,
