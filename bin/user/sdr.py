@@ -182,6 +182,7 @@ class ProcManager(object):
         self.stdout_reader = None
         self.stderr_queue = queue.Queue()
         self.stderr_reader = None
+        self.uses_shell = None
 
     def startup(self, cmd, path=None, use_shell=None, ld_library_path=None):
         self._cmd = cmd
@@ -193,11 +194,13 @@ class ProcManager(object):
             env['LD_LIBRARY_PATH'] = ld_library_path
         try:
             if use_shell:
+                self.uses_shell = True
                 self._process = subprocess.Popen(cmd,
                                              shell=True,
                                              env=env,
                                              stdout=subprocess.PIPE,
-                                             stderr=subprocess.PIPE)
+                                             stderr=subprocess.PIPE,
+                                             preexec_fn=os.setsid)
             else:
                 self._process = subprocess.Popen(cmd.split(' '),
                                              env=env,
@@ -217,6 +220,8 @@ class ProcManager(object):
         loginf('shutdown process %s' % self._cmd)
         logdbg('waiting for %s' % self.stdout_reader.getName())
         self.stdout_reader.stop_running()
+        if self.uses_shell:
+            os.killpg(os.getpgid(self._process.pid), signal.SIGTERM)
         self.stdout_reader.join(10.0)
         if self.stdout_reader.isAlive():
             loginf('timed out waiting for %s' % self.stdout_reader.getName())
