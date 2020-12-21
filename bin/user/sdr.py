@@ -199,8 +199,7 @@ class ProcManager(object):
                                              shell=True,
                                              env=env,
                                              stdout=subprocess.PIPE,
-                                             stderr=subprocess.PIPE,
-                                             preexec_fn=os.setsid)
+                                             stderr=subprocess.PIPE)
             else:
                 self._process = subprocess.Popen(cmd.split(' '),
                                              env=env,
@@ -221,7 +220,7 @@ class ProcManager(object):
         logdbg('waiting for %s' % self.stdout_reader.getName())
         self.stdout_reader.stop_running()
         if self.uses_shell:
-            os.killpg(os.getpgid(self._process.pid), signal.SIGTERM)
+            os.kill(self._process.pid, signal.SIGTERM)
         self.stdout_reader.join(10.0)
         if self.stdout_reader.isAlive():
             loginf('timed out waiting for %s' % self.stdout_reader.getName())
