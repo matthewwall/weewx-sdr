@@ -12,6 +12,9 @@
 * update identifier for Acurite-6045M to the new style SDR.
 * update identifier for Fineoffset-WHx080 to the new style SDR. thanks to W11T #97
 * update identifier for HIDEKI-TS04 to the new style SDR.
+0.78 06jun2020
+* updated packet formats for Oregon Scientific WMR100N. -tk
+* corrected wind speed for Acurite5n1PacketV2. -tk
 
 0.77 06feb2020
 * revert the rtl_433 to rtl changes
