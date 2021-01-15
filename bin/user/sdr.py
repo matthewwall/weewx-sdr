@@ -422,7 +422,7 @@ class AcuriteTowerPacketV2(Packet):
         pkt['channel'] = obj.get('channel')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        pkt['battery'] = Packet.get_int(obj, 'battery_ok') # 1 means battery OK, 0 means not low apparently
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
         pkt['mod'] = obj.get('mod') # apparently mod = ASK
         pkt['freq'] = Packet.get_float(obj, 'freq')
         pkt['rssi'] = Packet.get_float(obj, 'rssi')
@@ -450,7 +450,7 @@ class Acurite5n1PacketV2(Packet):
         pkt['hardware_id'] = "%04x" % obj.get('id', 0)
         pkt['channel'] = obj.get('channel')
         pkt['sequence_num'] = Packet.get_int(obj, 'sequence_num')
-        pkt['battery'] = Packet.get_int(obj, 'battery_ok')
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
         # connection diagnostics depend on the version of rtl_433
         pkt['mod'] = obj.get('mod')  # apparently is ASK
         pkt['freq'] = Packet.get_float(obj, 'freq')
@@ -710,7 +710,7 @@ class AcuriteRain899Packet(Packet):
         pkt['model'] = obj.get('model')
         pkt['hardware_id'] = "%04x" % obj.get('id', 0)
         pkt['channel'] = obj.get('channel')
-        pkt['battery'] = Packet.get_int(obj, 'battery_ok')
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
         if 'rain_mm' in obj:
             pkt['rain_total'] = Packet.get_float(obj, 'rain_mm') / 25.4
         return Acurite.insert_ids(pkt, AcuriteRain899Packet.__name__)
@@ -757,7 +757,7 @@ class Acurite986Packet(Packet):
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['hardware_id'] = obj.get('id', 0)
         pkt['channel'] = obj.get('channel')
-        pkt['battery'] = Packet.get_int(obj, 'battery_ok')
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
         if 'temperature_F' in obj:
             pkt['usUnits'] = weewx.US
             pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
@@ -795,7 +795,7 @@ class AcuriteLightningPacket(Packet):
         pkt['channel'] = obj.get('channel')
         pkt['hardware_id'] = "%04x" % obj.get('id', 0)
         pkt['temperature'] = obj.get('temperature_F')
-        pkt['battery'] = Packet.get_int(obj, 'battery_ok')
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
         pkt['humidity'] = obj.get('humidity')
         pkt['active'] = obj.get('active')
         pkt['rfi'] = obj.get('rfi')
@@ -1180,8 +1180,7 @@ class FOWHx080Packet(Packet):
         rain_total = Packet.get_float(obj, 'rain_mm')
         if rain_total is not None:
             pkt['rain_total'] = rain_total / 10.0 # convert to cm
-        #pkt['battery'] = 1 if obj.get('battery_ok') == 0 else 0
-        pkt['battery'] = Packet.get_int(obj, 'battery_ok')
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
         pkt['signal_type'] = 1 if obj.get('signal_type') == 'WWVB / MSF' else 0
         pkt['hours'] = Packet.get_int(obj, 'hours')
         pkt['minutes'] = Packet.get_int(obj, 'minutes')
@@ -1306,8 +1305,7 @@ class FOWH25Packet(Packet):
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         pkt['pressure'] = Packet.get_float(obj, 'pressure_hPa')
-        #pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
-        pkt['battery'] = Packet.get_int(obj, 'battery_ok')
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
         return FOWH25Packet.insert_ids(pkt)
 
     @staticmethod
@@ -1530,7 +1528,7 @@ class HidekiTS04Packet(Packet):
         pkt['channel'] = obj.get('channel')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        pkt['battery'] = Packet.get_int(obj, 'battery_ok')
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
         return Hideki.insert_ids(pkt, HidekiTS04Packet.__name__)
 
 
@@ -1736,7 +1734,7 @@ class LaCrosseTX141THBv2Packet(Packet):
         sensor_id = obj.get('id')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        pkt['battery'] = Packet.get_int(obj, 'battery_ok') 
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
         pkt = Packet.add_identifiers(pkt, sensor_id, LaCrosseTX141THBv2Packet.__name__)
         return pkt
 

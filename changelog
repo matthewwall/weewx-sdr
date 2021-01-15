@@ -8,6 +8,7 @@
 * update identifier for Acurite-6045M to the new style SDR.
 * update identifier for Fineoffset-WHx080 to the new style SDR. thanks to W11T #97
 * update identifier for HIDEKI-TS04 to the new style SDR.
+* update a few pars json battery_ok 
 
 0.78 06jun2020
 * updated packet formats for Oregon Scientific WMR100N. -tk
