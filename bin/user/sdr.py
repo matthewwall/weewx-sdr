@@ -125,11 +125,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-<<<<<<< HEAD
-DRIVER_VERSION = '0.77.2'
-=======
 DRIVER_VERSION = '0.78'
->>>>>>> upstream/master
 
 # The default command requests json output from every decoder
 # Use the -R option to indicate specific decoders
@@ -1841,12 +1837,9 @@ class OSPCR800Packet(Packet):
         pkt.update(Packet.parse_lines(lines, OSPCR800Packet.PARSEINFO))
         return OS.insert_ids(pkt, OSPCR800Packet.__name__)
 
-<<<<<<< HEAD
     # {"time" : "2018-08-04 15:29:27", "brand" : "OS", "model" : "PCR800",        "id" : 236, "channel" : 0, "battery" : "OK", "rain_rate" : 0.000, "rain_total" : 109.594}
     # {"time" : "2020-08-19 19:31:13", "brand" : "OS", "model" : "Oregon-PCR800", "id" : 80, "channel" : 0, "battery_ok" : 1, "rain_rate_in_h" : 0.000, "rain_in" : 27.741}
-=======
     # {"time" : "2020-06-06 20:15:17", "brand" : "OS", "model" : "Oregon-PCR800", "id" : 32, "channel" : 0, "battery_ok" : 1, "rain_rate_in_h" : 0.150, "rain_in" : 0.082}
->>>>>>> upstream/master
     @staticmethod
     def parse_json(obj):
         pkt = dict()
@@ -1854,12 +1847,7 @@ class OSPCR800Packet(Packet):
         pkt['usUnits'] = weewx.US
         pkt['house_code'] = obj.get('id')
         pkt['channel'] = obj.get('channel')
-<<<<<<< HEAD
-        #pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
-        pkt['battery'] = Packet.get_int(obj, 'battery_ok')
-=======
         pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
->>>>>>> upstream/master
         pkt['rain_rate'] = Packet.get_float(obj, 'rain_rate_in_h')
         pkt['rain_total'] = Packet.get_float(obj, 'rain_in')
         return OS.insert_ids(pkt, OSPCR800Packet.__name__)
