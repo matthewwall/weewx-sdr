@@ -2408,26 +2408,26 @@ class Bresser6in1Packet(Packet):
 
     @staticmethod
     def parse_json(obj):
-	      pkt = dict()
-    	  pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-    	  pkt['usUnits'] = weewx.METRICWX
-    	  pkt['station_id'] = obj.get('id')
-	      if 'temperature_C' in obj:
-    	     pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
-	      if 'humidity' in obj:
-	         pkt['humidity'] = Packet.get_float(obj, 'humidity')
+	pkt = dict()
+	pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+	pkt['usUnits'] = weewx.METRICWX
+	pkt['station_id'] = obj.get('id')
+	if 'temperature_C' in obj:
+		pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+	if 'humidity' in obj:
+		pkt['humidity'] = Packet.get_float(obj, 'humidity')
         if 'wind_dir_deg' in obj:
-    	     pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+		pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
         if 'wind_max_m_s' in obj:
-	         pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_m_s')
+		pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_m_s')
         if 'wind_avg_m_s' in obj:
-	         pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_m_s')
+		pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_m_s')
         if 'uv' in obj:
-	         pkt['uv'] = Packet.get_float(obj, 'uv')
+		pkt['uv'] = Packet.get_float(obj, 'uv')
         if 'uv_index' in obj:
-	         pkt['uv_index'] = Packet.get_float(obj, 'uvi')
+		pkt['uv_index'] = Packet.get_float(obj, 'uvi')
     	
-	      #deal with different labels from rtl_433
+	#deal with different labels from rtl_433
         for dst, src in [('wind_speed', 'wind_speed_ms'),
                      ('gust_speed', 'gust_speed_ms'),
                      ('rain_total', 'rainfall_mm'),
