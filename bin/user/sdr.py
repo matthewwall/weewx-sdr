@@ -689,7 +689,25 @@ class Acurite606TXPacket(Packet):
         pkt = Packet.add_identifiers(pkt, sensor_id, Acurite606TXPacket.__name__)
         return pkt
 
+     
+class Acurite606TXPacketV2(Packet):
+    # 2021-02-23: Acurite 606TX Temperature Sensor
+    # {"time" : "2021-02-23 16:24:07", "model" : "Acurite-606TX", "id" : 153, "battery_ok" : 1, "temperature_C" : 18.800, "mic" : "CHECKSUM"}
 
+    IDENTIFIER = "Acurite-606TX"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        sensor_id = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['battery'] = 0 if obj.get('battery_ok') == '1' else 1
+        pkt = Packet.add_identifiers(pkt, sensor_id, Acurite606TXPacket.__name__)
+        return pkt
+
+      
 class AcuriteRain899Packet(Packet):
     # Sample data:
     # {"time" : "2019-12-05 16:32:20", "model" : "Acurite-Rain899", "id" : 1699, "channel" : 0, "battery_ok" : 0, "rain_mm" : 6.096}
@@ -2495,6 +2513,7 @@ class PacketFactory(object):
         AcuriteTowerPacketV2,
         Acurite5n1PacketV2,
         Acurite606TXPacket,
+        Acurite606TXPacketV2,
         AcuriteRain899Packet,
         Acurite986Packet,
         AcuriteLightningPacket,
