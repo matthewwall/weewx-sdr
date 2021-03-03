@@ -125,7 +125,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.79'
+DRIVER_VERSION = '0.80'
 
 # The default command requests json output from every decoder
 # Use the -R option to indicate specific decoders
@@ -1654,6 +1654,25 @@ class HolmanWS5029Packet(Packet):
         return Packet.add_identifiers(pkt, station_id, HolmanWS5029Packet.__name__)
 
 
+class InFactoryTHPacket(Packet):
+    # {"time" : "2021-03-03 10:19:53", "model" : "inFactory-TH", "id" : 195, "channel" : 1, "battery_ok" : 1, "temperature_F" : 73.200, "humidity" : 55, "mic" : "CRC"}
+
+    IDENTIFIER = "nFactory-TH"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.US
+        sensor_id = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
+        pkt['channel'] = obj.get('channel')
+        pkt = Packet.add_identifiers(pkt, sensor_id, ProloguePacket.__name__)
+        return pkt
+
+
 class LaCrosseWSPacket(Packet):
     # 2016-09-08 00:43:52 :LaCrosse WS :9 :202
     # Temperature: 21.0 C
@@ -2559,6 +2578,7 @@ class PacketFactory(object):
         HidekiTS04Packet,
         HidekiWindPacket,
         HidekiRainPacket,
+        InFactoryTHPacket,
         HolmanWS5029Packet,
         LaCrosseWSPacket,
         LaCrosseTX141THBv2Packet,
