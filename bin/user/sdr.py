@@ -2385,6 +2385,29 @@ class Bresser5in1Packet(Packet):
         pkt = Packet.add_identifiers(pkt, station_id, Bresser5in1Packet.__name__)
         return pkt
 
+class BresserProRainGaugePacket(Packet):
+    # {"time" : "2021-03-14 15:30:28", "model" : "Bresser-ProRainGauge",
+    # "id" : 17, "battery_ok" : 1, "temperature_C" : 9.800, "rain_mm" : 122.000,
+    # "mic" : "CHECKSUM"
+
+    IDENTIFIER = "Bresser-ProRainGauge"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRICWX
+        pkt['station_id'] = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
+        pkt['battery'] = 1 if Packet.get_int(obj, 'battery_ok') == 0 else 0
+        return BresserProRainGaugePacket.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        pkt = Packet.add_identifiers(pkt, station_id, BresserProRainGaugePacket.__name__)
+        return pkt
 
 class SpringfieldTMPacket(Packet):
     # {"time" : "2019-01-20 11:14:00", "model" : "Springfield Temperature & Moisture", "sid" : 224, "channel" : 3, "battery" : "OK", "transmit" : "MANUAL", "temperature_C" : -204.800, "moisture" : 0, "mic" : "CHECKSUM"}
@@ -2545,6 +2568,7 @@ class PacketFactory(object):
         TFATwinPlus303049Packet,
         TSFT002Packet,
         WT0124Packet,
+        BresserProRainGaugePacket,
         ]
 
     @staticmethod
