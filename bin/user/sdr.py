@@ -825,7 +825,7 @@ class AcuriteLightningPacket(Packet):
 class Acurite00275MPacket(Packet):
     IDENTIFIER = "00275rm"
 
-    # {"time" : "2017-03-09 21:59:11", "model" : "00275rm", "probe" : 2, "id" : 3942, "battery" : "OK", "temperature_C" : 23.300, "humidity" : 34, "ptemperature_C" : 22.700, "crc" : "ok"}
+    # {"time" : "2017-03-09 21:59:11", "model" : "00275rm", "probe" : 2, "id" : 3942, "battery" : "OK", "temperature_C" : 23.300, "humidity" : 34, "temperature_1_C" : 22.700, "crc" : "ok"}
 
     @staticmethod
     def parse_json(obj):
@@ -835,7 +835,7 @@ class Acurite00275MPacket(Packet):
         pkt['hardware_id'] = "%04x" % obj.get('id', 0)
         pkt['probe'] = obj.get('probe')
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
-        pkt['temperature_probe'] = Packet.get_float(obj, 'ptemperature_C')
+        pkt['temperature_probe'] = Packet.get_float(obj, 'temperature_1_C')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         return Acurite.insert_ids(pkt, Acurite00275MPacket.__name__)
