@@ -126,7 +126,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.78'
+DRIVER_VERSION = '0.79'
 
 # The default command requests json output from every decoder
 # Use the -R option to indicate specific decoders
@@ -1457,6 +1457,36 @@ class FOWH65BPacket(Packet):
         station_id = pkt.pop('station_id', '0000')
         return Packet.add_identifiers(pkt, station_id, FOWH65BPacket.__name__)
 
+class FOWH51Packet(Packet):
+    # This is for a WH051 Soil Moisture Sensor (Fine Offset / Ecowitt WH51)
+
+    #{"time" : "2021-04-15 15:07:05", "model" : "Fineoffset-WH51", "id" : "00df73", "battery_ok" : 1.000, "battery_mV" : 1600, "moisture" : 0, "boost" : 0, "ad_raw" : 17, "mic" : "CRC", "mod" : "FSK", "freq1" : 915.024, "freq2" : 914.970, "rssi" : -2.258, "snr" : 35.115, "noise" : -37.373}
+
+    IDENTIFIER = "Fineoffset-WH51"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['usUnits'] = weewx.METRIC
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['station_id'] = obj.get('id')
+        pkt['soil_moisture_percent'] = Packet.get_float(obj, 'moisture')
+        pkt['boost'] = Packet.get_float(obj, 'boost')
+        pkt['soil_moisture_raw'] = Packet.get_float(obj, 'ad_raw')
+        pkt['freq1'] = Packet.get_float(obj, 'freq1')
+        pkt['freq2'] = Packet.get_float(obj, 'freq2')
+        pkt['battery_ok'] = Packet.get_float(obj, 'battery_ok')
+        pkt['battery_mV'] = Packet.get_float(obj, 'battery_mV')
+        pkt['snr'] = Packet.get_float(obj, 'snr')
+        pkt['rssi'] = Packet.get_float(obj, 'rssi')
+        pkt['noise'] = Packet.get_float(obj, 'noise')
+        return FOWH51Packet.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        return Packet.add_identifiers(pkt, station_id, FOWH51Packet.__name__)
+
 class FOWH0290Packet(Packet):
     # This is for a WH0290 Air Quality Monitor (Ambient Weather PM25)
 
@@ -2527,6 +2557,7 @@ class PacketFactory(object):
         FOWH2Packet,
         FOWH32BPacket,
         FOWH5Packet,
+        FOWH51Packet,
         FOWH65BPacket,
         FOWH0290Packet,
         HidekiTS04Packet,
