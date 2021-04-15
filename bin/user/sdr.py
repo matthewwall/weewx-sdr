@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright 2016-2017 Matthew Wall
+# Copyright 2016-2020 Matthew Wall
 # Distributed under the terms of the GNU Public License (GPLv3)
 """
 Collect data from stl-sdr.  Run rtl_433 on a thread and push the output onto
@@ -126,7 +126,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.77'
+DRIVER_VERSION = '0.78'
 
 # The default command requests json output from every decoder
 # Use the -R option to indicate specific decoders
@@ -477,14 +477,22 @@ class Acurite5n1PacketV2(Packet):
         #   56 has wind_speed, temperature, humidity
         if 'wind_avg_km_h' in obj:
             pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
+            if pkt['wind_speed'] is not None:
+                # Convert to mph
+                pkt['wind_speed'] *= 0.621371
         if 'wind_dir_deg' in obj:
             pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
         if 'rain_mm' in obj:
-            pkt['rain_total'] = Packet.get_float(obj, 'rain_mm') / 25.4
+            pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
+            if pkt['rain_total'] is not None:
+                # Convert to inches
+                pkt['rain_total'] /= 25.4
         if 'temperature_F' in obj:
             pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
         elif 'temperature_C' in obj:
-            pkt['temperature'] = Packet.get_float(obj, 'temperature_C') * 1.8 + 32
+            pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+            if pkt['temperature'] is not None:
+                pkt['temperature'] = pkt['temperature'] * 1.8 + 32
         if 'humidity' in obj:
             pkt['humidity'] = Packet.get_float(obj, 'humidity')
         return Acurite.insert_ids(pkt, Acurite5n1PacketV2.__name__)
@@ -1823,7 +1831,7 @@ class OSPCR800Packet(Packet):
         pkt.update(Packet.parse_lines(lines, OSPCR800Packet.PARSEINFO))
         return OS.insert_ids(pkt, OSPCR800Packet.__name__)
 
-    # {"time" : "2018-08-04 15:29:27", "brand" : "OS", "model" : "PCR800", "id" : 236, "channel" : 0, "battery" : "OK", "rain_rate" : 0.000, "rain_total" : 109.594}
+    # {"time" : "2020-06-06 20:15:17", "brand" : "OS", "model" : "Oregon-PCR800", "id" : 32, "channel" : 0, "battery_ok" : 1, "rain_rate_in_h" : 0.150, "rain_in" : 0.082}
     @staticmethod
     def parse_json(obj):
         pkt = dict()
@@ -1831,9 +1839,9 @@ class OSPCR800Packet(Packet):
         pkt['usUnits'] = weewx.US
         pkt['house_code'] = obj.get('id')
         pkt['channel'] = obj.get('channel')
-        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
-        pkt['rain_rate'] = Packet.get_float(obj, 'rain_rate')
-        pkt['rain_total'] = Packet.get_float(obj, 'rain_total')
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
+        pkt['rain_rate'] = Packet.get_float(obj, 'rain_rate_in_h')
+        pkt['rain_total'] = Packet.get_float(obj, 'rain_in')
         return OS.insert_ids(pkt, OSPCR800Packet.__name__)
 
 
@@ -1966,7 +1974,7 @@ class OSTHGR810Packet(Packet):
         pkt.update(Packet.parse_lines(lines, OSTHGR810Packet.PARSEINFO))
         return OS.insert_ids(pkt, OSTHGR810Packet.__name__)
 
-    # {"time" : "2016-11-04 14:40:05", "brand" : "OS", "model" : "THGR810", "id" : 122, "channel" : 1, "battery" : "OK", "temperature_C" : 20.900, "temperature_F" : 69.620, "humidity" : 57}
+    # {"time" : "2020-06-06 20:08:12", "brand" : "OS", "model" : "Oregon-THGR810", "id" : 153, "channel" : 1, "battery_ok" : 1, "temperature_C" : 18.200, "humidity" : 49}
 
     @staticmethod
     def parse_json(obj):
@@ -1975,7 +1983,7 @@ class OSTHGR810Packet(Packet):
         pkt['usUnits'] = weewx.METRIC
         pkt['house_code'] = obj.get('id')
         pkt['channel'] = obj.get('channel')
-        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         return OS.insert_ids(pkt, OSTHGR810Packet.__name__)
@@ -2141,8 +2149,7 @@ class OSWGR800Packet(Packet):
         pkt.update(Packet.parse_lines(lines, OSWGR800Packet.PARSEINFO))
         return OS.insert_ids(pkt, OSWGR800Packet.__name__)
 
-    # {"time" : "2018-08-04 15:29:19", "brand" : "OS", "model" : "WGR800", "id" : 93, "channel" : 0, "battery" : "OK", "gust" : 0.700, "average" : 1.000, "direction" : 315.000}
-
+    # {"time" : "2020-06-06 21:44:43", "brand" : "OS", "model" : "Oregon-WGR800", "id" : 245, "channel" : 0, "battery_ok" : 1, "wind_max_m_s" : 3.100, "wind_avg_m_s" : 0.000, "wind_dir_deg" : 90.000}
     @staticmethod
     def parse_json(obj):
         pkt = dict()
@@ -2150,10 +2157,10 @@ class OSWGR800Packet(Packet):
         pkt['usUnits'] = weewx.METRICWX
         pkt['house_code'] = obj.get('id')
         pkt['channel'] = obj.get('channel')
-        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
-        pkt['wind_gust'] = Packet.get_float(obj, 'gust')
-        pkt['wind_speed'] = Packet.get_float(obj, 'average')
-        pkt['wind_dir'] = Packet.get_float(obj, 'direction')
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
+        pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_m_s')
+        pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_m_s')
+        pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
         return OS.insert_ids(pkt, OSWGR800Packet.__name__)
 
 
