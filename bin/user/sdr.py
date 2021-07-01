@@ -1501,6 +1501,11 @@ class FOWH31LPacket(Packet):
         pkt['state'] = obj.get('state')
         return FOWH31LPacket.insert_ids(pkt)
 
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        return Packet.add_identifiers(pkt, station_id, FOWH31LPacket.__name__)
+
 class Hideki(object):
     @staticmethod
     def insert_ids(pkt, pkt_type):
