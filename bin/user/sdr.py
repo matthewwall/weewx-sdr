@@ -1174,7 +1174,7 @@ class FOWHx080Packet(Packet):
         pkt['msg_type'] = Packet.get_int(obj, 'subtype')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        pkt['wind_dir'] = Packet.get_float(obj, 'win_dir_deg')
+        pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
         pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
         pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_km_h')
         rain_total = Packet.get_float(obj, 'rain_mm')
