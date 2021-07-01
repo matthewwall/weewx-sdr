@@ -125,7 +125,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.80'
+DRIVER_VERSION = '0.81'
 
 # The default command requests json output from every decoder
 # Use the -R option to indicate specific decoders
@@ -1481,6 +1481,26 @@ class FOWH0290Packet(Packet):
         station_id = pkt.pop('station_id', '0000')
         return Packet.add_identifiers(pkt, station_id, FOWH0290Packet.__name__)
 
+class FOWH31LPacket(Packet):
+    # This is for a WH31L lightning detector
+
+    #{"time" : "2021-06-30 20:37:11", "model" : "FineOffset-WH31L", "id" : 67016, "battery_ok" : 0, "state" : 8, "flags" : 56, "storm_dist_km" : 10, "strike_count" : 2, "mic" : "CRC"}
+
+    IDENTIFIER = "FineOffset-WH31L"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['usUnits'] = weewx.METRIC
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['station_id'] = obj.get('id')
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
+        pkt['strikes_total'] = obj.get('strike_count')
+        pkt['distance'] = obj.get('storm_dist_km')
+        pkt['flags'] = obj.get('flags')
+        pkt['state'] = obj.get('state')
+        return FOWH31LPacket.insert_ids(pkt)
+
 class Hideki(object):
     @staticmethod
     def insert_ids(pkt, pkt_type):
@@ -2575,6 +2595,7 @@ class PacketFactory(object):
         FOWH5Packet,
         FOWH65BPacket,
         FOWH0290Packet,
+        FOWH31LPacket,
         HidekiTS04Packet,
         HidekiWindPacket,
         HidekiRainPacket,
