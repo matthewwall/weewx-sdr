@@ -476,6 +476,8 @@ class Acurite5n1PacketV2(Packet):
             if pkt['rain_total'] is not None:
                 # Convert to inches
                 pkt['rain_total'] /= 25.4
+        if 'rain_in' in obj:
+            pkt['rain_total'] = Packet.get_float(obj, 'rain_in')
         if 'temperature_F' in obj:
             pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
         elif 'temperature_C' in obj:
