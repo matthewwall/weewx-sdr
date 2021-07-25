@@ -1833,6 +1833,42 @@ class OSPCR800Packet(Packet):
         pkt['rain_total'] = Packet.get_float(obj, 'rain_in')
         return OS.insert_ids(pkt, OSPCR800Packet.__name__)
 
+class OSBTHR918Packet(Packet):
+    IDENTIFIER = "BTHR918"
+    PARSEINFO = {
+        'House Code': ['house_code', None, lambda x: int(x)],
+        'Channel': ['channel', None, lambda x: int(x)],
+        'Battery': ['battery', None, lambda x: 0 if x == 'OK' else 1],
+        'Temperature': ['temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
+        'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x: float(x)],
+        'Pressure': ['pressure', re.compile('([\d.]+) mbar'), lambda x: float(x)]}
+
+    @staticmethod
+    def parse_text(ts, payload, lines):
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRIC
+        pkt.update(Packet.parse_lines(lines, OSBTHR918Packet.PARSEINFO))
+        return OS.insert_ids(pkt, OSBTHR918Packet.__name__)
+
+    # original rtl_433 output
+    # {"time" : "2021-07-25 15:11:11", "model" : "Oregon-BTHR918", "id" : 20, "channel" : 0, "battery_ok" : 1, "temperature_C" : 22.200, "humidity" : 58, "pressure_hPa" : 1009.000}
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['house_code'] = obj.get('id')
+        pkt['channel'] = obj.get('channel')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        if 'pressure' in obj:
+            pkt['pressure'] = Packet.get_float(obj, 'pressure_hPa')
+        elif 'pressure_hPa' in obj:
+            pkt['pressure'] = Packet.get_float(obj, 'pressure_hPa')
+        return OS.insert_ids(pkt, OSBTHR918Packet.__name__)
 
 # apparently rtl_433 uses BHTR968 when it should be BTHR968
 class OSBTHR968Packet(Packet):
@@ -2527,6 +2563,7 @@ class PacketFactory(object):
         LaCrosseTXPacket,
         NexusTemperaturePacket,
         OSPCR800Packet,
+        OSBTHR918Packet,
         OSBTHR968Packet,
         OSTHGR122NPacket,
         OSTHGR810Packet,
