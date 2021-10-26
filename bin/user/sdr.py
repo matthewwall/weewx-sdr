@@ -2623,6 +2623,27 @@ class ProloguePacket(Packet):
         return pkt
 
 
+class PrologueTHPacket(Packet):
+    # 2021-09-03 : Prologue-TH Temperature and Humidity Sensor
+    # out:[u'{"time" : "2021-09-02 23:47:40", "model" : "Prologue-TH", "subtype" : 5, "id" : 70, "channel" : 1, "battery_ok" : 1, "temperature_C" : 24.800, "humidity" : 49, "button" : 0}\n']
+
+    IDENTIFIER = "Prologue-TH"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['model'] = obj.get('model')
+        sensor_id = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['channel'] = obj.get('channel')
+        pkt = Packet.add_identifiers(pkt, sensor_id, PrologueTHPacket.name)
+        return pkt
+
+
 class NexusTemperaturePacket(Packet):
     # 2018-06-30 01:12:12 :   Nexus Temperature
     #         House Code:      55
@@ -3002,6 +3023,7 @@ class PacketFactory(object):
         OSTHGR968Packet,
         OSRGR968Packet,
         ProloguePacket,
+        PrologueTHPacket,
         RubicsonTempPacket,
         SpringfieldTMPacket,
         TFATwinPlus303049Packet,
