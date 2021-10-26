@@ -1294,6 +1294,38 @@ class FOWH24Packet(Packet):
         return Packet.add_identifiers(pkt, station_id, FOWH24Packet.__name__)
 
 
+
+class FOWH24BPacket(Packet):
+    # This is for another WH24 (probably the EU-model or some kind of clone?)
+    # IDENTIFIER is *almost* the same and some of the keys are named slightly different
+
+    # {"time" : "2020-08-01 14:03:52", "model" : "Fineoffset-WH24", "id" : 247, "battery_ok" : 1, "temperature_C" : 30.600, "humidity" : 45, "wind_dir_deg" : 149, "wind_avg_m_s" : 0.000, "wind_max_m_s" : 0.000, "rain_mm" : 6.600, "uv" : 783, "uvi" : 1, "light_lux" : 28025.000, "mic" : "CRC"}
+
+    IDENTIFIER = "Fineoffset-WH24"
+	
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRICWX
+        pkt['station_id'] = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+        pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_m_s')
+        pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_m_s')
+        pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
+        pkt['uv_index'] = Packet.get_float(obj, 'uvi')
+        pkt['light'] = Packet.get_float(obj, 'light_lux')
+        pkt['battery'] = 0 if Packet.get_float(obj, 'battery_ok') == 1 else 1
+        return FOWH24BPacket.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        return Packet.add_identifiers(pkt, station_id, FOWH24BPacket.__name__)
+
+
 class FOWH25Packet(Packet):
     # 2016-09-02 22:26:05 :   Fine Offset Electronics, WH25
     # ID:     239
@@ -1345,6 +1377,48 @@ class FOWH25Packet(Packet):
     def insert_ids(pkt):
         station_id = pkt.pop('station_id', '0000')
         return Packet.add_identifiers(pkt, station_id, FOWH25Packet.__name__)
+
+
+class FOWH25BPacket(Packet):
+    # This is for another WH25 (probably the EU-model or some kind of clone?)
+    # IDENTIFIER is *almost* the same and some of the keys are named slightly different
+    
+    # {"time" : "2020-08-01 14:03:16", "model" : "Fineoffset-WH25", "id" : 19, "battery_ok" : 1, "temperature_C" : 26.100, "humidity" : 49, "pressure_hPa" : 987.800, "mic" : "CRC"}
+    
+    IDENTIFIER = "Fineoffset-WH25"
+    
+    PARSEINFO = {
+        'ID': ['station_id', None, lambda x: int(x)],
+        'Temperature':
+            ['temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
+        'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x: float(x)],
+        'Pressure':
+            ['pressure', re.compile('([\d.-]+) hPa'), lambda x: float(x)]}
+
+    @staticmethod
+    def parse_text(ts, payload, lines):
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRIC
+        pkt.update(Packet.parse_lines(lines, FOWH25BPacket.PARSEINFO))
+        return FOWH25BPacket.insert_ids(pkt)
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['station_id'] = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['pressure'] = Packet.get_float(obj, 'pressure_hPa')
+        pkt['battery'] = 0 if Packet.get_float(obj, 'battery_ok') == 1 else 1
+        return FOWH25BPacket.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        return Packet.add_identifiers(pkt, station_id, FOWH25BPacket.__name__)
 
 
 class FOWH2Packet(Packet):
@@ -2333,7 +2407,7 @@ class OSUVR128Packet(Packet):
     # UV Index: 0
     # Battery: OK
 
-    IDENTIFIER = "Oregon Scientific UVR128"
+    IDENTIFIER = "UVR128"
     PARSEINFO = {
         'House Code': ['house_code', None, lambda x: int(x)],
         'UV Index': ['uv_index', re.compile('([\d.-]+) C'), lambda x: float(x)],
@@ -2347,8 +2421,8 @@ class OSUVR128Packet(Packet):
         pkt.update(Packet.parse_lines(lines, OSUVR128Packet.PARSEINFO))
         return OS.insert_ids(pkt, OSUVR128Packet.__name__)
 
-    # {"time" : "2019-11-05 07:07:07", "model" : "Oregon Scientific UVR128", "id" : 116, "uv" : 0, "battery" : "OK"}
-    # {"time" : "2019-11-19 06:44:53", "model" : "Oregon Scientific UVR128", "id" : 116, "uv" : 0, "battery" : "OK"}
+    # {"time" : "2019-11-05 07:07:07", "model" : "Oregon-UVR128", "id" : 116, "uv" : 0, "battery" : "OK"}
+    # {"time" : "2019-11-19 06:44:53", "model" : "Oregon-UVR128", "id" : 116, "uv" : 0, "battery" : "OK"}
 
     @staticmethod
     def parse_json(obj):
@@ -2883,7 +2957,9 @@ class PacketFactory(object):
         FOWH1080Packet,
         FOWH3080Packet,
         FOWH24Packet,
+        FOWH24BPacket,
         FOWH25Packet,
+        FOWH25BPacket,
         FOWH2Packet,
         FOWH32BPacket,
         FOWH5Packet,
