@@ -1,3 +1,9 @@
+0.83 26oct2021
+* fix hideki wind/rain identifiers
+* fix bresser 6in1 indentation
+* use introspection for packet listing - packet must have IDENTIFIER
+* provide more feedback when listing recognized packet types
+
 0.82 26oct2021
 * huge thanks to andylittle for rolling up many changes while i was unavailable
 * add LaCrosse TX18 sensor thanks to jmpacquet MR82

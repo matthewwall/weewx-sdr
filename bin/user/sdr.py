@@ -136,7 +136,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.81'
+DRIVER_VERSION = '0.83'
 
 # The default command requests json output from every decoder
 # Use the -R option to indicate specific decoders
@@ -1782,7 +1782,7 @@ class HidekiWindPacket(Packet):
     # {"time" : "2021-02-07 03:44:54", "model" : "Hideki-Wind", "id" : 8, "channel" : 4, "battery_ok" : 1, "temperature_C" : 15.200, "wind_avg_mi_h" : 2.600, "wind_max_mi_h" : 2.900, "wind_approach" : 1, "wind_dir_deg" : 337.500, "mic" : "CRC"}
 
 #    IDENTIFIER = "HIDEKI Wind sensor"
-    IDENTIFIER = "HIDEKI-Wind"
+    IDENTIFIER = "Hideki-Wind"
 
     PARSEINFO = {
         'Rolling Code': ['rolling_code', None, lambda x: int(x)],
@@ -1856,7 +1856,7 @@ class HidekiRainPacket(Packet):
     # {"time" : "2021-02-07 03:45:10", "model" : "Hideki-Rain", "id" : 0, "channel" : 4, "battery_ok" : 1, "rain_mm" : 1382.500, "mic" : "CRC"}
 
 #    IDENTIFIER = "HIDEKI Rain sensor"
-    IDENTIFIER = "HIDEKI-Rain"
+    IDENTIFIER = "Hideki-Rain"
 
     PARSEINFO = {
         'Rolling Code': ['rolling_code', None, lambda x: int(x)],
@@ -2996,82 +2996,20 @@ class WT0124Packet(Packet):
         pkt = Packet.add_identifiers(pkt, sensor_id, WT0124Packet.__name__)
         return pkt
 
-
 class PacketFactory(object):
 
-    # FIXME: do this with class introspection
-    KNOWN_PACKETS = [
-        AcuriteAtlasPacket,
-        AcuriteTowerPacket,
-        Acurite5n1Packet,
-        AcuriteTowerPacketV2,
-        Acurite5n1PacketV2,
-        Acurite606TXPacket,
-        Acurite606TXPacketV2,
-        AcuriteRain899Packet,
-        Acurite986Packet,
-        AcuriteLightningPacket,
-        Acurite00275MPacket,
-        AcuriteWT450Packet,
-        AlectoV1TemperaturePacket,
-        AlectoV1WindPacket,
-        AlectoV1RainPacket,
-        AmbientF007THPacket,
-        AmbientWH31EPacket,
-        Bresser5in1Packet,
-        Bresser6in1Packet,
-        BresserProRainGaugePacket,
-        CalibeurRF104Packet,
-        EcoWittWH40Packet,
-        FOWHx080Packet,
-        FOWH1080Packet,
-        FOWH3080Packet,
-        FOWH24Packet,
-        FOWH24BPacket,
-        FOWH25Packet,
-        FOWH25BPacket,
-        FOWH2Packet,
-        FOWH32BPacket,
-        FOWH5Packet,
-        FOWH51Packet,
-        FOWH65BPacket,
-        FOWH65BAltPacket,
-        FOWH0290Packet,
-        FOWH31LPacket,
-        HidekiTS04Packet,
-        HidekiWindPacket,
-        HidekiRainPacket,
-        InFactoryTHPacket,
-        HolmanWS5029Packet,
-        LaCrosseBreezeProPacket,
-        LaCrosseWSPacket,
-        LaCrosseTX141THBv2Packet,
-        LaCrosseTXPacket,
-        LaCrosseTX18Packet,
-        NexusTemperaturePacket,
-        OSPCR800Packet,
-        OSBTHR918Packet,
-        OSBTHR968Packet,
-        OSTHGR122NPacket,
-        OSTHGR810Packet,
-        OSTHR128Packet,
-        OSTHR228NPacket,
-        OSUV800Packet,
-        OSUVR128Packet,
-        OSWGR800Packet,
-        OSTHN802Packet,
-        OSBTHGN129Packet,
-        OSTHGR968Packet,
-        OSRGR968Packet,
-        ProloguePacket,
-        PrologueTHPacket,
-        RubicsonTempPacket,
-        SpringfieldTMPacket,
-        TFATwinPlus303049Packet,
-        TSFT002Packet,
-        WT0124Packet,
-        WS2032Packet,
-        ]
+    # known packets will be lazy-loaded by introspecting at first request
+    KNOWN_PACKETS = []
+
+    @staticmethod
+    def known_packets():
+        if not PacketFactory.KNOWN_PACKETS:
+            import sys, inspect
+            objs = inspect.getmembers(sys.modules[__name__], inspect.isclass)
+            for name, obj in objs:
+                if hasattr(obj, 'IDENTIFIER'):
+                    PacketFactory.KNOWN_PACKETS.append(obj)
+        return PacketFactory.KNOWN_PACKETS
 
     @staticmethod
     def create(lines):
@@ -3094,7 +3032,7 @@ class PacketFactory(object):
         try:
             obj = json.loads(lines[0])
             if 'model' in obj:
-                for parser in PacketFactory.KNOWN_PACKETS:
+                for parser in PacketFactory.known_packets():
                     if obj['model'].find(parser.IDENTIFIER) >= 0:
                         return parser.parse_json(obj)
                 logdbg("parse_json: unknown model %s" % obj['model'])
@@ -3107,7 +3045,7 @@ class PacketFactory(object):
         ts, payload = PacketFactory.parse_firstline(lines[0])
         if ts and payload:
             logdbg("parse_text: ts=%s payload=%s" % (ts, payload))
-            for parser in PacketFactory.KNOWN_PACKETS:
+            for parser in PacketFactory.known_packets():
                 if payload.find(parser.IDENTIFIER) >= 0:
                     pkt = parser.parse_text(ts, payload, lines)
                     logdbg("pkt=%s" % pkt)
@@ -3340,8 +3278,10 @@ Hide:
         syslog.setlogmask(syslog.LOG_UPTO(syslog.LOG_DEBUG))
 
     if options.action == 'list-supported':
-        for pt in PacketFactory.KNOWN_PACKETS:
-            print(pt.IDENTIFIER)
+        pkt_names = PacketFactory.known_packets()
+        print("%s known packet types" % len(pkt_names))
+        for pt in pkt_names:
+            print("%s '%s'" % (pt.__name__, pt.IDENTIFIER))
     elif options.action == 'show-detected':
         # display identifiers for detected sensors
         mgr = ProcManager()
