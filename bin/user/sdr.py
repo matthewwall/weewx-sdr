@@ -417,9 +417,11 @@ class AcuriteAtlasPacket(Packet):
 
 class AcuriteTowerPacketV2(Packet):
     # Based on AcuriteTowerPacket type, but implemented for unsupported format
-    IDENTIFIER = "Acurite-Tower"
+
     # Sample data:
     # {"time" : "2019-07-29 07:44:23.005624", "protocol" : 40, "model" : "Acurite-Tower", "id" : 1234, "sensor_id" : 1234, "channel" : "A", "temperature_C" : 22.600, "humidity" : 45, "battery_ok" : 0, "mod" : "ASK", "freq" : 433.938, "rssi" : -0.134, "snr" : 14.391, "noise" : -14.525}
+
+    IDENTIFIER = "Acurite-Tower"
 
     @staticmethod
     def parse_json(obj):
@@ -444,12 +446,14 @@ class AcuriteTowerPacketV2(Packet):
 
 class Acurite5n1PacketV2(Packet):
     # Based on Acurite5n1Packet class, but implemented for unsupported format
-    IDENTIFIER = "Acurite-5n1"
+
     # sample json output from rtl_433
     # {"time" : "2019-07-29 07:46:22.482883", "protocol" : 40, "model" : "Acurite-5n1", "id" : 1234, "channel" : "B", "sequence_num" : 1, "battery_ok" : 1, "message_type" : 56, "wind_avg_km_h" : 0.000, "temperature_C" : 20.500, "humidity" : 93, "mod" : "ASK", "freq" : 433.934, "rssi" : -1.719, "snr" : 24.404, "noise" : -26.124}
     # {"time" : "2020-02-05 02:20:54", "model" : "Acurite-5n1", "subtype" : 56, "id" : 956, "channel" : "A", "sequence_num" : 2, "battery_ok" : 1, "wind_avg_km_h" : 3.483, "temperature_F" : 31.300, "humidity" : 66}
     # {"time" : "2020-10-26 22:09:12", "model" : "Acurite-5n1", "message_type" : 49, "id" : 2662, "channel" : "A", "sequence_num" : 0, "battery_ok" : 1, "wind_avg_km_h" : 15.900, "wind_dir_deg" : 337.500, "rain_in" : 7.290, "mic" : "CHECKSUM"}
     # {"time" : "2020-10-26 22:08:54", "model" : "Acurite-5n1", "message_type" : 56, "id" : 2662, "channel" : "A", "sequence_num" : 2, "battery_ok" : 1, "wind_avg_km_h" : 9.278, "temperature_F" : 76.100, "humidity" : 15, "mic" : "CHECKSUM"}
+
+    IDENTIFIER = "Acurite-5n1"
 
     @staticmethod
     def parse_json(obj):
@@ -858,10 +862,11 @@ class AcuriteLightningPacket(Packet):
 
 
 class Acurite00275MPacket(Packet):
-    IDENTIFIER = "00275rm"
 
     # {"time" : "2017-03-09 21:59:11", "model" : "00275rm", "probe" : 2, "id" : 3942, "battery" : "OK", "temperature_C" : 23.300, "humidity" : 34, "ptemperature_C" : 22.700, "crc" : "ok"}
     # {"time" : "2017-03-09 21:59:11", "model" : "00275rm", "probe" : 2, "id" : 3942, "battery" : "OK", "temperature_C" : 23.300, "humidity" : 34, "temperature_1_C" : 22.700, "crc" : "ok"}
+
+    IDENTIFIER = "00275rm"
 
     @staticmethod
     def parse_json(obj):
@@ -881,11 +886,12 @@ class Acurite00275MPacket(Packet):
 
 
 class AcuriteWT450Packet(Packet):
-    IDENTIFIER = "WT450 sensor"
 
     # {"time" : "2017-09-14 20:24:43", "model" : "WT450 sensor", "id" : 1, "channel" : 2, "battery" : "OK", "temperature_C" : 25.090, "humidity" : 49}
     # {"time" : "2017-09-14 20:24:44", "model" : "WT450 sensor", "id" : 1, "channel" : 2, "battery" : "OK", "temperature_C" : 25.110, "humidity" : 49}
     # {"time" : "2017-09-14 20:24:44", "model" : "WT450 sensor", "id" : 1, "channel" : 2, "battery" : "OK", "temperature_C" : 25.120, "humidity" : 49}
+
+    IDENTIFIER = "WT450 sensor"
 
     @staticmethod
     def parse_json(obj):
