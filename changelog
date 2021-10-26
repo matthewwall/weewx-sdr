@@ -1,3 +1,19 @@
+0.81 01jul2021
+* add WH31L thanks to MksRasp #133
+0.80 03mar2021
+* add inFactory-TH temp humidity sensor thanks to gleven #117
+
+0.79 15jan2021
+* update LaCrosse-TX141THBv2 to the new style SDR. thanks to Mario St-Gelais
+* update identifier for Acurite-986
+* update Oregon-PCR800 to the new style SDR. thanks to luchmhor #94
+* remove ussb1 from Acurite-6045M. thanks to rct/n7qnm #81
+* add support for WS2032. rain may not be correct. thanks to raadi...@gmail.com 
+* update identifier for Acurite-6045M to the new style SDR.
+* update identifier for Fineoffset-WHx080 to the new style SDR. thanks to W11T #97
+* update identifier for HIDEKI-TS04 to the new style SDR.
+* update a few parse json battery_ok 
+
 0.78 06jun2020
 * updated packet formats for Oregon Scientific WMR100N. -tk
 * corrected wind speed for Acurite5n1PacketV2. -tk
