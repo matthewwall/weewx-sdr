@@ -1937,6 +1937,26 @@ class LaCrosseTXPacket(Packet):
         return pkt
 
 
+class LaCrosseTX18Packet(Packet):
+
+    # {"time" : "2020-04-21 05:21:19", "model" : "LaCrosse-WS3600", "id" : 184, "temperature_C" : 9.400}
+    # {"time" : "2020-04-21 05:21:19", "model" : "LaCrosse-WS3600", "id" : 184, "humidity" : 52}
+    # {"time" : "2020-04-21 05:21:20", "model" : "LaCrosse-WS3600", "id" : 184, "rain_mm" : 0.000}
+
+    IDENTIFIER = "LaCrosse-WS3600"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        sensor_id = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt = Packet.add_identifiers(pkt, sensor_id, LaCrosseTX18Packet.__name__)
+        return pkt
+
+
 class RubicsonTempPacket(Packet):
     # 2017-01-15 14:49:03 : Rubicson Temperature Sensor
     # House Code: 14
@@ -2029,6 +2049,42 @@ class OSPCR800Packet(Packet):
         pkt['rain_total'] = Packet.get_float(obj, 'rain_in')
         return OS.insert_ids(pkt, OSPCR800Packet.__name__)
 
+class OSBTHR918Packet(Packet):
+    IDENTIFIER = "BTHR918"
+    PARSEINFO = {
+        'House Code': ['house_code', None, lambda x: int(x)],
+        'Channel': ['channel', None, lambda x: int(x)],
+        'Battery': ['battery', None, lambda x: 0 if x == 'OK' else 1],
+        'Temperature': ['temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
+        'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x: float(x)],
+        'Pressure': ['pressure', re.compile('([\d.]+) mbar'), lambda x: float(x)]}
+
+    @staticmethod
+    def parse_text(ts, payload, lines):
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRIC
+        pkt.update(Packet.parse_lines(lines, OSBTHR918Packet.PARSEINFO))
+        return OS.insert_ids(pkt, OSBTHR918Packet.__name__)
+
+    # original rtl_433 output
+    # {"time" : "2021-07-25 15:11:11", "model" : "Oregon-BTHR918", "id" : 20, "channel" : 0, "battery_ok" : 1, "temperature_C" : 22.200, "humidity" : 58, "pressure_hPa" : 1009.000}
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['house_code'] = obj.get('id')
+        pkt['channel'] = obj.get('channel')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        if 'pressure' in obj:
+            pkt['pressure'] = Packet.get_float(obj, 'pressure_hPa')
+        elif 'pressure_hPa' in obj:
+            pkt['pressure'] = Packet.get_float(obj, 'pressure_hPa')
+        return OS.insert_ids(pkt, OSBTHR918Packet.__name__)
 
 # apparently rtl_433 uses BHTR968 when it should be BTHR968
 class OSBTHR968Packet(Packet):
@@ -2579,6 +2635,67 @@ class Bresser5in1Packet(Packet):
         pkt = Packet.add_identifiers(pkt, station_id, Bresser5in1Packet.__name__)
         return pkt
 
+class Bresser6in1Packet(Packet):
+    #  'time' => '2018-12-15 16:04:04',
+    #  'model' => 'Bresser-6in1',
+    #  'id' => 118,
+    #  'temperature_C' => 6.4000000000000003552713678800500929355621337890625,
+    #  'humidity' => 87,
+    #  'wind_gust' => 2.79999999999999982236431605997495353221893310546875,
+    #  'wind_speed' => 2.899999999999999911182158029987476766109466552734375,
+    #  'wind_dir_deg' => 315,
+    #  'rain_mm' => 10.800000000000000710542735760100185871124267578125,
+    #  'data' => 'e7897fd71fd6ef9bff78f7feff18768028e02910640087080100',
+    #  'mic' => 'CHECKSUM',
+
+    # {"time" : "2018-12-15 16:04:04", "model" : "Bresser-6in1", "id" : 118,
+    # "temperature_C" : 6.400, "humidity" : 87, "wind_gust" : 2.800,
+    # "wind_speed" : 2.900, "wind_dir_deg" : 315.000, "rain_mm" : 10.800,
+    # "data" : "e7897fd71fd6ef9bff78f7feff18768028e02910640087080100",
+    # "mic" : "CHECKSUM"}#012
+
+    IDENTIFIER = "Bresser-6in1"
+
+    @staticmethod
+    def parse_json(obj):
+	pkt = dict()
+	pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+	pkt['usUnits'] = weewx.METRICWX
+	pkt['station_id'] = obj.get('id')
+	if 'temperature_C' in obj:
+		pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+	if 'humidity' in obj:
+		pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        if 'wind_dir_deg' in obj:
+		pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+        if 'wind_max_m_s' in obj:
+		pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_m_s')
+        if 'wind_avg_m_s' in obj:
+		pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_m_s')
+        if 'uv' in obj:
+		pkt['uv'] = Packet.get_float(obj, 'uv')
+        if 'uv_index' in obj:
+		pkt['uv_index'] = Packet.get_float(obj, 'uvi')
+    	
+	#deal with different labels from rtl_433
+        for dst, src in [('wind_speed', 'wind_speed_ms'),
+                     ('gust_speed', 'gust_speed_ms'),
+                     ('rain_total', 'rainfall_mm'),
+                     ('wind_speed', 'wind_speed'),
+                     ('gust_speed', 'gust_speed'),
+                     ('rain_total', 'rain_mm')]:
+           if src in obj:
+               pkt[dst] = Packet.get_float(obj, src)
+        return Bresser6in1Packet.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        pkt = Packet.add_identifiers(pkt, station_id, Bresser6in1Packet.__name__)
+        return pkt
+
+
+
 
 class BresserProRainGaugePacket(Packet):
     # {"time" : "2021-03-14 15:30:28", "model" : "Bresser-ProRainGauge",
@@ -2747,6 +2864,7 @@ class PacketFactory(object):
         AmbientF007THPacket,
         AmbientWH31EPacket,
         Bresser5in1Packet,
+        Bresser6in1Packet,
         BresserProRainGaugePacket,
         CalibeurRF104Packet,
         EcoWittWH40Packet,
@@ -2772,8 +2890,10 @@ class PacketFactory(object):
         LaCrosseWSPacket,
         LaCrosseTX141THBv2Packet,
         LaCrosseTXPacket,
+        LaCrosseTX18Packet,
         NexusTemperaturePacket,
         OSPCR800Packet,
+        OSBTHR918Packet,
         OSBTHR968Packet,
         OSTHGR122NPacket,
         OSTHGR810Packet,
