@@ -2520,6 +2520,67 @@ class Bresser5in1Packet(Packet):
         pkt = Packet.add_identifiers(pkt, station_id, Bresser5in1Packet.__name__)
         return pkt
 
+class Bresser6in1Packet(Packet):
+    #  'time' => '2018-12-15 16:04:04',
+    #  'model' => 'Bresser-6in1',
+    #  'id' => 118,
+    #  'temperature_C' => 6.4000000000000003552713678800500929355621337890625,
+    #  'humidity' => 87,
+    #  'wind_gust' => 2.79999999999999982236431605997495353221893310546875,
+    #  'wind_speed' => 2.899999999999999911182158029987476766109466552734375,
+    #  'wind_dir_deg' => 315,
+    #  'rain_mm' => 10.800000000000000710542735760100185871124267578125,
+    #  'data' => 'e7897fd71fd6ef9bff78f7feff18768028e02910640087080100',
+    #  'mic' => 'CHECKSUM',
+
+    # {"time" : "2018-12-15 16:04:04", "model" : "Bresser-6in1", "id" : 118,
+    # "temperature_C" : 6.400, "humidity" : 87, "wind_gust" : 2.800,
+    # "wind_speed" : 2.900, "wind_dir_deg" : 315.000, "rain_mm" : 10.800,
+    # "data" : "e7897fd71fd6ef9bff78f7feff18768028e02910640087080100",
+    # "mic" : "CHECKSUM"}#012
+
+    IDENTIFIER = "Bresser-6in1"
+
+    @staticmethod
+    def parse_json(obj):
+	pkt = dict()
+	pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+	pkt['usUnits'] = weewx.METRICWX
+	pkt['station_id'] = obj.get('id')
+	if 'temperature_C' in obj:
+		pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+	if 'humidity' in obj:
+		pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        if 'wind_dir_deg' in obj:
+		pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+        if 'wind_max_m_s' in obj:
+		pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_m_s')
+        if 'wind_avg_m_s' in obj:
+		pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_m_s')
+        if 'uv' in obj:
+		pkt['uv'] = Packet.get_float(obj, 'uv')
+        if 'uv_index' in obj:
+		pkt['uv_index'] = Packet.get_float(obj, 'uvi')
+    	
+	#deal with different labels from rtl_433
+        for dst, src in [('wind_speed', 'wind_speed_ms'),
+                     ('gust_speed', 'gust_speed_ms'),
+                     ('rain_total', 'rainfall_mm'),
+                     ('wind_speed', 'wind_speed'),
+                     ('gust_speed', 'gust_speed'),
+                     ('rain_total', 'rain_mm')]:
+           if src in obj:
+               pkt[dst] = Packet.get_float(obj, src)
+        return Bresser6in1Packet.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        pkt = Packet.add_identifiers(pkt, station_id, Bresser6in1Packet.__name__)
+        return pkt
+
+
+
 
 class SpringfieldTMPacket(Packet):
     # {"time" : "2019-01-20 11:14:00", "model" : "Springfield Temperature & Moisture", "sid" : 224, "channel" : 3, "battery" : "OK", "transmit" : "MANUAL", "temperature_C" : -204.800, "moisture" : 0, "mic" : "CHECKSUM"}
@@ -2663,6 +2724,7 @@ class PacketFactory(object):
         AmbientF007THPacket,
         AmbientWH31EPacket,
         Bresser5in1Packet,
+        Bresser6in1Packet,
         CalibeurRF104Packet,
         EcoWittWH40Packet,
         FOWHx080Packet,
