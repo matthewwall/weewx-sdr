@@ -14,6 +14,7 @@
 * update FOWH65B mappings thanks to vittorio88 MR92
 * added PrologueTH thanks to stephen-hocking
 * fixed battery indicator for OSBTHGN129 and recent rtl_433 thanks sbsrouteur
+* support for latest rtl_433 hideki wind speeds
 
 0.81 01jul2021
 * add WH31L thanks to MksRasp #133
