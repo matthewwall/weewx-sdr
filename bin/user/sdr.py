@@ -1779,6 +1779,7 @@ class HidekiWindPacket(Packet):
 
     # {"time" : "2017-01-16 04:38:39", "model" : "HIDEKI Wind sensor", "rc" : 0, "channel" : 4, "battery" : "OK", "temperature_C" : -4.400, "windstrength" : 2.897, "winddirection" : 292.500}
     # {"time" : "2019-11-24 19:13:41", "model" : "HIDEKI Wind sensor", "rc" : 3, "channel" : 4, "battery" : "OK", "temperature_C" : 11.000, "wind_speed_mph" : 1.300, "gust_speed_mph" : 0.100, "wind_approach" : 1, "wind_direction" : 270.000, "mic" : "CRC"}
+    # {"time" : "2021-02-07 03:44:54", "model" : "Hideki-Wind", "id" : 8, "channel" : 4, "battery_ok" : 1, "temperature_C" : 15.200, "wind_avg_mi_h" : 2.600, "wind_max_mi_h" : 2.900, "wind_approach" : 1, "wind_dir_deg" : 337.500, "mic" : "CRC"}
 
 #    IDENTIFIER = "HIDEKI Wind sensor"
     IDENTIFIER = "HIDEKI-Wind"
@@ -1808,18 +1809,30 @@ class HidekiWindPacket(Packet):
         pkt['rolling_code'] = obj.get('rc')
         pkt['channel'] = obj.get('channel')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
-        if 'wind_speed_mph' in obj:
+        if 'wind_avg_mi_h' in obj:
+            v = Packet.get_float(obj, 'wind_avg_mi_h')
+            if v is not None:
+                v /= weewx.units.MILE_PER_KM
+            pkt['wind_speed'] = v
+        elif 'wind_speed_mph' in obj:
             v = Packet.get_float(obj, 'wind_speed_mph')
             if v is not None:
                 v /= weewx.units.MILE_PER_KM
             pkt['wind_speed'] = v
         else:
             pkt['wind_speed'] = Packet.get_float(obj, 'windstrength')
-        if 'wind_direction' in obj:
+        if 'wind_dir_deg' in obj:
+            pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+        elif 'wind_direction' in obj:
             pkt['wind_dir'] = Packet.get_float(obj, 'wind_direction')
         else:
             pkt['wind_dir'] = Packet.get_float(obj, 'winddirection')
-        if 'gust_speed_mph' in obj:
+        if 'wind_max_mi_h' in obj:
+            v = Packet.get_float(obj, 'wind_max_mi_h')
+            if v is not None:
+                v /= weewx.units.MILE_PER_KM
+            pkt['wind_gust'] = v
+        elif 'gust_speed_mph' in obj:
             v = Packet.get_float(obj, 'gust_speed_mph')
             if v is not None:
                 v /= weewx.units.MILE_PER_KM
@@ -1840,7 +1853,8 @@ class HidekiRainPacket(Packet):
 
     # {"time" : "2017-01-16 04:38:50", "model" : "HIDEKI Rain sensor", "rc" : 0, "channel" : 4, "battery" : "OK", "rain" : 2622.900}
     # {"time" : "2019-11-24 19:13:52", "model" : "HIDEKI Rain sensor", "rc" : 0, "channel" : 4, "battery" : "OK", "rain_mm" : 274.400, "mic" : "CRC"}
-    
+    # {"time" : "2021-02-07 03:45:10", "model" : "Hideki-Rain", "id" : 0, "channel" : 4, "battery_ok" : 1, "rain_mm" : 1382.500, "mic" : "CRC"}
+
 #    IDENTIFIER = "HIDEKI Rain sensor"
     IDENTIFIER = "HIDEKI-Rain"
 
