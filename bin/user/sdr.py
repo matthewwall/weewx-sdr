@@ -55,6 +55,17 @@ many of the rtl_433 decoders do not emit this format yet (as of January 2017).
 So this driver is designed to look for json first, then fall back to single-
 or multi-line plain text format.
 
+Battery Status
+
+In the weewx database, a battery status of 1 indicates low battery.  This has
+origins in the original battery indicators from davis vantage stations.  Some
+devices report 'battery' where a value of 1 indicates that the battery is ok,
+i.e., the battery is *not* low.  The rtl_433 output has been changed recently
+to make this less ambiguous, so many devices now report 'battery_ok' instead
+of just 'battery'.  There were also cases where the 'battery' value was a
+string, typically just 'OK'.  FWIW, user fgonza2 reports that the Acurite low
+battery indicator kicks in when the voltage hits about 4V.
+
 WARNING: Handling of units and unit systems in rtl_433 is a mess, but it is
 getting better.  Although there is an option to request SI units, there is no
 indicate in the decoder output whether that option is respected, nor does
