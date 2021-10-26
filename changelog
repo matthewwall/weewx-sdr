@@ -12,6 +12,7 @@
 * added battery and more wind mappings for Bresser-5in1 thanks to millallo MR85
 * update FOWH65B mappings thanks to vittorio88 MR92
 * added PrologueTH thanks to stephen-hocking
+* fixed battery indicator for OSBTHGN129 and recent rtl_433 thanks sbsrouteur
 
 0.81 01jul2021
 * add WH31L thanks to MksRasp #133

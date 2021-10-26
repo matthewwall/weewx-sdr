@@ -2558,7 +2558,10 @@ class OSBTHGN129Packet(Packet):
         pkt['usUnits'] = weewx.METRIC
         pkt['house_code'] = obj.get('id')
         pkt['channel'] = obj.get('channel')
-        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        if 'battery' in obj:
+            pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        if 'battery_ok' in obj:
+            pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         pkt['pressure'] = Packet.get_float(obj, 'pressure_hPa')
