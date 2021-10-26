@@ -1,5 +1,5 @@
 # installer for the weewx-sdr driver
-# Copyright 2016-2019 Matthew Wall
+# Copyright 2016-2021 Matthew Wall
 # Distributed under the terms of the GNU Public License (GPLv3)
 
 from weecfg.extension import ExtensionInstaller

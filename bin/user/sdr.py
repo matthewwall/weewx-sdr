@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright 2016-2020 Matthew Wall
+# Copyright 2016-2021 Matthew Wall
 # Distributed under the terms of the GNU Public License (GPLv3)
 """
 Collect data from stl-sdr.  Run rtl_433 on a thread and push the output onto
