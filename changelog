@@ -7,6 +7,9 @@
 * added support for LaCross BreezePro thanks to CazYokoyama MR102
 * added support for Atlas Lightning Detector thanks to jrhelbert MR89
 * update definition for Acurite00275RM thanks to Topslakr MR124
+* update OSUVR128 packet identifier thanks to danimaciasperea MR130
+* added support for wh24/wh25 variant thanks to sagu23 MR93
+* added battery and more wind mappings for Bresser-5in1 thanks to millallo MR85
 
 0.81 01jul2021
 * add WH31L thanks to MksRasp #133
