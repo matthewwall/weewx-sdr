@@ -1319,7 +1319,7 @@ class FOWH24BPacket(Packet):
     # {"time" : "2020-08-01 14:03:52", "model" : "Fineoffset-WH24", "id" : 247, "battery_ok" : 1, "temperature_C" : 30.600, "humidity" : 45, "wind_dir_deg" : 149, "wind_avg_m_s" : 0.000, "wind_max_m_s" : 0.000, "rain_mm" : 6.600, "uv" : 783, "uvi" : 1, "light_lux" : 28025.000, "mic" : "CRC"}
 
     IDENTIFIER = "Fineoffset-WH24"
-	
+
     @staticmethod
     def parse_json(obj):
         pkt = dict()
@@ -2814,26 +2814,25 @@ class Bresser6in1Packet(Packet):
 
     @staticmethod
     def parse_json(obj):
-	pkt = dict()
-	pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-	pkt['usUnits'] = weewx.METRICWX
-	pkt['station_id'] = obj.get('id')
-	if 'temperature_C' in obj:
-		pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
-	if 'humidity' in obj:
-		pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRICWX
+        pkt['station_id'] = obj.get('id')
+        if 'temperature_C' in obj:
+            pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        if 'humidity' in obj:
+            pkt['humidity'] = Packet.get_float(obj, 'humidity')
         if 'wind_dir_deg' in obj:
-		pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+            pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
         if 'wind_max_m_s' in obj:
-		pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_m_s')
+            pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_m_s')
         if 'wind_avg_m_s' in obj:
-		pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_m_s')
+            pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_m_s')
         if 'uv' in obj:
-		pkt['uv'] = Packet.get_float(obj, 'uv')
+            pkt['uv'] = Packet.get_float(obj, 'uv')
         if 'uv_index' in obj:
-		pkt['uv_index'] = Packet.get_float(obj, 'uvi')
-    	
-	#deal with different labels from rtl_433
+            pkt['uv_index'] = Packet.get_float(obj, 'uvi')
+        # deal with different labels from rtl_433
         for dst, src in [('wind_speed', 'wind_speed_ms'),
                      ('gust_speed', 'gust_speed_ms'),
                      ('rain_total', 'rainfall_mm'),
