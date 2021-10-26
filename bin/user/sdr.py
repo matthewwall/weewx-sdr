@@ -243,8 +243,9 @@ class ProcManager(object):
         lines = []
         while self.running():
             try:
-                # Fetch the output line. For it to be searched, Python 3 requires that
-                # it be decoded to unicode. Decoding does no harm under Python 2:
+                # Fetch the output line. For it to be searched, Python 3
+                # requires that it be decoded to unicode. Decoding does no
+                # harm under Python 2:
                 line = self.stdout_queue.get(True, 3).decode()
                 m = ProcManager.TS.search(line)
                 if m and lines:
@@ -400,6 +401,16 @@ class AcuriteAtlasPacket(Packet):
             pkt['uv'] = Packet.get_int(obj, 'uv')
         if 'lux' in obj:
             pkt['lux'] = Packet.get_int(obj, 'lux')
+        if 'strike_count' in obj:
+            pkt['strike_count'] = Packet.get_int(obj, 'strike_count')
+        if 'strike_distance' in obj:
+            pkt['strike_distance'] = Packet.get_int(obj, 'strike_distance')
+        if 'snr' in obj:
+            pkt['snr'] = obj.get('snr')
+        if 'rssi' in obj:
+            pkt['rssi'] = obj.get('rssi')
+        if 'noise' in obj:
+            pkt['noise'] = obj.get('noise')
         pkt['battery'] = 1 if Packet.get_int(obj, 'battery_ok') == 0 else 0
         return Acurite.insert_ids(pkt, AcuriteAtlasPacket.__name__)
 
@@ -850,6 +861,7 @@ class Acurite00275MPacket(Packet):
     IDENTIFIER = "00275rm"
 
     # {"time" : "2017-03-09 21:59:11", "model" : "00275rm", "probe" : 2, "id" : 3942, "battery" : "OK", "temperature_C" : 23.300, "humidity" : 34, "ptemperature_C" : 22.700, "crc" : "ok"}
+    # {"time" : "2017-03-09 21:59:11", "model" : "00275rm", "probe" : 2, "id" : 3942, "battery" : "OK", "temperature_C" : 23.300, "humidity" : 34, "temperature_1_C" : 22.700, "crc" : "ok"}
 
     @staticmethod
     def parse_json(obj):
@@ -859,7 +871,10 @@ class Acurite00275MPacket(Packet):
         pkt['hardware_id'] = "%04x" % obj.get('id', 0)
         pkt['probe'] = obj.get('probe')
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
-        pkt['temperature_probe'] = Packet.get_float(obj, 'ptemperature_C')
+        if 'temperature_1_C' in obj:
+            pkt['temperature_probe'] = Packet.get_float(obj, 'temperature_1_C')
+        else:
+            pkt['temperature_probe'] = Packet.get_float(obj, 'ptemperature_C')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         return Acurite.insert_ids(pkt, Acurite00275MPacket.__name__)
@@ -1433,6 +1448,36 @@ class FOWH5Packet(Packet):
         return Packet.add_identifiers(pkt, station_id, FOWH5Packet.__name__)
 
 
+class FOWH51Packet(Packet):
+    # This is for a WH051 Soil Moisture Sensor (Fine Offset / Ecowitt WH51)
+    #{"time" : "2021-04-15 15:07:05", "model" : "Fineoffset-WH51", "id" : "00df73", "battery_ok" : 1.000, "battery_mV" : 1600, "moisture" : 0, "boost" : 0, "ad_raw" : 17, "mic" : "CRC", "mod" : "FSK", "freq1" : 915.024, "freq2" : 914.970, "rssi" : -2.258, "snr" : 35.115, "noise" : -37.373}
+
+    IDENTIFIER = "Fineoffset-WH51"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['usUnits'] = weewx.METRIC
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['station_id'] = obj.get('id')
+        pkt['soil_moisture_percent'] = Packet.get_float(obj, 'moisture')
+        pkt['boost'] = Packet.get_float(obj, 'boost')
+        pkt['soil_moisture_raw'] = Packet.get_float(obj, 'ad_raw')
+        pkt['freq1'] = Packet.get_float(obj, 'freq1')
+        pkt['freq2'] = Packet.get_float(obj, 'freq2')
+        pkt['battery_ok'] = Packet.get_float(obj, 'battery_ok')
+        pkt['battery_mV'] = Packet.get_float(obj, 'battery_mV')
+        pkt['snr'] = Packet.get_float(obj, 'snr')
+        pkt['rssi'] = Packet.get_float(obj, 'rssi')
+        pkt['noise'] = Packet.get_float(obj, 'noise')
+        return FOWH51Packet.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        return Packet.add_identifiers(pkt, station_id, FOWH51Packet.__name__)
+
+
 class FOWH65BPacket(Packet):
     # This is for a WH65B which is the sensor array for an Ambient Weather
     # WS-2902A. The same sensor array is used for several models.
@@ -1477,6 +1522,55 @@ class FOWH65BPacket(Packet):
         station_id = pkt.pop('station_id', '0000')
         return Packet.add_identifiers(pkt, station_id, FOWH65BPacket.__name__)
 
+
+class FOWH65BAltPacket(Packet):
+    # This is for a WH65B sensor array that identifies itself as
+    # Fineoffset-WH65B. Several mappings are also different from the other
+    # WH65B. This configuration was tested on an Ambient Weather WS-2902A kit.
+
+    # time : 2020-04-26 23:21:42
+    # model : Fineoffset-WH65B
+    # id : 16
+    # temperature_C : 15.400
+    # humidity : 51
+    # wind_dir_deg : 323
+    # wind_avg_m_s : 1.020
+    # wind_max_m_s : 2.040
+    # rain_mm : 76.453
+    # uv : 701
+    # uvi : 2
+    # light_lux : 14616.000
+    # battery_ok : OK
+    # mic : CRC
+
+    # {"time" : "2020-04-26 19:41:10", "model" : "Fineoffset-WH65B", "id" : 16, "battery_ok" : 1, "temperature_C" : 14.800, "humidity" : 50, "wind_dir_deg" : 336, "wind_avg_m_s" : 1.658, "wind_max_m_s" : 3.060, "rain_mm" : 76.454, "uv" : 1982, "uvi" : 4, "light_lux" : 69130.000, "mic" : "CRC"}
+
+    IDENTIFIER = "Fineoffset-WH65B"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRICWX
+        pkt['station_id'] = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+        pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_m_s')
+        pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_m_s')
+        pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
+        pkt['uv'] = Packet.get_float(obj, 'uv')      # superfluous?
+        pkt['uv_index'] = Packet.get_float(obj, 'uvi')
+        pkt['light'] = Packet.get_float(obj, 'light_lux')               # superfluous?
+        pkt['battery'] = 0 if obj.get('battery_ok') == 'OK' else 1
+        return FOWH65BAltPacket.insert_ids(pkt)
+    
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        return Packet.add_identifiers(pkt, station_id, FOWH65BAltPacket.__name__)
+
+
 class FOWH0290Packet(Packet):
     # This is for a WH0290 Air Quality Monitor (Ambient Weather PM25)
 
@@ -1498,6 +1592,7 @@ class FOWH0290Packet(Packet):
     def insert_ids(pkt):
         station_id = pkt.pop('station_id', '0000')
         return Packet.add_identifiers(pkt, station_id, FOWH0290Packet.__name__)
+
 
 class FOWH31LPacket(Packet):
     # This is for a WH31L lightning detector
@@ -1523,6 +1618,7 @@ class FOWH31LPacket(Packet):
     def insert_ids(pkt):
         station_id = pkt.pop('station_id', '0000')
         return Packet.add_identifiers(pkt, station_id, FOWH31LPacket.__name__)
+
 
 class Hideki(object):
     @staticmethod
@@ -1716,6 +1812,28 @@ class InFactoryTHPacket(Packet):
         return pkt
 
 
+class LaCrosseBreezeProPacket(Packet):
+    # sample json output from rtl_433
+    # {"time" : "2020-12-14 22:22:21", "model" : "LaCrosse-BreezePro", "id" : 561556, "seq" : 2, "flags" : 0, "temperature_C" : 19.800, "humidity" : 50, "wind_avg_km_h" : 0.000, "wind_dir_deg" : 262, "mic" : "CRC"}\n']
+
+    IDENTIFIER = "LaCrosse-BreezePro"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['usUnits'] = weewx.METRIC
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['model'] = obj.get('model')
+        pkt['hardware_id'] = "%d" % obj.get('id', 0)
+        pkt['sequence_num'] = Packet.get_int(obj, 'seq')
+        pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
+        pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        sensor_id = str(pkt.pop('hardware_id', '0000')).upper()
+        return Packet.add_identifiers(pkt, sensor_id, LaCrosseBreezeProPacket.__name__)
+
+
 class LaCrosseWSPacket(Packet):
     # 2016-09-08 00:43:52 :LaCrosse WS :9 :202
     # Temperature: 21.0 C
@@ -1802,7 +1920,6 @@ class LaCrosseTX141THBv2Packet(Packet):
 
 
 class LaCrosseTXPacket(Packet):
-
     # {"time" : "2017-07-30 21:11:19", "model" : "LaCrosse TX Sensor", "id" : 127, "humidity" : 34.000}
     # {"time" : "2017-07-30 21:11:19", "model" : "LaCrosse TX Sensor", "id" : 127, "temperature_C" : 27.100}
 
@@ -2311,11 +2428,10 @@ class OSBTHGN129Packet(Packet):
 
 
 class OSTHGR968Packet(Packet):
-
-    IDENTIFIER = "THGR968"
-
     # {"time" : "2019-02-15 13:43:25", "brand" : "OS", "model" : "THGR968", "id" : 187, "channel" : 1, "battery" : "OK", "temperature_C" : 16.500, "humidity" : 11}
     # '{"time" : "2019-02-15 13:43:26", "brand" : "OS", "model" : "THGR968", "id" : 187, "channel" : 1, "battery" : "OK", "temperature_C" : 16.500, "humidity" : 11}
+
+    IDENTIFIER = "THGR968"
 
     @staticmethod
     def parse_json(obj):
@@ -2331,11 +2447,10 @@ class OSTHGR968Packet(Packet):
 
 
 class OSRGR968Packet(Packet):
+    # {"time" : "2019-02-15 14:32:51", "brand" : "OS", "model" : "RGR968", "id" : 48, "channel" : 0, "battery" : "OK", "rain_rate" : 0.000, "total_rain" : 6935.100}
+    # {"time" : "2019-02-15 14:32:51", "brand" : "OS", "model" : "RGR968", "id" : 48, "channel" : 0, "battery" : "OK", "rain_rate" : 0.000, "total_rain" : 6935.100}
 
     IDENTIFIER = "RGR968"
-
-    # {"time" : "2019-02-15 14:32:51", "brand" : "OS", "model" : "RGR968", "id" : 48, "channel" : 0, "battery" : "OK", "rain_rate" : 0.000, "total_rain" : 6935.100}
-    # {"time" : "2019-02-15 14:32:51", "brand" : "OS", "model" : "RGR968", "id" : 48, "channel" : 0, "battery" : "OK", "rain_rate" : 0.000, "total_rain" : 6935.100}
 
     @staticmethod
     def parse_json(obj):
@@ -2462,6 +2577,31 @@ class Bresser5in1Packet(Packet):
     def insert_ids(pkt):
         station_id = pkt.pop('station_id', '0000')
         pkt = Packet.add_identifiers(pkt, station_id, Bresser5in1Packet.__name__)
+        return pkt
+
+
+class BresserProRainGaugePacket(Packet):
+    # {"time" : "2021-03-14 15:30:28", "model" : "Bresser-ProRainGauge",
+    # "id" : 17, "battery_ok" : 1, "temperature_C" : 9.800,
+    # "rain_mm" : 122.000, "mic" : "CHECKSUM"
+
+    IDENTIFIER = "Bresser-ProRainGauge"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRICWX
+        pkt['station_id'] = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
+        pkt['battery'] = 1 if Packet.get_int(obj, 'battery_ok') == 0 else 0
+        return BresserProRainGaugePacket.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        pkt = Packet.add_identifiers(pkt, station_id, BresserProRainGaugePacket.__name__)
         return pkt
 
 
@@ -2607,6 +2747,7 @@ class PacketFactory(object):
         AmbientF007THPacket,
         AmbientWH31EPacket,
         Bresser5in1Packet,
+        BresserProRainGaugePacket,
         CalibeurRF104Packet,
         EcoWittWH40Packet,
         FOWHx080Packet,
@@ -2617,7 +2758,9 @@ class PacketFactory(object):
         FOWH2Packet,
         FOWH32BPacket,
         FOWH5Packet,
+        FOWH51Packet,
         FOWH65BPacket,
+        FOWH65BAltPacket,
         FOWH0290Packet,
         FOWH31LPacket,
         HidekiTS04Packet,
@@ -2625,6 +2768,7 @@ class PacketFactory(object):
         HidekiRainPacket,
         InFactoryTHPacket,
         HolmanWS5029Packet,
+        LaCrosseBreezeProPacket,
         LaCrosseWSPacket,
         LaCrosseTX141THBv2Packet,
         LaCrosseTXPacket,
