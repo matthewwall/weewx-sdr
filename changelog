@@ -1,4 +1,5 @@
 0.82 26oct2021
+* huge thanks to andylittle for rolling up many changes while i was unavailable
 * add LaCrosse TX18 sensor thanks to jmpacquet MR82
 * added FOWH65BAltPacket thanks to jdormansteel MR84
 * added support for OS BTHR918 thanks to billatq MR136
