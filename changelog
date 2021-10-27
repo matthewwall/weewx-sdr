@@ -3,6 +3,7 @@
 * fix bresser 6in1 indentation
 * use introspection for packet listing - packet must have IDENTIFIER
 * provide more feedback when listing recognized packet types
+* update identifier and fields for Acurite 606TX
 
 0.82 26oct2021
 * huge thanks to andylittle for rolling up many changes while i was unavailable

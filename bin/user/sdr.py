@@ -705,8 +705,10 @@ class Acurite5n1Packet(Packet):
 class Acurite606TXPacket(Packet):
     # 2017-03-20: Acurite 606TX Temperature Sensor
     # {"time" : "2017-03-04 16:18:12", "model" : "Acurite 606TX Sensor", "id" : 48, "battery" : "OK", "temperature_C" : -1.100}
+    # {"time" : "2021-10-26 23:39:49", "model" : "Acurite-606TX", "id" : 194, "battery_ok" : 1, "temperature_C" : 19.200, "mic" : "CHECKSUM"}
 
-    IDENTIFIER = "Acurite 606TX Sensor"
+#    IDENTIFIER = "Acurite 606TX Sensor"
+    IDENTIFIER = "Acurite-606TX"
 
     @staticmethod
     def parse_json(obj):
@@ -715,7 +717,10 @@ class Acurite606TXPacket(Packet):
         pkt['usUnits'] = weewx.METRIC
         sensor_id = obj.get('id')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
-        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        if 'battery' in obj:
+            pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        if 'battery_ok' in obj:
+            pkt['battery'] = 0 if Packet.get_int(obj, 'battery_ok') == 1 else 1
         pkt = Packet.add_identifiers(pkt, sensor_id, Acurite606TXPacket.__name__)
         return pkt
 
