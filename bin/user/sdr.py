@@ -136,7 +136,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.83'
+DRIVER_VERSION = '0.84'
 
 # The default command requests json output from every decoder
 # Use the -R option to indicate specific decoders
@@ -3128,6 +3128,7 @@ class SDRDriver(weewx.drivers.AbstractDevice):
 
     def __init__(self, **stn_dict):
         loginf('driver version is %s' % DRIVER_VERSION)
+        self._model = stn_dict.get('model', 'SDR')
         self._log_unknown = tobool(stn_dict.get('log_unknown_sensors', False))
         self._log_unmapped = tobool(stn_dict.get('log_unmapped_sensors', False))
         self._sensor_map = stn_dict.get('sensor_map', {})
@@ -3147,7 +3148,7 @@ class SDRDriver(weewx.drivers.AbstractDevice):
 
     @property
     def hardware_name(self):
-        return 'SDR'
+        return self._model
 
     def genLoopPackets(self):
         while self._mgr.running():
