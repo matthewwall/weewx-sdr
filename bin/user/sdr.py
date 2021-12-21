@@ -431,6 +431,7 @@ class AcuriteTowerPacketV2(Packet):
 
     # Sample data:
     # {"time" : "2019-07-29 07:44:23.005624", "protocol" : 40, "model" : "Acurite-Tower", "id" : 1234, "sensor_id" : 1234, "channel" : "A", "temperature_C" : 22.600, "humidity" : 45, "battery_ok" : 0, "mod" : "ASK", "freq" : 433.938, "rssi" : -0.134, "snr" : 14.391, "noise" : -14.525}
+    # {"time" : "2021-12-20 20:00:59", "model" : "Acurite-Tower", "id" : 11041, "channel" : "B", "battery_ok" : 1, "temperature_C" : -3.500, "humidity" : 71, "mic" : "CHECKSUM"}
 
     IDENTIFIER = "Acurite-Tower"
 
@@ -3019,7 +3020,6 @@ class PacketFactory(object):
     @staticmethod
     def create(lines):
         # return a list of packets from the specified lines
-        logdbg("lines=%s" % lines)
         while lines:
             pkt = None
             if lines[0].startswith('{'):
@@ -3129,6 +3129,8 @@ class SDRDriver(weewx.drivers.AbstractDevice):
     def __init__(self, **stn_dict):
         loginf('driver version is %s' % DRIVER_VERSION)
         self._model = stn_dict.get('model', 'SDR')
+        loginf('model is %s' % self._model)
+        self._log_lines = tobool(stn_dict.get('log_lines', False))
         self._log_unknown = tobool(stn_dict.get('log_unknown_sensors', False))
         self._log_unmapped = tobool(stn_dict.get('log_unmapped_sensors', False))
         self._sensor_map = stn_dict.get('sensor_map', {})
@@ -3153,6 +3155,8 @@ class SDRDriver(weewx.drivers.AbstractDevice):
     def genLoopPackets(self):
         while self._mgr.running():
             for lines in self._mgr.get_stdout():
+                if self._log_lines:
+                    loginf("lines: %s" % lines)
                 for packet in PacketFactory.create(lines):
                     if packet:
                         pkt = self.map_to_fields(packet, self._sensor_map)
@@ -3165,7 +3169,7 @@ class SDRDriver(weewx.drivers.AbstractDevice):
                             else:
                                 logdbg("ignoring duplicate packet %s" % pkt)
                         elif self._log_unmapped:
-                            loginf("unmapped: %s (%s)" % (lines, packet))
+                            loginf("unmapped: %s" % packet)
                     elif self._log_unknown:
                         loginf("unparsed: %s" % lines)
             self._mgr.get_stderr()  # flush the stderr queue
@@ -3269,8 +3273,10 @@ Hide:
                       help='value for PATH')
     parser.add_option('--ld_library_path', dest='ld_library_path',
                       help='value for LD_LIBRARY_PATH')
+    parser.add_option('--config',
+                      help='configuration file with sensor map')
     parser.add_option('--hide', dest='hidden', default='empty',
-                      help='output to be hidden: out, parsed, unparsed, empty')
+                      help='output to be hidden as comma-delimited list: out, parsed, unparsed, mapped, unmapped, empty')
     parser.add_option('--action', dest='action', default='show-packets',
                       help='actions include show-packets, show-detected, list-supported')
 
@@ -3282,6 +3288,12 @@ Hide:
 
     if options.debug:
         syslog.setlogmask(syslog.LOG_UPTO(syslog.LOG_DEBUG))
+
+    sensor_map = dict()
+    if options.config:
+        import weecfg
+        config_path, config_dict = weecfg.read_config(options.config)
+        sensor_map = config_dict.get('SDR', {}).get('sensor_map', {})
 
     if options.action == 'list-supported':
         pkt_names = PacketFactory.known_packets()
@@ -3295,7 +3307,7 @@ Hide:
                     ld_library_path=options.ld_library_path)
         detected = dict()
         for lines in mgr.get_stdout():
-            # print "out:", lines
+            # print("out: %s" % lines)
             for p in PacketFactory.create(lines):
                 if p:
                     del p['usUnits']
@@ -3320,6 +3332,14 @@ Hide:
                 if p:
                     if 'parsed' not in hidden:
                         print('parsed: %s' % p)
+                    if sensor_map:
+                        m = SDRDriver.map_to_fields(p, sensor_map)
+                        if m:
+                            if 'mapped' not in hidden:
+                                print('mapped: %s' % m)
+                        else:
+                            if 'unmapped' not in hidden:
+                                print('unmapped: %s' % p)
                 else:
                     if 'unparsed' not in hidden and (
                             'empty' not in hidden or len(lines)):
