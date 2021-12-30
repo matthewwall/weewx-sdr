@@ -1,3 +1,8 @@
+0.85 30dec2021
+* fixed shutdown - use is_alive instead of isAlive to keep python 3.9 happy
+* eliminate stderr memory leak
+* report failures on startup (rtl_433 still uses incorrect stdout/stderr)
+
 0.84 19dec2021
 * added 'model' field
 * added option log_lines to assist in new sensor detection

@@ -136,7 +136,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.84'
+DRIVER_VERSION = '0.85'
 
 # The default command requests json output from every decoder
 # Use the -R option to indicate specific decoders
@@ -175,7 +175,8 @@ class AsyncReader(threading.Thread):
         logdbg("start async reader for %s" % self.getName())
         self._running = True
         for line in iter(self._fd.readline, ''):
-            self._queue.put(line)
+            if line:
+                self._queue.put(line)
             if not self._running:
                 break
 
@@ -219,27 +220,27 @@ class ProcManager(object):
 
     def shutdown(self):
         loginf('shutdown process %s' % self._cmd)
-        logdbg('waiting for %s' % self.stdout_reader.getName())
-        self.stdout_reader.stop_running()
-        self.stdout_reader.join(10.0)
-        if self.stdout_reader.isAlive():
-            loginf('timed out waiting for %s' % self.stdout_reader.getName())
-        self.stdout_reader = None
-        logdbg('waiting for %s' % self.stderr_reader.getName())
-        self.stderr_reader.stop_running()
-        self.stderr_reader.join(10.0)
-        if self.stderr_reader.isAlive():
-            loginf('timed out waiting for %s' % self.stderr_reader.getName())
-        self.stderr_reader = None
+        self._process.kill()
         logdbg("close stdout")
         self._process.stdout.close()
         logdbg("close stderr")
         self._process.stderr.close()
-        logdbg('kill process')
-        self._process.kill()
+        logdbg('shutdown %s' % self.stdout_reader.getName())
+        self.stdout_reader.stop_running()
+        self.stdout_reader.join(0.5)
+        logdbg('shutdown %s' % self.stderr_reader.getName())
+        self.stderr_reader.stop_running()
+        self.stderr_reader.join(0.5)
         if self._process.poll() is None:
             logerr('process did not respond to kill, shutting down anyway')
         self._process = None
+        if self.stdout_reader.is_alive():
+            loginf('timed out waiting for %s' % self.stdout_reader.getName())
+        self.stdout_reader = None
+        if self.stderr_reader.is_alive():
+            loginf('timed out waiting for %s' % self.stderr_reader.getName())
+        self.stderr_reader = None
+        loginf('shutdown complete')
 
     def running(self):
         return self._process.poll() is None
@@ -247,7 +248,7 @@ class ProcManager(object):
     def get_stderr(self):
         lines = []
         while not self.stderr_queue.empty():
-            lines.append(self.stderr_queue.get())
+            lines.append(self.stderr_queue.get().decode())
         return lines
 
     def get_stdout(self):
@@ -3172,9 +3173,12 @@ class SDRDriver(weewx.drivers.AbstractDevice):
                             loginf("unmapped: %s" % packet)
                     elif self._log_unknown:
                         loginf("unparsed: %s" % lines)
-            self._mgr.get_stderr()  # flush the stderr queue
+            # report any errors
+            for line in self._mgr.get_stderr():
+                logerr(line)
         else:
-            logerr("err: %s" % self._mgr.get_stderr())
+            for line in self._mgr.get_stderr():
+                logerr(line)
             raise weewx.WeeWxIOError("rtl_433 process is not running")
 
     def _calculate_deltas(self, pkt):
@@ -3327,7 +3331,7 @@ Hide:
         for lines in mgr.get_stdout():
             if 'out' not in hidden and (
                     'empty' not in hidden or len(lines)):
-                print("out:%s" % lines)
+                print("out: %s" % lines)
             for p in PacketFactory.create(lines):
                 if p:
                     if 'parsed' not in hidden:
@@ -3343,9 +3347,10 @@ Hide:
                 else:
                     if 'unparsed' not in hidden and (
                             'empty' not in hidden or len(lines)):
-                        print("unparsed:%s" % lines)
-        for lines in mgr.get_stderr():
-            print("err:%s" % lines)
+                        print("unparsed: %s" % lines)
+        for line in mgr.get_stderr():
+            line = line.rstrip()
+            print("err: %s" % line)
 
 
 if __name__ == '__main__':
