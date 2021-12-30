@@ -4,6 +4,8 @@
 * report failures on startup (rtl_433 still uses incorrect stdout/stderr)
 * added support for Acurite-3n1 thanks to zenon2cubed
 * added time threshhold to distinguish nearly duplicate packets
+* added support for Auriol HG02832 thanks to dinoj-bg MR140
+* support both metric and us in AcuriteAtlas packets thanks to ka6sox MR142
 
 0.84 19dec2021
 * added 'model' field
