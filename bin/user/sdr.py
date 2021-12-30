@@ -74,6 +74,9 @@ There seems to be a pattern of appending a unit label to the observation name
 in the JSON data, for example 'wind_speed_mph' instead of just 'wind_speed'.
 """
 
+# FIXME: deprecate then eliminate the V2 acurite packets - single packet def
+# can recognize anything rtl_433 spits out
+
 from __future__ import with_statement
 from calendar import timegm
 try:
@@ -160,6 +163,23 @@ def loader(config_dict, _):
 
 def confeditor_loader():
     return SDRConfigurationEditor()
+
+
+# utilities for inline unit conversions.  respect the None!
+def to_F(v):
+    if v is not None:
+        v  = v * 1.8 + 32
+    return v
+
+def to_mph(v):
+    if v is not None:
+        v *= 0.621371
+    return v
+
+def to_in(v):
+    if v is not None:
+        v /= 25.4
+    return v
 
 
 class AsyncReader(threading.Thread):
@@ -400,30 +420,22 @@ class AcuriteAtlasPacket(Packet):
         pkt['channel'] = obj.get('channel')
         pkt['sequence_num'] = Packet.get_int(obj, 'sequence_num')
         pkt['message_type'] = Packet.get_int(obj, 'message_type')
-        if 'temperature_F' in obj:
-            pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
-        if 'temperature_C' in obj:
-            pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
-            if pkt['temperature'] is not None:
-                pkt['temperature'] = pkt['temperature'] * 1.8 + 32
         if 'humidity' in obj:
             pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        if 'temperature_F' in obj:
+            pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
+        elif 'temperature_C' in obj:
+            pkt['temperature'] = to_F(Packet.get_float(obj, 'temperature_C'))
         if 'wind_avg_mi_h' in obj:
             pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_mi_h')
-        if 'wind_avg_km_h' in obj:
-            pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
-            if pkt['wind_speed'] is not None:
-                # Convert to mph
-                pkt['wind_speed'] *= 0.621371
+        elif 'wind_avg_km_h' in obj:
+            pkt['wind_speed'] = to_mph(Packet.get_float(obj, 'wind_avg_km_h'))
         if 'wind_dir_deg' in obj:
             pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
         if 'rain_in' in obj:
             pkt['rain_total'] = Packet.get_float(obj, 'rain_in')
-        if 'rain_mm' in obj:
-            pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
-            if pkt['rain_total'] is not None:
-                # Convert to inches
-                pkt['rain_total'] /= 25.4
+        elif 'rain_mm' in obj:
+            pkt['rain_total'] = to_in(Packet.get_float(obj, 'rain_mm'))
         if 'uv' in obj:
             pkt['uv'] = Packet.get_int(obj, 'uv')
         if 'lux' in obj:
@@ -461,8 +473,11 @@ class AcuriteTowerPacketV2(Packet):
         pkt['hardware_id'] = "%04x" % obj.get('id', 0)
         pkt['sensor_id'] = "%04x" % obj.get('sensor_id', 0)
         pkt['channel'] = obj.get('channel')
-        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        if 'temperature_F' in obj:
+            pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
+        elif 'temperature_C' in obj:
+            pkt['temperature'] = to_F(Packet.get_float(obj, 'temperature_C'))
         pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
         pkt['mod'] = obj.get('mod') # apparently mod = ASK
         pkt['freq'] = Packet.get_float(obj, 'freq')
@@ -492,21 +507,16 @@ class Acurite3n1PacketV2(Packet):
             pkt['msg_type'] = Packet.get_int(obj, 'subtype')
         elif 'message_type' in obj:
             pkt['msg_type'] = Packet.get_int(obj, 'message_type')
-        if 'wind_avg_mi_h' in obj:
-            pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_mi_h')
-        elif 'wind_avg_km_h' in obj:
-            pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
-            if pkt['wind_speed'] is not None:
-                # Convert to mph
-                pkt['wind_speed'] *= 0.621371
+        if 'humidity' in obj:
+            pkt['humidity'] = Packet.get_float(obj, 'humidity')
         if 'temperature_F' in obj:
             pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
         elif 'temperature_C' in obj:
-            pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
-            if pkt['temperature'] is not None:
-                pkt['temperature'] = pkt['temperature'] * 1.8 + 32
-        if 'humidity' in obj:
-            pkt['humidity'] = Packet.get_float(obj, 'humidity')
+            pkt['temperature'] = to_F(Packet.get_float(obj, 'temperature_C'))
+        if 'wind_avg_mi_h' in obj:
+            pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_mi_h')
+        elif 'wind_avg_km_h' in obj:
+            pkt['wind_speed'] = to_mph(Packet.get_float(obj, 'wind_avg_km_h'))
         return Acurite.insert_ids(pkt, Acurite3n1PacketV2.__name__)
 
 
@@ -548,25 +558,17 @@ class Acurite5n1PacketV2(Packet):
         #   49 has wind_speed, wind_dir, and rain
         #   56 has wind_speed, temperature, humidity
         if 'wind_avg_km_h' in obj:
-            pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
-            if pkt['wind_speed'] is not None:
-                # Convert to mph
-                pkt['wind_speed'] *= 0.621371
+            pkt['wind_speed'] = to_mph(Packet.get_float(obj, 'wind_avg_km_h'))
         if 'wind_dir_deg' in obj:
             pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
         if 'rain_in' in obj:
             pkt['rain_total'] = Packet.get_float(obj, 'rain_in')
-        if 'rain_mm' in obj:
-            pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
-            if pkt['rain_total'] is not None:
-                # Convert to inches
-                pkt['rain_total'] /= 25.4
+        elif 'rain_mm' in obj:
+            pkt['rain_total'] = to_in(Packet.get_float(obj, 'rain_mm'))
         if 'temperature_F' in obj:
             pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
         elif 'temperature_C' in obj:
-            pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
-            if pkt['temperature'] is not None:
-                pkt['temperature'] = pkt['temperature'] * 1.8 + 32
+            pkt['temperature'] = to_F(Packet.get_float(obj, 'temperature_C'))
         if 'humidity' in obj:
             pkt['humidity'] = Packet.get_float(obj, 'humidity')
         return Acurite.insert_ids(pkt, Acurite5n1PacketV2.__name__)
@@ -616,7 +618,7 @@ class AcuriteTowerPacket(Packet):
     def parse_json(obj):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['usUnits'] = weewx.METRIC
+        pkt['usUnits'] = weewx.US
         pkt['hardware_id'] = "%04x" % obj.get('id', 0)
         pkt['channel'] = obj.get('channel')
         # support both battery status keywords
@@ -625,7 +627,10 @@ class AcuriteTowerPacket(Packet):
         else:
             pkt['battery'] = Packet.get_int(obj, 'battery')
         pkt['status'] = obj.get('status')
-        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        if 'temperature_F' in obj:
+            pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
+        elif 'temperature_C' in obj:
+            pkt['temperature'] = to_F(Packet.get_float(obj, 'temperature_C'))
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         return Acurite.insert_ids(pkt, AcuriteTowerPacket.__name__)
 
@@ -760,22 +765,23 @@ class Acurite5n1Packet(Packet):
 class Acurite606TXPacket(Packet):
     # 2017-03-20: Acurite 606TX Temperature Sensor
     # {"time" : "2017-03-04 16:18:12", "model" : "Acurite 606TX Sensor", "id" : 48, "battery" : "OK", "temperature_C" : -1.100}
-    # {"time" : "2021-10-26 23:39:49", "model" : "Acurite-606TX", "id" : 194, "battery_ok" : 1, "temperature_C" : 19.200, "mic" : "CHECKSUM"}
 
-#    IDENTIFIER = "Acurite 606TX Sensor"
-    IDENTIFIER = "Acurite-606TX"
+    IDENTIFIER = "Acurite 606TX Sensor"
 
     @staticmethod
     def parse_json(obj):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['usUnits'] = weewx.METRIC
+        pkt['usUnits'] = weewx.US
         sensor_id = obj.get('id')
-        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
-        if 'battery' in obj:
-            pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        if 'temperature_F' in obj:
+            pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
+        elif 'temperature_C' in obj:
+            pkt['temperature'] = to_F(Packet.get_float(obj, 'temperature_C'))
         if 'battery_ok' in obj:
             pkt['battery'] = 0 if Packet.get_int(obj, 'battery_ok') == 1 else 1
+        else:
+            pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         pkt = Packet.add_identifiers(pkt, sensor_id, Acurite606TXPacket.__name__)
         return pkt
 
@@ -783,6 +789,7 @@ class Acurite606TXPacket(Packet):
 class Acurite606TXPacketV2(Packet):
     # 2021-02-23: Acurite 606TX Temperature Sensor
     # {"time" : "2021-02-23 16:24:07", "model" : "Acurite-606TX", "id" : 153, "battery_ok" : 1, "temperature_C" : 18.800, "mic" : "CHECKSUM"}
+    # {"time" : "2021-10-26 23:39:49", "model" : "Acurite-606TX", "id" : 194, "battery_ok" : 1, "temperature_C" : 19.200, "mic" : "CHECKSUM"}
 
     IDENTIFIER = "Acurite-606TX"
 
@@ -790,11 +797,14 @@ class Acurite606TXPacketV2(Packet):
     def parse_json(obj):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['usUnits'] = weewx.METRIC
+        pkt['usUnits'] = weewx.US
         sensor_id = obj.get('id')
-        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        if 'temperature_F' in obj:
+            pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
+        elif 'temperature_C' in obj:
+            pkt['temperature'] = to_F(Packet.get_float(obj, 'temperature_C'))
         pkt['battery'] = 0 if obj.get('battery_ok') == '1' else 1
-        pkt = Packet.add_identifiers(pkt, sensor_id, Acurite606TXPacket.__name__)
+        pkt = Packet.add_identifiers(pkt, sensor_id, Acurite606TXPacketV2.__name__)
         return pkt
 
       
@@ -816,7 +826,7 @@ class AcuriteRain899Packet(Packet):
         pkt['channel'] = obj.get('channel')
         pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
         if 'rain_mm' in obj:
-            pkt['rain_total'] = Packet.get_float(obj, 'rain_mm') / 25.4
+            pkt['rain_total'] = to_in(Packet.get_float(obj, 'rain_mm'))
         return Acurite.insert_ids(pkt, AcuriteRain899Packet.__name__)
 
 
