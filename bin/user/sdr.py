@@ -466,7 +466,7 @@ class AcuriteTowerPacketV2(Packet):
     @staticmethod
     def parse_json(obj):
         pkt = dict()
-        pkt['usUnits'] = weewx.METRIC
+        pkt['usUnits'] = weewx.US
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['protocol'] = Packet.get_int(obj, 'protocol') # 40
         pkt['model'] = obj.get('model') # model = Acurite-Tower
