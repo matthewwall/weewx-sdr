@@ -88,6 +88,7 @@ import re
 import subprocess
 import threading
 import time
+import copy
 
 try:
     import cjson as json
@@ -455,6 +456,44 @@ class AcuriteTowerPacketV2(Packet):
         pkt['snr'] = Packet.get_float(obj, 'snr')
         pkt['noise'] = Packet.get_float(obj, 'noise')
         return Acurite.insert_ids(pkt, AcuriteTowerPacketV2.__name__)
+
+
+class Acurite3n1PacketV2(Packet):
+    # sample json output from rtl_433
+    # {"time" : "2021-12-27 02:53:38", "model" : "Acurite-3n1", "subtype" : 32, "id" : 7220, "channel" : "B", "sequence_num" : 1, "battery_ok" : 1, "wind_avg_mi_h" : 5.000, "temperature_F" : 5.100, "humidity" : 65, "mic" : "CHECKSUM"}
+
+    IDENTIFIER = "Acurite-3n1"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['usUnits'] = weewx.US
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['model'] = obj.get('model')
+        pkt['hardware_id'] = "%04x" % obj.get('id', 0)
+        pkt['channel'] = obj.get('channel')
+        pkt['sequence_num'] = Packet.get_int(obj, 'sequence_num')
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
+        if 'subtype' in obj:
+            pkt['msg_type'] = Packet.get_int(obj, 'subtype')
+        elif 'message_type' in obj:
+            pkt['msg_type'] = Packet.get_int(obj, 'message_type')
+        if 'wind_avg_mi_h' in obj:
+            pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_mi_h')
+        elif 'wind_avg_km_h' in obj:
+            pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
+            if pkt['wind_speed'] is not None:
+                # Convert to mph
+                pkt['wind_speed'] *= 0.621371
+        if 'temperature_F' in obj:
+            pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
+        elif 'temperature_C' in obj:
+            pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+            if pkt['temperature'] is not None:
+                pkt['temperature'] = pkt['temperature'] * 1.8 + 32
+        if 'humidity' in obj:
+            pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        return Acurite.insert_ids(pkt, Acurite3n1PacketV2.__name__)
 
 
 class Acurite5n1PacketV2(Packet):
@@ -3127,6 +3166,16 @@ class SDRDriver(weewx.drivers.AbstractDevice):
         'rain': 'rain_total',
         'strikes': 'strikes_total'}
 
+    # what is the difference in timestamp values at which we consider two
+    # data samples to be different?  some hardware emits duplicate data, and
+    # sometimes the rtl_433/rtl-sdr emits duplicate data.  when all of the
+    # data are identical, including timestamp, we can easily reject duplicates.
+    # when the data are identical but vary only by timestamp, then we can
+    # reject duplicates only if the difference in timestamp is smaller than
+    # the sensor sampling period.  there is no way to know this, so we make
+    # that number a configurable option.  the default is 1 second.
+    TIMESTAMP_MATCH_THRESHHOLD = 1
+
     def __init__(self, **stn_dict):
         loginf('driver version is %s' % DRIVER_VERSION)
         self._model = stn_dict.get('model', 'SDR')
@@ -3138,6 +3187,7 @@ class SDRDriver(weewx.drivers.AbstractDevice):
         loginf('sensor map is %s' % self._sensor_map)
         self._deltas = stn_dict.get('deltas', SDRDriver.DEFAULT_DELTAS)
         loginf('deltas is %s' % self._deltas)
+        self._ts_delta = stn_dict.get('timestamp_match_threshhold', SDRDriver.TIMESTAMP_MATCH_THRESHHOLD)
         self._counter_values = dict()
         cmd = stn_dict.get('cmd', DEFAULT_CMD)
         path = stn_dict.get('path', None)
@@ -3162,7 +3212,7 @@ class SDRDriver(weewx.drivers.AbstractDevice):
                     if packet:
                         pkt = self.map_to_fields(packet, self._sensor_map)
                         if pkt:
-                            if pkt != self._last_pkt:
+                            if not self._packets_match(pkt, self._last_pkt):
                                 logdbg("packet=%s" % pkt)
                                 self._last_pkt = pkt
                                 self._calculate_deltas(pkt)
@@ -3180,6 +3230,23 @@ class SDRDriver(weewx.drivers.AbstractDevice):
             for line in self._mgr.get_stderr():
                 logerr(line)
             raise weewx.WeeWxIOError("rtl_433 process is not running")
+
+    def _packets_match(self, pkt1, pkt2):
+        # see if two packets match.  this is more than just a direct comparison
+        # of packets.  if the data match, but the timestamps are different,
+        # then that is considered different, but only if the timestamp is
+        # bigger than the sampling period for the hardware.
+        if pkt1 != pkt2:
+            return False
+        a = copy.deepcopy(pkt1)
+        b = copy.deepcopy(pkt2)
+        a_ts = a.pop('dateTime')
+        b_ts = b.pop('dateTime')
+        if a != b:
+            return False
+        if abs(a_ts - b_ts) > self._ts_delta:
+            return False
+        return True
 
     def _calculate_deltas(self, pkt):
         for k in self._deltas:

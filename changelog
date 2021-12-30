@@ -2,6 +2,8 @@
 * fixed shutdown - use is_alive instead of isAlive to keep python 3.9 happy
 * eliminate stderr memory leak
 * report failures on startup (rtl_433 still uses incorrect stdout/stderr)
+* added support for Acurite-3n1 thanks to zenon2cubed
+* added time threshhold to distinguish nearly duplicate packets
 
 0.84 19dec2021
 * added 'model' field
