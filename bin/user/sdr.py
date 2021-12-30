@@ -402,14 +402,28 @@ class AcuriteAtlasPacket(Packet):
         pkt['message_type'] = Packet.get_int(obj, 'message_type')
         if 'temperature_F' in obj:
             pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
+        if 'temperature_C' in obj:
+            pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+            if pkt['temperature'] is not None:
+                pkt['temperature'] = pkt['temperature'] * 1.8 + 32
         if 'humidity' in obj:
             pkt['humidity'] = Packet.get_float(obj, 'humidity')
         if 'wind_avg_mi_h' in obj:
             pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_mi_h')
+        if 'wind_avg_km_h' in obj:
+            pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
+            if pkt['wind_speed'] is not None:
+                # Convert to mph
+                pkt['wind_speed'] *= 0.621371
         if 'wind_dir_deg' in obj:
             pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
         if 'rain_in' in obj:
             pkt['rain_total'] = Packet.get_float(obj, 'rain_in')
+        if 'rain_mm' in obj:
+            pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
+            if pkt['rain_total'] is not None:
+                # Convert to inches
+                pkt['rain_total'] /= 25.4
         if 'uv' in obj:
             pkt['uv'] = Packet.get_int(obj, 'uv')
         if 'lux' in obj:
