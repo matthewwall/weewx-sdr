@@ -1,3 +1,6 @@
+0.86 11jan2021
+* fixed typo in factor for THPacket (thanks gjr80)
+
 0.85 30dec2021
 * fixed shutdown - use is_alive instead of isAlive to keep python 3.9 happy
 * eliminate stderr memory leak
