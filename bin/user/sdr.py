@@ -2020,7 +2020,7 @@ class InFactoryTHPacket(Packet):
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
         pkt['channel'] = obj.get('channel')
-        pkt = Packet.add_identifiers(pkt, sensor_id, ProloguePacket.__name__)
+        pkt = Packet.add_identifiers(pkt, sensor_id, InFactoryTHPacket.__name__)
         return pkt
 
 
