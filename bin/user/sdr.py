@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright 2016-2021 Matthew Wall
+# Copyright 2016-2022 Matthew Wall
 # Distributed under the terms of the GNU Public License (GPLv3)
 """
 Collect data from stl-sdr.  Run rtl_433 on a thread and push the output onto
@@ -140,7 +140,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.86'
+DRIVER_VERSION = '0.87'
 
 # The default command requests json output from every decoder
 # Use the -R option to indicate specific decoders
@@ -986,6 +986,30 @@ class AcuriteWT450Packet(Packet):
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         _id = "%s:%s" % (pkt['sid'], pkt['channel'])
         return Packet.add_identifiers(pkt, _id, AcuriteWT450Packet.__name__)
+
+
+class Acurite515Packet(Packet):
+
+    # refrigerator (XR) and freezer (XF) sensors
+    # X is one of A, B, or C
+    # "time" : "2022-01-21 21:55:54", "model" : "Acurite-515", "id" : 2375, "channel" : "BR", "battery_ok" : 1, "temperature_F" : 47.600, "mic" : "CHECKSUM"
+    # "time" : "2022-01-21 21:55:44", "model" : "Acurite-515", "id" : 78, "channel" : "BF", "battery_ok" : 1, "temperature_F" : 47.100, "mic" : "CHECKSUM"
+
+    IDENTIFIER = "Acurite-515"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.US
+        pkt['hardware_id'] = "%04x" % obj.get('id', 0)
+        pkt['channel'] = Packet.get_int(obj, 'channel')
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
+        if 'temperature_F' in obj:
+            pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
+        elif 'temperature_C' in obj:
+            pkt['temperature'] = to_F(Packet.get_float(obj, 'temperature_C'))
+        return Packet.insert_ids(pkt, Acurite515Packet.__name__)
 
 
 class AlectoV1TemperaturePacket(Packet):
@@ -2166,6 +2190,25 @@ class LaCrosseTX18Packet(Packet):
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         pkt = Packet.add_identifiers(pkt, sensor_id, LaCrosseTX18Packet.__name__)
+        return pkt
+
+
+class LaCrosseLTVR3Packet(Packet):
+
+    # "time" : "2022-01-16 04:43:25", "model" : "LaCrosse-R3", "id" : 7417878, "battery_ok" : 1, "seq" : 1, "rain_mm" : 10921.750, "rain2_mm" : 10921.750, "mic" : "CRC"
+
+    IDENTIFIER = "LaCrosse-R3"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        sensor_id = obj.get('id')
+        pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
+        pkt['rain2_total'] = Packet.get_float(obj, 'rain2_mm')
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
+        pkt = Packet.add_identifiers(pkt, sensor_id, LaCrosseLTVR3Packet.__name__)
         return pkt
 
 

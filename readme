@@ -1,5 +1,5 @@
 weewx-sdr
-Copyright 2016-20212 Matthew Wall
+Copyright 2016-2022 Matthew Wall
 Distributed under terms of the GPLv3
 
 This is a driver for weewx that captures data from software-defined radio.

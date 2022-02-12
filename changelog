@@ -1,3 +1,7 @@
+0.87 21jan2021
+* added support for Acurite515 refrigerator/freezer sensors
+* added support for LaCross LTV-R3 rain sensor thanks to srhuston (#145)
+
 0.86 11jan2021
 * fixed typo in factor for THPacket (thanks gjr80)
 
