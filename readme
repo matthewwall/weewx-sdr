@@ -1,5 +1,5 @@
 weewx-sdr
-Copyright 2016-2021 Matthew Wall
+Copyright 2016-20212 Matthew Wall
 Distributed under terms of the GPLv3
 
 This is a driver for weewx that captures data from software-defined radio.
@@ -70,8 +70,7 @@ How to run the driver directly
 Run the driver directly for testing and diagnostics.  For example, if weewx
 was installed using setup.py:
 
-cd /home/weewx
-sudo PYTHONPATH=bin python bin/user/sdr.py --help
+sudo PYTHONPATH=/home/weewx/bin python /home/weewx/bin/user/sdr.py --help
 
 If weewx was installed from deb or rpm:
 
@@ -184,8 +183,7 @@ sudo rtl_433 -M utc -F json -R 9 -R 31
 Once that is working, run the driver directly to be sure that it is collecting
 data from the rtl_433 application.
 
-cd /home/weewx
-sudo PYTHONPATH=bin python bin/user/sdr.py
+sudo PYTHONPATH=/home/weewx/bin python /home/weewx/bin/user/sdr.py
 
 Make note of the sensor identifiers.  Each identifier is a three-part string
 consisting of the observation, sensor id, and rf packet type, separated by
@@ -260,12 +258,35 @@ Using a more recent version of libusb (e.g., 1.0.20) seems to clear things up.
 
 
 ===============================================================================
-Support for new sensors
+Detecting new sensors
+
+After you have run for awhile, you might want to add new sensors to your
+system.  If you have more than two or three sensors, it can be quite a
+challenge to pick through all of the output when you run the driver directly.
+This shows how to display only sensors that are detected but not yet part of
+your weewx configuration.
+
+First, shut down weewx so that you can talk to the SDR directly.
+
+Then run the SDR driver directly, but tell it to print out information only
+about sensors that you have not yet added to your weewx configuration:
+
+PYTHONPATH=/home/weewx/bin python /home/weewx/bin/user/sdr.py --config /home/weewx/weewx.conf --hide=out,parsed,mapped
+
+As always, unless the sensor identifier is marked on the sensor itself, you
+should turn on sensors one at a time, marking the outside of the sensor with
+its identifier.  Then you can turn on all the sensors and place them, using
+the identifier on the sensor to distinguish which sensor is which when you
+map them to database fields in your weewx configuration.
+
+
+===============================================================================
+Support for new sensor types
 
 To add support for new sensors, capture the output from rtl_433.  To capture
 output, run the driver directly and hide known packets:
 
-PYTHONPATH=bin python bin/user/sdr.py --cmd "rtl_433 -M utc -F json" --hide parsed,out,empty
+PYTHONPATH=/home/weewx/bin python /home/weewx/bin/user/sdr.py --cmd "rtl_433 -M utc -F json" --hide parsed,out,empty
 
 This should emit a line for each unparsed type.  For example:
 
