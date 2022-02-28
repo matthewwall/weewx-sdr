@@ -2816,7 +2816,7 @@ class PrologueTHPacket(Packet):
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         pkt['channel'] = obj.get('channel')
-        pkt = Packet.add_identifiers(pkt, sensor_id, PrologueTHPacket.name)
+        pkt = Packet.add_identifiers(pkt, sensor_id, PrologueTHPacket.__name__)
         return pkt
 
 
