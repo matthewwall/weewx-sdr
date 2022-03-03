@@ -1194,7 +1194,7 @@ class Cotech367959Packet(Packet):
         pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_m_s')
         pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
         pkt['total_rain'] = Packet.get_float(obj, 'rain_mm')
-        pkt = Packet.add_identifiers(pkt, sensor_id, WS2032Packet.__name__)
+        pkt = Packet.add_identifiers(pkt, sensor_id, Cotech367959Packet.__name__)
         return pkt
 class EcoWittWH40Packet(Packet):
     # This is for a WH40 rain sensor
