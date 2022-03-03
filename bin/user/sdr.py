@@ -171,6 +171,11 @@ def to_F(v):
         v  = v * 1.8 + 32
     return v
 
+def to_C(v):
+    if v is not None:
+        v  = 5 / 9 * (v - 32) 
+    return v
+
 def to_mph(v):
     if v is not None:
         v *= 0.621371
@@ -1172,8 +1177,25 @@ class CalibeurRF104Packet(Packet):
         pkt = Packet.add_identifiers(
             pkt, sensor_id, CalibeurRF104Packet.__name__)
         return pkt
+class Cotech367959Packet(Packet):
+    #{"time" : "2022-03-01 14:11:42", "model" : "Cotech-367959", "id" : 24, "battery_ok" : 1, "temperature_F" : 46.900, "humidity" : 62, "rain_mm" : 18.600, "wind_dir_deg" : 16, "wind_avg_m_s" : 0.600, "wind_max_m_s" : 0.700, "mic" : "CRC"}
+    IDENTIFIER = "Cotech-367959"
 
-
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        sensor_id = obj.get('id')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['temperature'] = to_C(Packet.get_float(obj, 'temperature_F'))
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_m_s')
+        pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_m_s')
+        pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+        pkt['total_rain'] = Packet.get_float(obj, 'rain_mm')
+        pkt = Packet.add_identifiers(pkt, sensor_id, WS2032Packet.__name__)
+        return pkt
 class EcoWittWH40Packet(Packet):
     # This is for a WH40 rain sensor
 
