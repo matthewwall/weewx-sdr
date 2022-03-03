@@ -140,7 +140,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.87'
+DRIVER_VERSION = '0.88'
 
 # The default command requests json output from every decoder
 # Use the -R option to indicate specific decoders
@@ -2816,7 +2816,7 @@ class PrologueTHPacket(Packet):
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         pkt['channel'] = obj.get('channel')
-        pkt = Packet.add_identifiers(pkt, sensor_id, PrologueTHPacket.name)
+        pkt = Packet.add_identifiers(pkt, sensor_id, PrologueTHPacket.__name__)
         return pkt
 
 
