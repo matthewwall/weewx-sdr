@@ -2382,7 +2382,7 @@ class OSBTHR968Packet(Packet):
         pkt['usUnits'] = weewx.METRIC
         pkt['house_code'] = obj.get('id')
         pkt['channel'] = obj.get('channel')
-        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['battery'] = 0 if obj.get('battery_ok') == 'OK' else 1
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         if 'pressure' in obj:
@@ -2577,7 +2577,7 @@ class OSUV800Packet(Packet):
         pkt['usUnits'] = weewx.METRIC
         pkt['house_code'] = obj.get('id')
         pkt['channel'] = obj.get('channel')
-        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['battery'] = 0 if obj.get('battery_ok') == 'OK' else 1
         pkt['uv_index'] = Packet.get_float(obj, 'uv')
         return OS.insert_ids(pkt, OSUV800Packet.__name__)
 
