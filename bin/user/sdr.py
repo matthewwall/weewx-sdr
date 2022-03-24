@@ -1739,6 +1739,7 @@ class FOWH65BAltPacket(Packet):
 
     # {"time" : "2020-04-26 19:41:10", "model" : "Fineoffset-WH65B", "id" : 16, "battery_ok" : 1, "temperature_C" : 14.800, "humidity" : 50, "wind_dir_deg" : 336, "wind_avg_m_s" : 1.658, "wind_max_m_s" : 3.060, "rain_mm" : 76.454, "uv" : 1982, "uvi" : 4, "light_lux" : 69130.000, "mic" : "CRC"}
     # {"time" : "2020-07-22 04:47:47", "model" : "Fineoffset-WH65B", "id" : 73, "battery_ok" : 1, "temperature_C" : 24.900, "humidity" : 53, "wind_dir_deg" : 21, "wind_avg_m_s" : 0.000, "wind_max_m_s" : 0.000, "rain_mm" : 7.874, "uv" : 1, "uvi" : 0, "light_lux" : 0.000, "mic" : "CRC"}
+    # {"time" : "2022-03-24 02:27:26", "model" : "Fineoffset-WH65B", "id" : 86, "battery_ok" : 1, "temperature_C" : 2.400, "humidity" : 94, "wind_dir_deg" : 268, "wind_avg_m_s" : 0.701, "wind_max_m_s" : 1.020, "rain_mm" : 2411.222, "uv" : 2, "uvi" : 0, "light_lux" : 0.000, "mic" : "CRC", "mod" : "FSK", "freq1" : 914.965, "freq2" : 915.019, "rssi" : -0.120, "snr" : 20.011, "noise" : -20.130}
 
     IDENTIFIER = "Fineoffset-WH65B"
 
@@ -1756,10 +1757,13 @@ class FOWH65BAltPacket(Packet):
         pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
         pkt['uv'] = Packet.get_float(obj, 'uv') # superfluous?
         pkt['uv_index'] = Packet.get_float(obj, 'uvi')
-        pkt['light'] = Packet.get_float(obj, 'light_lux') # superfluous?
-        pkt['battery'] = 0 if Packet.get_int(obj, 'battery_ok') == 1 else 0
+        pkt['light'] = Packet.get_float(obj, 'light_lux')
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
+        pkt['rssi'] = Packet.get_float(obj, 'rssi')
+        pkt['snr'] = Packet.get_float(obj, 'snr')
+        pkt['noise'] = Packet.get_float(obj, 'noise')
         return FOWH65BAltPacket.insert_ids(pkt)
-    
+
     @staticmethod
     def insert_ids(pkt):
         station_id = pkt.pop('station_id', '0000')
