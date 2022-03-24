@@ -1583,6 +1583,7 @@ class FOWH32BPacket(Packet):
     # Integrity : CHECKSUM
 
     # {"time" : "2019-04-08 07:06:03", "model" : "Fineoffset-WH32B", "id" : 146, "temperature_C" : 16.900, "humidity" : 59, "pressure_hPa" : 1001.300, "battery" : "OK", "mic" : "CHECKSUM"}
+    # {"time" : "2022-03-24 02:27:27", "model" : "Fineoffset-WH32B", "id" : 114, "battery_ok" : 1, "temperature_C" : 20.700, "humidity" : 49, "pressure_hPa" : 960.300, "mic" : "CRC", "mod" : "FSK", "freq1" : 914.964, "freq2" : 915.026, "rssi" : -0.118, "snr" : 20.295, "noise" : -20.412}
 
     IDENTIFIER = "Fineoffset-WH32B"
 
@@ -1595,7 +1596,10 @@ class FOWH32BPacket(Packet):
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         pkt['pressure'] = Packet.get_float(obj, 'pressure_hPa')
-        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        if 'battery' in obj:
+            pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        if 'battery_ok' in obj:
+            pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
         return FOWH32BPacket.insert_ids(pkt)
 
     @staticmethod
