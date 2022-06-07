@@ -1,3 +1,6 @@
+0.89 07jun2022
+* add json parse section for Oregon THR228N thanks to user modu
+
 0.88 03mar2022 
 * fixed typo in method for THPacket thanks to olpayras (#149)
 

@@ -140,7 +140,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.88'
+DRIVER_VERSION = '0.89'
 
 # The default command requests json output from every decoder
 # Use the -R option to indicate specific decoders
@@ -2550,7 +2550,7 @@ class OSTHR228NPacket(Packet):
     # Battery:         OK
     # Temperature:     24.70 C
 
-    IDENTIFIER = "Thermo Sensor THR228N"
+    IDENTIFIER = "Oregon-THR228N"
     PARSEINFO = {
         'House Code': ['house_code', None, lambda x: int(x)],
         'Channel': ['channel', None, lambda x: int(x)],
@@ -2566,6 +2566,17 @@ class OSTHR228NPacket(Packet):
         pkt.update(Packet.parse_lines(lines, OSTHR228NPacket.PARSEINFO))
         return OS.insert_ids(pkt, OSTHR228NPacket.__name__)
 
+    # "time" : "2022-06-07 08:17:09", "model" : "Oregon-THR228N", "id" : 211, "channel" : 1, "battery_ok" : 0, "temperature_C" : -19.900}
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['house_code'] = obj.get('id')
+        pkt['channel'] = obj.get('channel')
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        return OS.insert_ids(pkt, OSTHR228NPacket.__name__)
 
 class OSUV800Packet(Packet):
     # 2017-01-30 22:00:12 : OS : UV800
