@@ -1,5 +1,8 @@
+0.90 20jun2022
+* add json pars section for TFA-Drop thanks to user modussiam (#156)
+
 0.89 07jun2022
-* add json parse section for Oregon THR228N thanks to user modu
+* add json parse section for Oregon THR228N thanks to user modussiam
 
 0.88 03mar2022 
 * fixed typo in method for THPacket thanks to olpayras (#149)

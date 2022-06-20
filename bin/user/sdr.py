@@ -140,7 +140,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.89'
+DRIVER_VERSION = '0.90'
 
 # The default command requests json output from every decoder
 # Use the -R option to indicate specific decoders
@@ -3101,6 +3101,24 @@ class TFATwinPlus303049Packet(Packet):
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         return Hideki.insert_ids(pkt, TFATwinPlus303049Packet.__name__)
+
+
+class TFADropPacket(Packet):
+
+    # {"time" : "2022-06-19 09:18:57", "model" : "TFA-Drop", "id" : 549565, "battery_ok" : 1, "rain_mm" : 0.000, "mic" : "CHECKSUM"} 
+
+    IDENTIFIER = "TFA-Drop"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
+        pkt['usUnits'] = weewx.METRIC
+        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        sensor_id = pkt.pop('id', '0000')
+        pkt = Packet.add_identifiers(pkt, sensor_id, TFADropPacket.__name__)
+        return pkt
 
 
 class TSFT002Packet(Packet):
