@@ -2070,6 +2070,26 @@ class InFactoryTHPacket(Packet):
         return pkt
 
 
+class KedsumTHPacket(Packet):
+    # {"time" : "2022-06-17 00:23:59", "model" : "Kedsum-TH", "id" : 235, "channel" : 1, "battery_ok" : 0, "flags" : 8, "temperature_F" : 59.000, "humidity" : 74, "mic" : "CRC"}
+
+    IDENTIFIER = "Kedsum-TH"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.US
+        sensor_id = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
+        pkt['channel'] = obj.get('channel')
+        pkt['flags'] = obj.get('flags')
+        pkt = Packet.add_identifiers(pkt, sensor_id, KedsumTHPacket.__name__)
+        return pkt
+
+
 class LaCrosseBreezeProPacket(Packet):
     # sample json output from rtl_433
     # {"time" : "2020-12-14 22:22:21", "model" : "LaCrosse-BreezePro", "id" : 561556, "seq" : 2, "flags" : 0, "temperature_C" : 19.800, "humidity" : 50, "wind_avg_km_h" : 0.000, "wind_dir_deg" : 262, "mic" : "CRC"}\n']
