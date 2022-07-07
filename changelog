@@ -1,3 +1,9 @@
+0.90 07jul2022
+* add battery voltage for WS80 thanks to fankyy (#153)
+
+0.90 06jul2022
+* add json pars section for WS80 thanks to fankyy (#153) 
+
 0.90 22jun2022
 * add json pars section for Kedsum-TH thanks to user Sar6e (#157)
 

@@ -186,6 +186,10 @@ def to_in(v):
         v /= 25.4
     return v
 
+def to_v(v):
+    if v is not None:
+        v /= 1000
+    return v
 
 class AsyncReader(threading.Thread):
 
@@ -1834,9 +1838,9 @@ class FOWH31LPacket(Packet):
 
 
 class FOWS80Packet(Packet):
+    # This is for a Fine Offset Electronics WS80 weather station 
 
-#{"time" : "2022-07-06 21:06:18", "model" : "Fineoffset-WS80", "id" : 589862, "battery_ok" : 1.170, "battery_mV" : 3280, "temperature_C" : 17.700, "humidity" : 67, "wind_dir_deg" : 268, "wind_avg_m_s" : 1.300, "wind_max_m_s" : 1.800, "uvi" : 0.000, "light_lux" : 0.000, "flags" : 170, "mic" : "CRC"}
-
+    #{"time" : "2022-07-06 21:06:18", "model" : "Fineoffset-WS80", "id" : 589862, "battery_ok" : 1.170, "battery_mV" : 3280, "temperature_C" : 17.700, "humidity" : 67, "wind_dir_deg" : 268, "wind_avg_m_s" : 1.300, "wind_max_m_s" : 1.800, "uvi" : 0.000, "light_lux" : 0.000, "flags" : 170, "mic" : "CRC"}
 
     IDENTIFIER = "Fineoffset-WS80"
 
@@ -1854,24 +1858,14 @@ class FOWS80Packet(Packet):
         pkt['rain_total'] = Packet.get_float(obj, 'rainfall_mm')
         pkt['uv_index'] = Packet.get_float(obj, 'uvi')
         pkt['light'] = Packet.get_float(obj, 'light_lux')
-        #pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
-        #pkt['some voltage'] = Packet.get_float(obj, 'battery_mV')
+        #pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
+        pkt['voltage'] = to_v(Packet.get_float(obj, 'battery_mV'))
         return FOWS80Packet.insert_ids(pkt)
 
     @staticmethod
     def insert_ids(pkt):
         station_id = pkt.pop('station_id', '0000')
         return Packet.add_identifiers(pkt, station_id, FOWS80Packet.__name__)
-
-
-
-
-
-
-
-
-
-
 
 
 class AuriolHG02832Packet(Packet):
