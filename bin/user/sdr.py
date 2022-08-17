@@ -1311,9 +1311,6 @@ class FOWHx080Packet(Packet):
     # Month: 25
     # Day: 70
 
-    # {"time" : "2020-10-13 14:04:48", "model" : "Fine Offset Electronics WH1080/WH3080 Weather Station", "msg_type" : 0, "id" : 14, "battery" : "OK", "temperature_C" : 24.400, "humidity" : 35, "direction_deg" : 225, "speed" : 0.000, "gust" : 0.000, "rain" : 41.400, "mic" : "CRC"}
-    # todays rtl_433 output
-    # {"time" : "2020-10-13 14:04:48", "model" : "Fineoffset-WHx080", "subtype" : 0, "id" : 14, "battery_ok" : 1, "temperature_C" : 24.400, "humidity" : 35, "wind_dir_deg" : 225, "wind_avg_km_h" : 0.000, "wind_max_km_h" : 0.000, "rain_mm" : 41.400, "mic" : "CRC"}
 
     # apparently there are different identifiers for the same packet, depending
     # on which version of rtl_433 is running.  one version has extra spaces,
@@ -1323,6 +1320,13 @@ class FOWHx080Packet(Packet):
 
     # this assumes rain total is in mm (as of dec 2019)
     # this assumes wind speed is kph (as of dec 2019)
+
+    # {"time" : "2020-10-13 14:04:48", "model" : "Fine Offset Electronics WH1080/WH3080 Weather Station", "msg_type" : 0, "id" : 14, "battery" : "OK", "temperature_C" : 24.400, "humidity" : 35, "direction_deg" : 225, "speed" : 0.000, "gust" : 0.000, "rain" : 41.400, "mic" : "CRC"}
+    # todays rtl_433 output
+    # {"time" : "2020-10-13 14:04:48", "model" : "Fineoffset-WHx080", "subtype" : 0, "id" : 14, "battery_ok" : 1, "temperature_C" : 24.400, "humidity" : 35, "wind_dir_deg" : 225, "wind_avg_km_h" : 0.000, "wind_max_km_h" : 0.000, "rain_mm" : 41.400, "mic" : "CRC"}
+
+    #{"time" : "2022-08-17 15:58:42", "model" : "Fineoffset-WHx080", "subtype" : 0, "id" : 14, "battery_ok" : 1, "temperature_C" : 28.100, "humidity" : 36, "wind_dir_deg" : 338, "wind_avg_km_h" : 0.000, "wind_max_km_h" : 1.224, "rain_mm" : 614.400, "mic" : "CRC"}
+    #{"time" : "2022-08-14 17:22:30", "model" : "Fineoffset-WHx080", "subtype" : 2, "uv_sensor_id" : 225, "uv_status" : "OK", "uv_index" : 1, "lux" : 2223.200, "wm" : 3.255, "mic" : "CRC"}
 
     #IDENTIFIER = "Fine Offset Electronics WH1080 / WH3080 Weather Station"
     #IDENTIFIER = "Fine Offset Electronics WH1080/WH3080 Weather Station"
@@ -1334,30 +1338,28 @@ class FOWHx080Packet(Packet):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['usUnits'] = weewx.METRIC
-        # older versions of rlt_433 user 'station_id'
-        if 'station_id' in obj:
-            pkt['station_id'] = obj.get('station_id')
-        # but some newer versions of rtl_433 seem to use 'id'
-        if 'id' in obj:
+        msg_type = obj.get('subtype')
+        pkt['msg_type'] = msg_type
+        
+        if msg_type == 0: 
             pkt['station_id'] = obj.get('id')
-        pkt['msg_type'] = Packet.get_int(obj, 'msg_type')
-        pkt['msg_type'] = Packet.get_int(obj, 'subtype')
-        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
-        pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
-        pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
-        pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_km_h')
-        rain_total = Packet.get_float(obj, 'rain_mm')
-        if rain_total is not None:
-            pkt['rain_total'] = rain_total / 10.0 # convert to cm
-        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
-        pkt['signal_type'] = 1 if obj.get('signal_type') == 'WWVB / MSF' else 0
-        pkt['hours'] = Packet.get_int(obj, 'hours')
-        pkt['minutes'] = Packet.get_int(obj, 'minutes')
-        pkt['seconds'] = Packet.get_int(obj, 'seconds')
-        pkt['year'] = Packet.get_int(obj, 'year')
-        pkt['month'] = Packet.get_int(obj, 'month')
-        pkt['day'] = Packet.get_int(obj, 'day')
+            pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
+            pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+            pkt['humidity'] = Packet.get_float(obj, 'humidity')
+            pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+            pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
+            pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_km_h')
+            rain_total = Packet.get_float(obj, 'rain_mm')
+            if rain_total is not None:
+                pkt['rain_total'] = rain_total / 10.0 # convert to cm
+
+        if msg_type == 20: 
+            pkt['station_id'] = obj.get('uv_sensor_id')
+            pkt['uv_status'] = 0 if obj.get('uv_status') == 'OK' else 1
+            pkt['uv_index'] = Packet.get_float(obj, 'uv_index')
+            pkt['luminosity'] = Packet.get_float(obj, 'lux')
+            pkt['radiation'] = Packet.get_float(obj, 'wm')
+
         return FOWHx080Packet.insert_ids(pkt)
 
     @staticmethod
