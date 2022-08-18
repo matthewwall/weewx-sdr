@@ -1353,7 +1353,7 @@ class FOWHx080Packet(Packet):
             if rain_total is not None:
                 pkt['rain_total'] = rain_total / 10.0 # convert to cm
 
-        if msg_type == 20: 
+        if msg_type == 2: 
             pkt['station_id'] = obj.get('uv_sensor_id')
             pkt['uv_status'] = 0 if obj.get('uv_status') == 'OK' else 1
             pkt['uv_index'] = Packet.get_float(obj, 'uv_index')
