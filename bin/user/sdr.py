@@ -1129,7 +1129,7 @@ class AmbientWH31EPacket(Packet):
         pkt['station_id'] = obj.get('id')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
         pkt['channel'] = Packet.get_int(obj, 'channel')
         pkt['rssi'] = Packet.get_int(obj, 'rssi')
         pkt['snr'] = Packet.get_float(obj, 'snr')
@@ -1568,7 +1568,38 @@ class FOWH2Packet(Packet):
         station_id = pkt.pop('station_id', '0000')
         return Packet.add_identifiers(pkt, station_id, FOWH2Packet.__name__)
 
+class FOWH32Packet(Packet):
+    # This is for a WH32 which is the indoors sensor array for an Ambient
+    # Weather WS-2902A. The same sensor array is used for several models.
 
+    # time      : 2019-04-08 00:48:02
+    # model     : Fineoffset-WH32
+    # ID        : 146
+    # Temperature: 17.5 C
+    # Humidity  : 60 %
+    # Pressure  : 1001.2 hPa
+    # Battery   : OK
+    # Integrity : CHECKSUM
+
+    # {"time" : "2022-08-19 21:34:58", "model" : "Fineoffset-WH32", "id" : 13, "battery_ok" : 1, "temperature_C" : 26.200, "humidity" : 55, "mi$
+    IDENTIFIER = "Fineoffset-WH32"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['station_id'] = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
+        return FOWH32Packet.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        return Packet.add_identifiers(pkt, station_id, FOWH32Packet.__name__)
+      
 class FOWH32BPacket(Packet):
     # This is for a WH32B which is the indoors sensor array for an Ambient
     # Weather WS-2902A. The same sensor array is used for several models.
@@ -1654,7 +1685,7 @@ class FOWH51Packet(Packet):
         pkt['soil_moisture_raw'] = Packet.get_float(obj, 'ad_raw')
         pkt['freq1'] = Packet.get_float(obj, 'freq1')
         pkt['freq2'] = Packet.get_float(obj, 'freq2')
-        pkt['battery_ok'] = Packet.get_float(obj, 'battery_ok')
+        pkt['battery_ok'] = 0 if obj.get('battery_ok') == 1 else 1
         pkt['battery_mV'] = Packet.get_float(obj, 'battery_mV')
         pkt['snr'] = Packet.get_float(obj, 'snr')
         pkt['rssi'] = Packet.get_float(obj, 'rssi')
