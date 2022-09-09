@@ -1,3 +1,7 @@
+0.90 09sept2022
+* cleanup Fineoffset-WH0290 identifier and fields, add battery thanks to
+* farmabep (166)
+
 0.90 07jul2022
 * add battery voltage for WS80 thanks to fankyy (#153)
 

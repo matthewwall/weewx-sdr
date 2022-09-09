@@ -1794,8 +1794,9 @@ class FOWH0290Packet(Packet):
     # This is for a WH0290 Air Quality Monitor (Ambient Weather PM25)
 
     #{"time" : "@0.084044s", "model" : "Fine Offset Electronics, WH0290", "id" : 204, "pm2_5_ug_m3" : 9, "pm10_0_ug_m3" : 10, "mic" : "CHECKSUM"}
+    #{"time": "2022-09-08 19:48:38", "model": "Endoffset-WH0290", " id ": 142," battery_ok ": 0.800," pm2_5_ug_m3 ": 2," estimated_pm10_0_ug_m3 ": 2," family ": 65," unknown1 ": 0," mic ":" CRC "} 
 
-    IDENTIFIER = "Fine Offset Electronics, WH0290"
+    IDENTIFIER = "Fineoffset-WH0290"
 
     @staticmethod
     def parse_json(obj):
@@ -1803,8 +1804,9 @@ class FOWH0290Packet(Packet):
         pkt['usUnits'] = weewx.METRIC
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['station_id'] = obj.get('id')
+        pkt['battery'] = 0 if Packet.get_int(obj, 'battery_ok') == 1 else 0
         pkt['pm2_5_atm'] = Packet.get_float(obj, 'pm2_5_ug_m3')
-        pkt['pm10_0_atm'] = Packet.get_float(obj, 'pm10_0_ug_m3')
+        pkt['pm10_0_atm'] = Packet.get_float(obj, 'estimated_pm10_0_ug_m3')
         return FOWH0290Packet.insert_ids(pkt)
 
     @staticmethod
