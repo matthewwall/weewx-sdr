@@ -1314,24 +1314,23 @@ class FOWHx080Packet(Packet):
         # but some newer versions of rtl_433 seem to use 'id'
         if 'id' in obj:
             pkt['station_id'] = obj.get('id')
-        # some stations have a second packet with a uv_sensor_id
-        if 'uv_sensor_id' in obj:
+        if 'subtype' in obj and obj.get('subtype') == 2:
             pkt['station_id'] = obj.get('uv_sensor_id')
+            pkt['uv_index'] = Packet.get_float(obj, 'uv_index')
+            pkt['luminosity'] = Packet.get_float(obj, 'lux')
+            pkt['radiation'] = Packet.get_float(obj, 'wm')
+            pkt['uv_status'] = 0 if obj.get('uv_status') == 'OK' else 1
+        else:
+            pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+            pkt['humidity'] = Packet.get_float(obj, 'humidity')
+            pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+            pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
+            pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_km_h')
+            rain_total = Packet.get_float(obj, 'rain_mm')
+            if rain_total is not None:
+                pkt['rain_total'] = rain_total / 10.0 # convert to cm
         pkt['msg_type'] = Packet.get_int(obj, 'msg_type')
-        pkt['msg_type'] = Packet.get_int(obj, 'subtype')
-        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
-        pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
-        pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
-        pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_km_h')
-        pkt['uv_index'] = Packet.get_float(obj, 'uv_index')
-        pkt['luminosity'] = Packet.get_float(obj, 'lux')
-        pkt['radiation'] = Packet.get_float(obj, 'wm')
-        pkt['illumination'] = Packet.get_float(obj, 'fc')
-        pkt['uv_status'] = 0 if obj.get('uv_status') == 'OK' else 1
-        rain_total = Packet.get_float(obj, 'rain_mm')
-        if rain_total is not None:
-            pkt['rain_total'] = rain_total / 10.0 # convert to cm
+        pkt['sub_type'] = Packet.get_int(obj, 'subtype')
         pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
         pkt['signal_type'] = 1 if obj.get('signal_type') == 'WWVB / MSF' else 0
         pkt['hours'] = Packet.get_int(obj, 'hours')
