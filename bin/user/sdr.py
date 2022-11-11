@@ -1260,6 +1260,30 @@ class FOWH1080Packet(Packet):
         station_id = pkt.pop('station_id', '0000')
         return Packet.add_identifiers(pkt, station_id, FOWH1080Packet.__name__)
 
+class FineOffsetWN34Packet(Packet):
+
+    # {"time" : "2019-02-14 17:24:41.259441", "protocol" : 113, "model" : "AmbientWeather-WH31E", "id" : 24, "channel" : 1, "battery" : "OK", "temperature_C" : 6.000, "humidity" : 42, "data" :"2f00000000", "mic" : "CRC", "mod" : "FSK", "freq1" : 914.984, "freq2" : 914.906, "rssi" : -13.328, "snr" : 13.197, "noise" : -26.525}
+
+    IDENTIFIER = "Fineoffset-WN34"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRICWX
+        pkt['station_id'] = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
+        pkt['battery_mV'] = Packet.get_float(obj, 'battery_mV')
+        return FineoffsetWN34Packet.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        pkt = Packet.add_identifiers(pkt, station_id, FineoffsetWN34Packet.__name__)
+        return pkt
+
+
 
 class FOWHx080Packet(Packet):
     # 2017-05-15 11:58:31: Fine Offset Electronics WH1080 / WH3080 Weather Station
