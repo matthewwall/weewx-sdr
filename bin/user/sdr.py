@@ -1105,11 +1105,17 @@ class AmbientF007THPacket(Packet):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['usUnits'] = weewx.US
-        house_code = obj.get('device', 0)
+        house_code = obj.get('id', 0)
         channel = obj.get('channel')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         sensor_id = "%s:%s" % (channel, house_code)
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
+        pkt['mod'] = obj.get('mod')
+        pkt['freq'] = Packet.get_float(obj, 'freq')
+        pkt['rssi'] = Packet.get_float(obj, 'rssi')
+        pkt['snr'] = Packet.get_float(obj, 'snr')
+        pkt['noise'] = Packet.get_float(obj, 'noise')
         pkt = Packet.add_identifiers(
             pkt, sensor_id, AmbientF007THPacket.__name__)
         return pkt
