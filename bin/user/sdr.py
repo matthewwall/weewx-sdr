@@ -3087,7 +3087,7 @@ class TSFT002Packet(Packet):
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['depth'] = Packet.get_float(obj, 'depth_cm')
         pkt['transmit'] = Packet.get_float(obj, 'transmit_s')
-        pkt['flags'] = Packet.get_int(obj, 'transmit_s')
+        pkt['flags'] = Packet.get_int(obj, 'flags')
         sensor_id = pkt.pop('id', '0000')
         pkt = Packet.add_identifiers(pkt, sensor_id, TSFT002Packet.__name__)
         return pkt
