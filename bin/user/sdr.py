@@ -3314,7 +3314,7 @@ class SDRDriver(weewx.drivers.AbstractDevice):
     # these are applied to mapped packets.
     DEFAULT_DELTAS = {
         'rain': 'rain_total',
-        'strikes': 'strikes_total'}
+        'lightning_strikes_count': 'strikes_total'}
 
     # what is the difference in timestamp values at which we consider two
     # data samples to be different?  some hardware emits duplicate data, and
