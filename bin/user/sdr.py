@@ -1262,8 +1262,7 @@ class FOWH1080Packet(Packet):
 
 class FineOffsetWN34Packet(Packet):
 
-    # {"time" : "2019-02-14 17:24:41.259441", "protocol" : 113, "model" : "AmbientWeather-WH31E", "id" : 24, "channel" : 1, "battery" : "OK", "temperature_C" : 6.000, "humidity" : 42, "data" :"2f00000000", "mic" : "CRC", "mod" : "FSK", "freq1" : 914.984, "freq2" : 914.906, "rssi" : -13.328, "snr" : 13.197, "noise" : -26.525}
-
+    # {"time" : "2023-06-04 09:12:18", "model" : "Fineoffset-WN34", "id" : 12318, "battery_ok" : 1.000, "battery_mV" : 2060, "temperature_C" : 19.700, "mic" : "CRC"}
     IDENTIFIER = "Fineoffset-WN34"
 
     @staticmethod
@@ -1282,7 +1281,6 @@ class FineOffsetWN34Packet(Packet):
         station_id = pkt.pop('station_id', '0000')
         pkt = Packet.add_identifiers(pkt, station_id, FineoffsetWN34Packet.__name__)
         return pkt
-
 
 
 class FOWHx080Packet(Packet):
@@ -1345,17 +1343,17 @@ class FOWHx080Packet(Packet):
             pkt['radiation'] = Packet.get_float(obj, 'wm')
             pkt['uv_status'] = 0 if obj.get('uv_status') == 'OK' else 1
         else:
+            pkt['msg_type'] = Packet.get_int(obj, 'msg_type')
+            pkt['sub_type'] = Packet.get_int(obj, 'subtype')
             pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
             pkt['humidity'] = Packet.get_float(obj, 'humidity')
             pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
             pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
             pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_km_h')
+            pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
             rain_total = Packet.get_float(obj, 'rain_mm')
             if rain_total is not None:
                 pkt['rain_total'] = rain_total / 10.0 # convert to cm
-        pkt['msg_type'] = Packet.get_int(obj, 'msg_type')
-        pkt['sub_type'] = Packet.get_int(obj, 'subtype')
-        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
         pkt['signal_type'] = 1 if obj.get('signal_type') == 'WWVB / MSF' else 0
         pkt['hours'] = Packet.get_int(obj, 'hours')
         pkt['minutes'] = Packet.get_int(obj, 'minutes')
@@ -1436,7 +1434,6 @@ class FOWH24Packet(Packet):
         return Packet.add_identifiers(pkt, station_id, FOWH24Packet.__name__)
 
 
-
 class FOWH24BPacket(Packet):
     # This is for another WH24 (probably the EU-model or some kind of clone?)
     # IDENTIFIER is *almost* the same and some of the keys are named slightly different
@@ -1486,7 +1483,6 @@ class FOWH25Packet(Packet):
     # {"time" : "2017-03-25 05:33:57", "model" : "Fine Offset Electronics, WH25", "id" : 239, "temperature_C" : 30.200, "humidity" : 68, "pressure" : 1008.000}
     # {"time" : "2018-10-10 13:37:11", "model" : "Fine Offset Electronics, WH25", "id" : 21, "temperature_C" : 21.600, "humidity" : 66, "pressure_hPa" : 972.800, "battery" : "OK", "mic" : "CHECKSUM"}
     # {"time" : "2020-10-13 23:29:35", "model" : "Fineoffset-WH25", "id" : 170, "battery_ok" : 0, "temperature_C" : 26.200, "humidity" : 36, "pressure_hPa" : 1009.900, "mic" : "CRC"}
-
     # {"time" : "2021-04-08 18:11:01", "model" : "Fineoffset-WH25", "id" : 121, "battery_ok" : 1, "temperature_C" : 20.000, "humidity" : 48, "pressure_hPa" : 979.100, "mic" : "CRC"}
 
     IDENTIFIER = "Fineoffset-WH25"
