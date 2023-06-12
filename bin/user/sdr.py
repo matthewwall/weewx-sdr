@@ -3097,6 +3097,7 @@ class Bresser7in1Packet(Packet):
         pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
         pkt['lux'] = Packet.get_int(obj, 'light_lux')
         pkt['uv'] = Packet.get_float(obj, 'uv')
+        pkt['battery'] = 1 if Packet.get_int(obj, 'battery_ok') == 0 else 0
         return Bresser7in1Packet.insert_ids(pkt)
 
     @staticmethod
