@@ -1200,7 +1200,6 @@ class Cotech367959Packet(Packet):
         pkt['total_rain'] = Packet.get_float(obj, 'rain_mm')
         pkt = Packet.add_identifiers(pkt, sensor_id, Cotech367959Packet.__name__)
         return pkt
-
 class EcoWittWH40Packet(Packet):
     # This is for a WH40 rain sensor
 
@@ -1221,31 +1220,6 @@ class EcoWittWH40Packet(Packet):
     def insert_ids(pkt):
         station_id = pkt.pop('station_id', 0)
         return Packet.add_identifiers(pkt, station_id, EcoWittWH40Packet.__name__)
-
-class EcoWittWS68Packet(Packet):
-    # This is for a WS68 sensor
-
-    #  {"time" : "2022-09-26 00:47:08", "model" : "EcoWitt-WS68", "id" : 388, "battery_raw" : 90, "battery_ok" : 1, "lux_raw" : 0, "wind_avg_raw" : 0, "wind_max_raw" : 0, "wind_dir_deg" : 157, "data" : "00 210", "mic" : "CRC"}
-
-    IDENTIFIER = "EcoWitt-WS68"
-
-    @staticmethod
-    def parse_json(obj):
-        pkt = dict()
-        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['usUnits'] = weewx.METRICWX
-        pkt['station_id'] = obj.get('id')
-        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
-        pkt['luminosity'] = Packet.get_float(obj, 'lux_raw')
-        pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_raw')
-        pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_raw')
-        pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
-        return EcoWittWS68Packet.insert_ids(pkt)
-
-    @staticmethod
-    def insert_ids(pkt):
-        station_id = pkt.pop('station_id', 0)
-        return Packet.add_identifiers(pkt, station_id, EcoWittWS68Packet.__name__)
 
 
 class FOWH1080Packet(Packet):
