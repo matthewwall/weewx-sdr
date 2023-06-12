@@ -3077,6 +3077,33 @@ class Bresser6in1Packet(Packet):
         return pkt
 
 
+class Bresser7in1Packet(Packet):
+    # {"time" : "2023-06-11 17:09:05", "model" : "Bresser-7in1", "id" : 50437, "temperature_C" : 23.500, 
+    # "humidity" : 67, "wind_max_m_s" : 0.000, "wind_avg_m_s" : 0.000, "wind_dir_deg" : 102, "rain_mm" :
+    #  3.500, "light_klx" : 8.592, "light_lux" : 8592.000, "uv" : 1.000, "battery_ok" : 1, "mic " : "CRC"}
+    IDENTIFIER = "Bresser-7in1"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRICWX
+        pkt['station_id'] = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_m_s')
+        pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_m_s')
+        pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+        pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
+        pkt['lux'] = Packet.get_int(obj, 'light_lux')
+        pkt['uv'] = Packet.get_float(obj, 'uv')
+        return Bresser7in1Packet.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        pkt = Packet.add_identifiers(pkt, station_id, Bresser7in1Packet.__name__)
+        return pkt
 
 
 class BresserProRainGaugePacket(Packet):
