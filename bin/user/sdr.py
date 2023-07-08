@@ -1916,7 +1916,7 @@ class FOWH45Packet(Packet):
         pkt['station_id'] = obj.get('id')
         pkt['co2_atm'] = Packet.get_float(obj, 'co2_ppm')
         pkt['pm2_5_atm'] = Packet.get_float(obj, 'pm2_5_ug_m3')
-        pkt['pm10_0_atm'] = Packet.get_float(obj, 'pm10_0_ug_m3')
+        pkt['pm10_0_atm'] = Packet.get_float(obj, 'pm10_ug_m3')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         return FOWH45Packet.insert_ids(pkt)
