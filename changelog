@@ -1,3 +1,6 @@
+0.93 12nov2023
+* change rc to id in Hideki Rain/Wind, thanks to promy (#181) 
+
 0.92 12nov2023
 * fixed typo in Acurite-515 parse json 
 

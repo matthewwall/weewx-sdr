@@ -140,7 +140,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.92'
+DRIVER_VERSION = '0.93'
 
 # The default command requests json output from every decoder
 # Use the -R option to indicate specific decoders
@@ -1983,7 +1983,7 @@ class HidekiWindPacket(Packet):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['usUnits'] = weewx.METRIC
-        pkt['rolling_code'] = obj.get('rc')
+        pkt['rolling_code'] = obj.get('id')
         pkt['channel'] = obj.get('channel')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         if 'wind_avg_mi_h' in obj:
@@ -2031,6 +2031,7 @@ class HidekiRainPacket(Packet):
     # {"time" : "2017-01-16 04:38:50", "model" : "HIDEKI Rain sensor", "rc" : 0, "channel" : 4, "battery" : "OK", "rain" : 2622.900}
     # {"time" : "2019-11-24 19:13:52", "model" : "HIDEKI Rain sensor", "rc" : 0, "channel" : 4, "battery" : "OK", "rain_mm" : 274.400, "mic" : "CRC"}
     # {"time" : "2021-02-07 03:45:10", "model" : "Hideki-Rain", "id" : 0, "channel" : 4, "battery_ok" : 1, "rain_mm" : 1382.500, "mic" : "CRC"}
+    # {"time" : "2023-11-10 14:42:06", "model" : "Hideki-Rain", "id" : 0, "channel" : 4, "battery_ok" : 1, "rain_mm" : 2255.400, "mic" : "CRC"}
 
 #    IDENTIFIER = "HIDEKI Rain sensor"
     IDENTIFIER = "Hideki-Rain"
@@ -2054,7 +2055,7 @@ class HidekiRainPacket(Packet):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['usUnits'] = weewx.METRIC
-        pkt['rolling_code'] = obj.get('rc')
+        pkt['rolling_code'] = obj.get('id')
         pkt['channel'] = obj.get('channel')
         if 'rain_mm' in obj:
             pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
