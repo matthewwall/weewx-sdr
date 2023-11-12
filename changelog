@@ -1,3 +1,34 @@
+0.93 12nov2023
+* change rc to id in Hideki Rain/Wind, thanks to promy (#181) 
+
+0.92 12nov2023
+* fixed typo in Acurite-515 parse json 
+
+0.91 12june2023
+* add bresser 7in1 thanks to farmabep (179)
+
+0.90 09sept2022
+* cleanup Fineoffset-WH0290 identifier and fields, add battery thanks to
+* farmabep (166)
+
+0.90 07jul2022
+* add battery voltage for WS80 thanks to fankyy (#153)
+
+0.90 06jul2022
+* add json pars section for WS80 thanks to fankyy (#153) 
+
+0.90 22jun2022
+* add json pars section for Kedsum-TH thanks to user Sar6e (#157)
+
+0.90 20jun2022
+* add json pars section for TFA-Drop thanks to user modussiam (#156)
+
+0.89 07jun2022
+* add json parse section for Oregon THR228N thanks to user modussiam
+
+0.88 03mar2022 
+* fixed typo in method for THPacket thanks to olpayras (#149)
+
 0.87 21jan2021
 * added support for Acurite515 refrigerator/freezer sensors
 * added support for LaCross LTV-R3 rain sensor thanks to srhuston (#145)
