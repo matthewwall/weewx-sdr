@@ -140,7 +140,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.91'
+DRIVER_VERSION = '0.92'
 
 # The default command requests json output from every decoder
 # Use the -R option to indicate specific decoders
@@ -1018,7 +1018,7 @@ class Acurite515Packet(Packet):
             pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
         elif 'temperature_C' in obj:
             pkt['temperature'] = to_F(Packet.get_float(obj, 'temperature_C'))
-        return Packet.insert_ids(pkt, Acurite515Packet.__name__)
+        return Acurite.insert_ids(pkt, Acurite515Packet.__name__)
 
 
 class AlectoV1TemperaturePacket(Packet):
