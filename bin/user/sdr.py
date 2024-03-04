@@ -1155,9 +1155,6 @@ class AmbientWH31EPacket(Packet):
         pkt = Packet.add_identifiers(pkt, station_id, AmbientWH31EPacket.__name__)
         return pkt
 
-#-----
-# added by us
-#-----
 class AmbientWH31BPacket(Packet):
 
     # {'time': '2024-03-04 17:36:20', 'model': 'AmbientWeather-WH31B', 'id': 196, 'channel': 3, 'battery_ok': 1, 'temperature_C': 21.6, 'humidity': 40, 'data': 'ea00000000', 'mic': 'CRC'}
@@ -1183,7 +1180,6 @@ class AmbientWH31BPacket(Packet):
         station_id = pkt.pop('station_id', '0000')
         pkt = Packet.add_identifiers(pkt, station_id, AmbientWH31BPacket.__name__)
         return pkt
-#-----
 
 class FineOffsetWH32Packet(Packet):
 
@@ -1208,8 +1204,6 @@ class FineOffsetWH32Packet(Packet):
         station_id = pkt.pop('station_id', '0000')
         pkt = Packet.add_identifiers(pkt, station_id, FineOffsetWH32Packet.__name__)
         return pkt
-#-----
-
 
 class CalibeurRF104Packet(Packet):
     # 2016-11-01 01:25:28 :Calibeur RF-104
