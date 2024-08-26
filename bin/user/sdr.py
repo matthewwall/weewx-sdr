@@ -3030,6 +3030,26 @@ class SpringfieldTMPacket(Packet):
         pkt = Packet.add_identifiers(pkt, sensor_id, SpringfieldTMPacket.__name__)
         return pkt
 
+class TFADropPacket(Packet):
+    # {"time" : "2024-08-24 13:51:38", "model" : "TFA-Drop", "id" : 899964, "battery_ok" : 1, "rain_mm" : 17.780, "mic" : "CHECKSUM"}
+
+    IDENTIFIER = "TFA-Drop"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRICWX
+        pkt['station_id'] = obj.get('id')
+        pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
+        pkt['battery'] = 1 if Packet.get_int(obj, 'battery_ok') == 0 else 0
+        return TFADropPacket.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        pkt = Packet.add_identifiers(pkt, station_id, TFADropPacket.__name__)
+        return pkt
 
 class TFATwinPlus303049Packet(Packet):
     # 2019-09-25 17:15:12 :   TFA-Twin-Plus-30.3049
