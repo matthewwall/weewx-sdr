@@ -3040,14 +3040,9 @@ class TFADropPacket(Packet):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['usUnits'] = weewx.METRICWX
-        pkt['station_id'] = obj.get('id')
         pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
         pkt['battery'] = 1 if Packet.get_int(obj, 'battery_ok') == 0 else 0
-        return TFADropPacket.insert_ids(pkt)
-
-    @staticmethod
-    def insert_ids(pkt):
-        station_id = pkt.pop('station_id', '0000')
+        station_id = pkt.pop('id', '0000')
         pkt = Packet.add_identifiers(pkt, station_id, TFADropPacket.__name__)
         return pkt
 
