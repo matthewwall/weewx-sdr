@@ -50,6 +50,19 @@ not yet recognized by your configuration.
 
 The default for each of these is False.
 
+In addition, there are two options to more granularly log debugging
+information that can be helpful in bringing up a new system that may not
+have sensor models known to this driver.
+
+    log_packets            = False
+    log_duplicate_readings = False
+
+The default for these is True.  When debug=1, the default behavior is to
+log the assembled packets as well as any duplicate received readings.  Many
+sensors send duplicate messages that rtl_433 will read.  Setting these False
+will suppress those messages from being logged if you otherwise want to see
+normal debug=1 messages.
+
 Eventually we would prefer to have all rtl_433 output as json.  Unfortunately,
 many of the rtl_433 decoders do not emit this format yet (as of January 2017).
 So this driver is designed to look for json first, then fall back to single-
@@ -1142,6 +1155,55 @@ class AmbientWH31EPacket(Packet):
         pkt = Packet.add_identifiers(pkt, station_id, AmbientWH31EPacket.__name__)
         return pkt
 
+class AmbientWH31BPacket(Packet):
+
+    # {'time': '2024-03-04 17:36:20', 'model': 'AmbientWeather-WH31B', 'id': 196, 'channel': 3, 'battery_ok': 1, 'temperature_C': 21.6, 'humidity': 40, 'data': 'ea00000000', 'mic': 'CRC'}
+    IDENTIFIER = "AmbientWeather-WH31B"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRICWX
+        pkt['station_id'] = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['battery'] = 0 if Packet.get_int(obj, 'battery_ok') == 1 else 1
+        pkt['channel'] = Packet.get_int(obj, 'channel')
+        pkt['rssi'] = Packet.get_int(obj, 'rssi')
+        pkt['snr'] = Packet.get_float(obj, 'snr')
+        pkt['noise'] = Packet.get_float(obj, 'noise')
+        return AmbientWH31BPacket.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        pkt = Packet.add_identifiers(pkt, station_id, AmbientWH31BPacket.__name__)
+        return pkt
+
+class FineOffsetWH32Packet(Packet):
+
+    # {'time': '2024-03-04 17:41:55', 'model': 'Fineoffset-WH32', 'id': 35, 'battery_ok': 1, 'temperature_C': 3.2, 'humidity': 91, 'mic': 'CRC'}
+
+    IDENTIFIER = "Fineoffset-WH32"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRICWX
+        pkt['station_id'] = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['battery'] = 0 if Packet.get_int(obj, 'battery_ok') == 1 else 1
+        pkt['channel'] = Packet.get_int(obj, 'channel')
+        return FineOffsetWH32Packet.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        pkt = Packet.add_identifiers(pkt, station_id, FineOffsetWH32Packet.__name__)
+        return pkt
 
 class CalibeurRF104Packet(Packet):
     # 2016-11-01 01:25:28 :Calibeur RF-104
@@ -3286,6 +3348,8 @@ class SDRDriver(weewx.drivers.AbstractDevice):
         self._log_lines = tobool(stn_dict.get('log_lines', False))
         self._log_unknown = tobool(stn_dict.get('log_unknown_sensors', False))
         self._log_unmapped = tobool(stn_dict.get('log_unmapped_sensors', False))
+        self._log_packets  = tobool(stn_dict.get('log_packets', True))
+        self._log_dups     = tobool(stn_dict.get('log_duplicate_readings', True))
         self._sensor_map = stn_dict.get('sensor_map', {})
         loginf('sensor map is %s' % self._sensor_map)
         self._deltas = stn_dict.get('deltas', SDRDriver.DEFAULT_DELTAS)
@@ -3316,12 +3380,14 @@ class SDRDriver(weewx.drivers.AbstractDevice):
                         pkt = self.map_to_fields(packet, self._sensor_map)
                         if pkt:
                             if not self._packets_match(pkt, self._last_pkt):
-                                logdbg("packet=%s" % pkt)
+                                if self._log_packets:
+                                    logdbg("packet=%s" % pkt)
                                 self._last_pkt = pkt
                                 self._calculate_deltas(pkt)
                                 yield pkt
                             else:
-                                logdbg("ignoring duplicate packet %s" % pkt)
+                                if self._log_dups:
+                                    logdbg("ignoring duplicate packet %s" % pkt)
                         elif self._log_unmapped:
                             loginf("unmapped: %s" % packet)
                     elif self._log_unknown:
