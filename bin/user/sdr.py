@@ -2198,6 +2198,24 @@ class LaCrosseWSPacket(Packet):
         return pkt
 
 
+class LaCrosseTX141Bv3Packet(Packet):
+
+    # {"time" : "2023-03-29 20:55:22", "model" : "LaCrosse-TX141Bv3", "id" : 172, "channel" : 1, "battery_ok" : 1, "temperature_C" : 3.700, "test" : "No"}
+
+    IDENTIFIER = "LaCrosse-TX141Bv3"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        sensor_id = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
+        pkt = Packet.add_identifiers(pkt, sensor_id, LaCrosseTX141Bv3Packet.__name__)
+        return pkt
+
+
 class LaCrosseTX141THBv2Packet(Packet):
 
     # {"time" : "2017-01-16 15:24:43", "temperature" : 54.140, "humidity" : 34, "id" : 221, "model" : "LaCrosse TX141TH-Bv2 sensor", "battery" : "OK", "test" : "Yes"}
