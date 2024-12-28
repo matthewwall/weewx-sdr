@@ -476,39 +476,6 @@ class AcuriteAtlasPacket(Packet):
         return Acurite.insert_ids(pkt, AcuriteAtlasPacket.__name__)
 
 
-class AcuriteTowerPacketV2(Packet):
-    # Based on AcuriteTowerPacket type, but implemented for unsupported format
-
-    # Sample data:
-    # {"time" : "2019-07-29 07:44:23.005624", "protocol" : 40, "model" : "Acurite-Tower", "id" : 1234, "sensor_id" : 1234, "channel" : "A", "temperature_C" : 22.600, "humidity" : 45, "battery_ok" : 0, "mod" : "ASK", "freq" : 433.938, "rssi" : -0.134, "snr" : 14.391, "noise" : -14.525}
-    # {"time" : "2021-12-20 20:00:59", "model" : "Acurite-Tower", "id" : 11041, "channel" : "B", "battery_ok" : 1, "temperature_C" : -3.500, "humidity" : 71, "mic" : "CHECKSUM"}
-
-    IDENTIFIER = "Acurite-Tower"
-
-    @staticmethod
-    def parse_json(obj):
-        pkt = dict()
-        pkt['usUnits'] = weewx.US
-        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['protocol'] = Packet.get_int(obj, 'protocol') # 40
-        pkt['model'] = obj.get('model') # model = Acurite-Tower
-        pkt['hardware_id'] = "%04x" % obj.get('id', 0)
-        pkt['sensor_id'] = "%04x" % obj.get('sensor_id', 0)
-        pkt['channel'] = obj.get('channel')
-        pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        if 'temperature_F' in obj:
-            pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
-        elif 'temperature_C' in obj:
-            pkt['temperature'] = to_F(Packet.get_float(obj, 'temperature_C'))
-        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
-        pkt['mod'] = obj.get('mod') # apparently mod = ASK
-        pkt['freq'] = Packet.get_float(obj, 'freq')
-        pkt['rssi'] = Packet.get_float(obj, 'rssi')
-        pkt['snr'] = Packet.get_float(obj, 'snr')
-        pkt['noise'] = Packet.get_float(obj, 'noise')
-        return Acurite.insert_ids(pkt, AcuriteTowerPacketV2.__name__)
-
-
 class Acurite3n1PacketV2(Packet):
     # sample json output from rtl_433
     # {"time" : "2021-12-27 02:53:38", "model" : "Acurite-3n1", "subtype" : 32, "id" : 7220, "channel" : "B", "sequence_num" : 1, "battery_ok" : 1, "wind_avg_mi_h" : 5.000, "temperature_F" : 5.100, "humidity" : 65, "mic" : "CHECKSUM"}
@@ -540,121 +507,6 @@ class Acurite3n1PacketV2(Packet):
         elif 'wind_avg_km_h' in obj:
             pkt['wind_speed'] = to_mph(Packet.get_float(obj, 'wind_avg_km_h'))
         return Acurite.insert_ids(pkt, Acurite3n1PacketV2.__name__)
-
-
-class Acurite5n1PacketV2(Packet):
-    # Based on Acurite5n1Packet class, but implemented for unsupported format
-
-    # sample json output from rtl_433
-    # {"time" : "2019-07-29 07:46:22.482883", "protocol" : 40, "model" : "Acurite-5n1", "id" : 1234, "channel" : "B", "sequence_num" : 1, "battery_ok" : 1, "message_type" : 56, "wind_avg_km_h" : 0.000, "temperature_C" : 20.500, "humidity" : 93, "mod" : "ASK", "freq" : 433.934, "rssi" : -1.719, "snr" : 24.404, "noise" : -26.124}
-    # {"time" : "2020-02-05 02:20:54", "model" : "Acurite-5n1", "subtype" : 56, "id" : 956, "channel" : "A", "sequence_num" : 2, "battery_ok" : 1, "wind_avg_km_h" : 3.483, "temperature_F" : 31.300, "humidity" : 66}
-    # {"time" : "2020-10-26 22:09:12", "model" : "Acurite-5n1", "message_type" : 49, "id" : 2662, "channel" : "A", "sequence_num" : 0, "battery_ok" : 1, "wind_avg_km_h" : 15.900, "wind_dir_deg" : 337.500, "rain_in" : 7.290, "mic" : "CHECKSUM"}
-    # {"time" : "2020-10-26 22:08:54", "model" : "Acurite-5n1", "message_type" : 56, "id" : 2662, "channel" : "A", "sequence_num" : 2, "battery_ok" : 1, "wind_avg_km_h" : 9.278, "temperature_F" : 76.100, "humidity" : 15, "mic" : "CHECKSUM"}
-
-    IDENTIFIER = "Acurite-5n1"
-
-    @staticmethod
-    def parse_json(obj):
-        pkt = dict()
-        pkt['usUnits'] = weewx.US
-        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['protocol'] = Packet.get_int(obj, 'protocol')
-        pkt['model'] = obj.get('model')
-        pkt['hardware_id'] = "%04x" % obj.get('id', 0)
-        pkt['channel'] = obj.get('channel')
-        pkt['sequence_num'] = Packet.get_int(obj, 'sequence_num')
-        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
-        # connection diagnostics depend on the version of rtl_433
-        pkt['mod'] = obj.get('mod')  # apparently is ASK
-        pkt['freq'] = Packet.get_float(obj, 'freq')
-        pkt['rssi'] = Packet.get_float(obj, 'rssi')
-        pkt['snr'] = Packet.get_float(obj, 'snr')
-        pkt['noise'] = Packet.get_float(obj, 'noise')
-        # the label for message type has changed in rtl_433
-        if 'subtype' in obj:
-            pkt['msg_type'] = Packet.get_int(obj, 'subtype')
-        elif 'message_type' in obj:
-            pkt['msg_type'] = Packet.get_int(obj, 'message_type')
-        # each message type contains different information.  units vary
-        # depending on the rtl_433 configuration, so be ready for anything.
-        #   49 has wind_speed, wind_dir, and rain
-        #   56 has wind_speed, temperature, humidity
-        if 'wind_avg_km_h' in obj:
-            pkt['wind_speed'] = to_mph(Packet.get_float(obj, 'wind_avg_km_h'))
-        if 'wind_dir_deg' in obj:
-            pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
-        if 'rain_in' in obj:
-            pkt['rain_total'] = Packet.get_float(obj, 'rain_in')
-        elif 'rain_mm' in obj:
-            pkt['rain_total'] = to_in(Packet.get_float(obj, 'rain_mm'))
-        if 'temperature_F' in obj:
-            pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
-        elif 'temperature_C' in obj:
-            pkt['temperature'] = to_F(Packet.get_float(obj, 'temperature_C'))
-        if 'humidity' in obj:
-            pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        return Acurite.insert_ids(pkt, Acurite5n1PacketV2.__name__)
-
-
-class AcuriteTowerPacket(Packet):
-    # initial implementation was single-line
-    # 2016-08-30 23:57:20 Acurite tower sensor 0x37FC Ch A: 26.7 C 80.1 F 16 % RH
-    #
-    # multi-line was introduced nov2016 - only single line is supported here
-    # 2017-01-12 02:55:10 : Acurite tower sensor : 12391 : B
-    # Temperature: 18.0 C
-    # Humidity: 68
-    # Battery: 0
-    # : 68
-
-    IDENTIFIER = "Acurite tower sensor"
-    PATTERN = re.compile('0x([0-9a-fA-F]+) Ch ([A-C]): ([\d.-]+) C ([\d.-]+) F ([\d]+) % RH')
-
-    @staticmethod
-    def parse_text(ts, payload, lines):
-        pkt = dict()
-        m = AcuriteTowerPacket.PATTERN.search(lines[0])
-        if m:
-            pkt['dateTime'] = ts
-            pkt['usUnits'] = weewx.METRIC
-            pkt['hardware_id'] = m.group(1)
-            pkt['channel'] = m.group(2)
-            pkt['temperature'] = float(m.group(3))
-            pkt['temperature_F'] = float(m.group(4))
-            pkt['humidity'] = float(m.group(5))
-            pkt = Acurite.insert_ids(pkt, AcuriteTowerPacket.__name__)
-        else:
-            loginf("AcuriteTowerPacket: unrecognized data: '%s'" % lines[0])
-        lines.pop(0)
-        return pkt
-
-    # JSON format as of mid-2018
-    # {"time" : "2018-07-21 01:53:56", "model" : "Acurite tower sensor", "id" : 13009, "sensor_id" : 13009, "channel" : "A", "temperature_C" : 15.000, "humidity" : 16, "battery_low" : 1}
-    # {"time" : "2018-07-21 01:52:24", "model" : "Acurite tower sensor", "id" : 13009, "sensor_id" : 13009, "channel" : "A", "temperature_C" : 15.600, "humidity" : 16, "battery_low" : 0}
-
-    # JSON format as of early 2017
-    # {"time" : "2017-01-12 03:43:05", "model" : "Acurite tower sensor", "id" : 521, "channel" : "A", "temperature_C" : 0.800, "humidity" : 68, "battery" : 0, "status" : 68}
-    # {"time" : "2017-01-12 03:43:11", "model" : "Acurite tower sensor", "id" : 5585, "channel" : "C", "temperature_C" : 21.100, "humidity" : 32, "battery" : 0, "status" : 68}
-
-    @staticmethod
-    def parse_json(obj):
-        pkt = dict()
-        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['usUnits'] = weewx.US
-        pkt['hardware_id'] = "%04x" % obj.get('id', 0)
-        pkt['channel'] = obj.get('channel')
-        # support both battery status keywords
-        if 'battery_low' in obj:
-            pkt['battery'] = Packet.get_int(obj, 'battery_low')
-        else:
-            pkt['battery'] = Packet.get_int(obj, 'battery')
-        pkt['status'] = obj.get('status')
-        if 'temperature_F' in obj:
-            pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
-        elif 'temperature_C' in obj:
-            pkt['temperature'] = to_F(Packet.get_float(obj, 'temperature_C'))
-        pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        return Acurite.insert_ids(pkt, AcuriteTowerPacket.__name__)
 
 
 class Acurite5n1Packet(Packet):
@@ -782,6 +634,154 @@ class Acurite5n1Packet(Packet):
         elif 'rain_inch' in obj:
             rain_total = Packet.get_float(obj, 'rain_inch')
         return rain_total
+
+
+class Acurite5n1PacketV2(Packet):
+    # Based on Acurite5n1Packet class, but implemented for unsupported format
+
+    # sample json output from rtl_433
+    # {"time" : "2019-07-29 07:46:22.482883", "protocol" : 40, "model" : "Acurite-5n1", "id" : 1234, "channel" : "B", "sequence_num" : 1, "battery_ok" : 1, "message_type" : 56, "wind_avg_km_h" : 0.000, "temperature_C" : 20.500, "humidity" : 93, "mod" : "ASK", "freq" : 433.934, "rssi" : -1.719, "snr" : 24.404, "noise" : -26.124}
+    # {"time" : "2020-02-05 02:20:54", "model" : "Acurite-5n1", "subtype" : 56, "id" : 956, "channel" : "A", "sequence_num" : 2, "battery_ok" : 1, "wind_avg_km_h" : 3.483, "temperature_F" : 31.300, "humidity" : 66}
+    # {"time" : "2020-10-26 22:09:12", "model" : "Acurite-5n1", "message_type" : 49, "id" : 2662, "channel" : "A", "sequence_num" : 0, "battery_ok" : 1, "wind_avg_km_h" : 15.900, "wind_dir_deg" : 337.500, "rain_in" : 7.290, "mic" : "CHECKSUM"}
+    # {"time" : "2020-10-26 22:08:54", "model" : "Acurite-5n1", "message_type" : 56, "id" : 2662, "channel" : "A", "sequence_num" : 2, "battery_ok" : 1, "wind_avg_km_h" : 9.278, "temperature_F" : 76.100, "humidity" : 15, "mic" : "CHECKSUM"}
+
+    IDENTIFIER = "Acurite-5n1"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['usUnits'] = weewx.US
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['protocol'] = Packet.get_int(obj, 'protocol')
+        pkt['model'] = obj.get('model')
+        pkt['hardware_id'] = "%04x" % obj.get('id', 0)
+        pkt['channel'] = obj.get('channel')
+        pkt['sequence_num'] = Packet.get_int(obj, 'sequence_num')
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
+        # connection diagnostics depend on the version of rtl_433
+        pkt['mod'] = obj.get('mod')  # apparently is ASK
+        pkt['freq'] = Packet.get_float(obj, 'freq')
+        pkt['rssi'] = Packet.get_float(obj, 'rssi')
+        pkt['snr'] = Packet.get_float(obj, 'snr')
+        pkt['noise'] = Packet.get_float(obj, 'noise')
+        # the label for message type has changed in rtl_433
+        if 'subtype' in obj:
+            pkt['msg_type'] = Packet.get_int(obj, 'subtype')
+        elif 'message_type' in obj:
+            pkt['msg_type'] = Packet.get_int(obj, 'message_type')
+        # each message type contains different information.  units vary
+        # depending on the rtl_433 configuration, so be ready for anything.
+        #   49 has wind_speed, wind_dir, and rain
+        #   56 has wind_speed, temperature, humidity
+        if 'wind_avg_km_h' in obj:
+            pkt['wind_speed'] = to_mph(Packet.get_float(obj, 'wind_avg_km_h'))
+        if 'wind_dir_deg' in obj:
+            pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+        if 'rain_in' in obj:
+            pkt['rain_total'] = Packet.get_float(obj, 'rain_in')
+        elif 'rain_mm' in obj:
+            pkt['rain_total'] = to_in(Packet.get_float(obj, 'rain_mm'))
+        if 'temperature_F' in obj:
+            pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
+        elif 'temperature_C' in obj:
+            pkt['temperature'] = to_F(Packet.get_float(obj, 'temperature_C'))
+        if 'humidity' in obj:
+            pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        return Acurite.insert_ids(pkt, Acurite5n1PacketV2.__name__)
+
+
+class AcuriteTowerPacket(Packet):
+    # initial implementation was single-line
+    # 2016-08-30 23:57:20 Acurite tower sensor 0x37FC Ch A: 26.7 C 80.1 F 16 % RH
+    #
+    # multi-line was introduced nov2016 - only single line is supported here
+    # 2017-01-12 02:55:10 : Acurite tower sensor : 12391 : B
+    # Temperature: 18.0 C
+    # Humidity: 68
+    # Battery: 0
+    # : 68
+
+    IDENTIFIER = "Acurite tower sensor"
+    PATTERN = re.compile('0x([0-9a-fA-F]+) Ch ([A-C]): ([\d.-]+) C ([\d.-]+) F ([\d]+) % RH')
+
+    @staticmethod
+    def parse_text(ts, payload, lines):
+        pkt = dict()
+        m = AcuriteTowerPacket.PATTERN.search(lines[0])
+        if m:
+            pkt['dateTime'] = ts
+            pkt['usUnits'] = weewx.METRIC
+            pkt['hardware_id'] = m.group(1)
+            pkt['channel'] = m.group(2)
+            pkt['temperature'] = float(m.group(3))
+            pkt['temperature_F'] = float(m.group(4))
+            pkt['humidity'] = float(m.group(5))
+            pkt = Acurite.insert_ids(pkt, AcuriteTowerPacket.__name__)
+        else:
+            loginf("AcuriteTowerPacket: unrecognized data: '%s'" % lines[0])
+        lines.pop(0)
+        return pkt
+
+    # JSON format as of mid-2018
+    # {"time" : "2018-07-21 01:53:56", "model" : "Acurite tower sensor", "id" : 13009, "sensor_id" : 13009, "channel" : "A", "temperature_C" : 15.000, "humidity" : 16, "battery_low" : 1}
+    # {"time" : "2018-07-21 01:52:24", "model" : "Acurite tower sensor", "id" : 13009, "sensor_id" : 13009, "channel" : "A", "temperature_C" : 15.600, "humidity" : 16, "battery_low" : 0}
+
+    # JSON format as of early 2017
+    # {"time" : "2017-01-12 03:43:05", "model" : "Acurite tower sensor", "id" : 521, "channel" : "A", "temperature_C" : 0.800, "humidity" : 68, "battery" : 0, "status" : 68}
+    # {"time" : "2017-01-12 03:43:11", "model" : "Acurite tower sensor", "id" : 5585, "channel" : "C", "temperature_C" : 21.100, "humidity" : 32, "battery" : 0, "status" : 68}
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.US
+        pkt['hardware_id'] = "%04x" % obj.get('id', 0)
+        pkt['channel'] = obj.get('channel')
+        # support both battery status keywords
+        if 'battery_low' in obj:
+            pkt['battery'] = Packet.get_int(obj, 'battery_low')
+        else:
+            pkt['battery'] = Packet.get_int(obj, 'battery')
+        pkt['status'] = obj.get('status')
+        if 'temperature_F' in obj:
+            pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
+        elif 'temperature_C' in obj:
+            pkt['temperature'] = to_F(Packet.get_float(obj, 'temperature_C'))
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        return Acurite.insert_ids(pkt, AcuriteTowerPacket.__name__)
+
+
+class AcuriteTowerPacketV2(Packet):
+    # Based on AcuriteTowerPacket type, but implemented for unsupported format
+
+    # Sample data:
+    # {"time" : "2019-07-29 07:44:23.005624", "protocol" : 40, "model" : "Acurite-Tower", "id" : 1234, "sensor_id" : 1234, "channel" : "A", "temperature_C" : 22.600, "humidity" : 45, "battery_ok" : 0, "mod" : "ASK", "freq" : 433.938, "rssi" : -0.134, "snr" : 14.391, "noise" : -14.525}
+    # {"time" : "2021-12-20 20:00:59", "model" : "Acurite-Tower", "id" : 11041, "channel" : "B", "battery_ok" : 1, "temperature_C" : -3.500, "humidity" : 71, "mic" : "CHECKSUM"}
+
+    IDENTIFIER = "Acurite-Tower"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['usUnits'] = weewx.US
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['protocol'] = Packet.get_int(obj, 'protocol') # 40
+        pkt['model'] = obj.get('model') # model = Acurite-Tower
+        pkt['hardware_id'] = "%04x" % obj.get('id', 0)
+        pkt['sensor_id'] = "%04x" % obj.get('sensor_id', 0)
+        pkt['channel'] = obj.get('channel')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        if 'temperature_F' in obj:
+            pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
+        elif 'temperature_C' in obj:
+            pkt['temperature'] = to_F(Packet.get_float(obj, 'temperature_C'))
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
+        pkt['mod'] = obj.get('mod') # apparently mod = ASK
+        pkt['freq'] = Packet.get_float(obj, 'freq')
+        pkt['rssi'] = Packet.get_float(obj, 'rssi')
+        pkt['snr'] = Packet.get_float(obj, 'snr')
+        pkt['noise'] = Packet.get_float(obj, 'noise')
+        return Acurite.insert_ids(pkt, AcuriteTowerPacketV2.__name__)
 
 
 class Acurite606TXPacket(Packet):
@@ -1164,6 +1164,7 @@ class AmbientWH31EPacket(Packet):
         pkt = Packet.add_identifiers(pkt, station_id, AmbientWH31EPacket.__name__)
         return pkt
 
+
 class AmbientWH31BPacket(Packet):
 
     # {'time': '2024-03-04 17:36:20', 'model': 'AmbientWeather-WH31B', 'id': 196, 'channel': 3, 'battery_ok': 1, 'temperature_C': 21.6, 'humidity': 40, 'data': 'ea00000000', 'mic': 'CRC'}
@@ -1220,6 +1221,8 @@ class CalibeurRF104Packet(Packet):
         pkt = Packet.add_identifiers(
             pkt, sensor_id, CalibeurRF104Packet.__name__)
         return pkt
+
+
 class Cotech367959Packet(Packet):
     #{"time" : "2022-03-01 14:11:42", "model" : "Cotech-367959", "id" : 24, "battery_ok" : 1, "temperature_F" : 46.900, "humidity" : 62, "rain_mm" : 18.600, "wind_dir_deg" : 16, "wind_avg_m_s" : 0.600, "wind_max_m_s" : 0.700, "mic" : "CRC"}
     IDENTIFIER = "Cotech-367959"
@@ -1239,6 +1242,8 @@ class Cotech367959Packet(Packet):
         pkt['total_rain'] = Packet.get_float(obj, 'rain_mm')
         pkt = Packet.add_identifiers(pkt, sensor_id, Cotech367959Packet.__name__)
         return pkt
+
+
 class EcoWittWH40Packet(Packet):
     # This is for a WH40 rain sensor
 
