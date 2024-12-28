@@ -153,7 +153,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.95'
+DRIVER_VERSION = '0.96b1'
 
 # The default command requests json output from every decoder
 # Use the -R option to indicate specific decoders
@@ -1286,6 +1286,30 @@ class EcoWittWH40Packet(Packet):
     def insert_ids(pkt):
         station_id = pkt.pop('station_id', 0)
         return Packet.add_identifiers(pkt, station_id, EcoWittWH40Packet.__name__)
+
+
+class EM3551HPacket(Packet):
+    # The EMAX-EM3551H sensor cluster, used in the raddy weather station
+
+    # {"time" : "2024-10-25 17:51:33", "model" : "Emax-EM3551H", "id" : 1001, "channel" : 4, "battery_ok" : 1, "temperature_F" : 55.700,"humidity" : 95, "wind_avg_km_h" : 0.000, "wind_max_km_h" : 0.000, "wind_dir_deg" : 169, "rain_mm" : 0.000, "mic" : "CHECKSUM"}
+
+    IDENTIFIER = "Emax-EM3551H"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        sensor_id = obj.get('id') # changes when the outdoor sensor is reset
+        pkt['battery'] = Packet.get_battery(obj)
+        pkt['temperature'] = to_C(Packet.get_float(obj, 'temperature_F'))
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_km_h')
+        pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
+        pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+        pkt['total_rain'] = Packet.get_float(obj, 'rain_mm')
+        pkt = Packet.add_identifiers(pkt, sensor_id, EM3551HPacket.__name__)
+        return pkt
 
 
 class FOWH1080Packet(Packet):
