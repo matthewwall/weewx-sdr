@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright 2016-2022 Matthew Wall
+# Copyright 2016-2024 Matthew Wall
 # Distributed under the terms of the GNU Public License (GPLv3)
 """
 Collect data from stl-sdr.  Run rtl_433 on a thread and push the output onto
@@ -153,7 +153,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.93'
+DRIVER_VERSION = '0.95'
 
 # The default command requests json output from every decoder
 # Use the -R option to indicate specific decoders
@@ -357,6 +357,20 @@ class Packet:
             except ValueError:
                 pass
         return None
+
+    @staticmethod
+    def get_battery(obj):
+        # deal with boolean battery status indicators.  older rtl_433 used a
+        # field called 'battery' with string 'OK'.  later rtl_433 uses a field
+        # called 'battery_ok' with value 1 to indicate battery is ok and 0 to
+        # indicate battery is not ok.  map these to the WeeWX convention of
+        # boolean battery indicators of 0=OK 1=notOK
+        bs = None
+        if 'battery_ok' in obj:
+            bs = 0 if Packet.get_int(obj, 'battery_ok') == 1 else 1
+        else:
+            bs = 0 if obj.get('battery') == 'OK' else 1
+        return bs
 
     @staticmethod
     def parse_lines(lines, parseinfo=None):
@@ -1035,56 +1049,58 @@ class Acurite515Packet(Packet):
 
 
 class AlectoV1TemperaturePacket(Packet):
-    # {"time" : "2018-08-29 17:07:34", "model" : "AlectoV1 Temperature Sensor", "id" : 88, "channel" : 2, "battery" : "OK", "temperature_C" : 27.700, "humidity" : 42, "mic" : "CHECKSUM"}
+    # {"time" : "2024-12-28 09:06:10", "model" : "AlectoV1-Temperature", "id" : 33, "channel" : 1, "battery_ok" : 1, "temperature_C" : -2.200, "humidity" : 51, "mic" : "CHECKSUM"}
 
-    IDENTIFIER = "AlectoV1 Temperature Sensor"
+    IDENTIFIER = "AlectoV1-Temperature"
 
     @staticmethod
     def parse_json(obj):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['usUnits'] = weewx.METRIC
+        pkt['usUnits'] = weewx.METRICWX
         station_id = obj.get('id')
+        pkt['channel'] = obj.get('channel')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['battery'] = Packet.get_battery(obj)
         pkt = Packet.add_identifiers(pkt, station_id, AlectoV1TemperaturePacket.__name__)
         return pkt
 
 
 class AlectoV1WindPacket(Packet):
-    # {"time" : "2019-01-20 11:14:00", "model" : "AlectoV1 Wind Sensor", "id" : 7, "channel" : 0, "battery" : "OK", "wind_speed" : 0.000, "wind_gust" : 0.000, "wind_direction" : 270, "mic" : "CHECKSUM"}
+    # {"time" : "2024-12-28 09:06:41", "model" : "AlectoV1-Wind", "id" : 33, "channel" : 1, "battery_ok" : 1, "wind_avg_m_s" : 0.800, "wind_max_m_s" : 1.000, "wind_dir_deg" : 180, "mic" : "CHECKSUM"}
 
-    IDENTIFIER = "AlectoV1 Wind Sensor"
+    IDENTIFIER = "AlectoV1-Wind"
 
     @staticmethod
     def parse_json(obj):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['usUnits'] = weewx.METRIC  # FIXME: units have not been verified
+        pkt['usUnits'] = weewx.METRICWX
         station_id = obj.get('id')
-        pkt['wind_speed'] = Packet.get_float(obj, 'wind_speed')
-        pkt['wind_gust'] = Packet.get_float(obj, 'wind_gust')
-        pkt['wind_dir'] = Packet.get_int(obj, 'wind_direction')
-        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         pkt['channel'] = obj.get('channel')
+        pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_m_s')
+        pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_m_s')
+        pkt['wind_dir'] = Packet.get_int(obj, 'wind_dir_deg')
+        pkt['battery'] = Packet.get_battery(obj)
         pkt = Packet.add_identifiers(pkt, station_id, AlectoV1WindPacket.__name__)
         return pkt
 
 
 class AlectoV1RainPacket(Packet):
-    # {"time" : "2019-01-20 15:29:21", "model" : "AlectoV1 Rain Sensor", "id" : 13, "channel" : 0, "battery" : "OK", "rain_total" : 15.500, "mic" : "CHECKSUM"}
+    # {"time" : "2024-12-28 09:06:31", "model" : "AlectoV1-Rain", "id" : 202, "channel" : 0, "battery_ok" : 1, "rain_mm" : 54.750, "mic" : "CHECKSUM"}
 
-    IDENTIFIER = "AlectoV1 Rain Sensor"
+    IDENTIFIER = "AlectoV1-Rain"
 
     @staticmethod
     def parse_json(obj):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['usUnits'] = weewx.METRIC # FIXME: units have not been verified
+        pkt['usUnits'] = weewx.METRICWX
         station_id = obj.get('id')
-        pkt['rain_total'] = Packet.get_float(obj, 'rain_total')
-        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
         pkt['channel'] = obj.get('channel')
+        pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
+        pkt['battery'] = Packet.get_battery(obj)
         pkt = Packet.add_identifiers(pkt, station_id, AlectoV1RainPacket.__name__)
         return pkt
 
