@@ -69,24 +69,20 @@ fact, you can run the driver without installing it - just invoke python on it!
 In the examples elsewhere in this file, you will see this illustrated with the
 generic form, which is:
 
-python3 sdr.py
+  python3 sdr.py
 
 However, in most cases you must specify the location of the WeeWX modules using
 PYTHONPATH.  So that generic form will become something like this:
 
-PYTHONPATH=/path/to/weewx/modules python3 sdr.py
+  PYTHONPATH=/path/to/weewx/modules python3 sdr.py
 
 For example, a deb/rpm installation would look like this:
 
-export WEEWX_BINDIR=/usr/share/weewx
-export WEEWX_USRDIR=/etc/weewx/bin/user
-PYTHONPATH=$WEEWX_BINDIR python3 $WEEWX_USRDIR/sdr.py
+  PYTHONPATH=/usr/share/weewx python3 /etc/weewx/bin/user/sdr.py
 
 A pip/venv installation would look something like this:
 
-export WEEWX_BINDIR=~/weewx-venv
-export WEEWX_USRDIR=~/weewx-data/bin/user
-PYTHONPATH=$WEEWX_BINDIR python3 $WEEWX_USRDIR/sdr.py
+  PYTHONPATH=~/weewx-env python3 ~/weewx-data/bin/user/sdr.py
 
 Note:
 You might have use 'sudo' if the user does not have permission to read/write
@@ -316,3 +312,24 @@ unparsed: ['2016-11-04 16:12:39 :\tFine Offset Electronics, WH2 Temperature/Humi
 If you are not comfortable writing your own parser, post the output to the
 issues section of the weewx-sdr repository and some helpful person might write
 the parser for you.
+
+
+===============================================================================
+Historical notes
+
+When this driver was first created, most of the output from rtl_433 was only
+available as multi-line plain text, often but not always with some structure.
+JSON output was soon introduced, but there were many inconsistencies between
+sensors and rtl_433 releases.  Thankfully this stabilized over time.
+
+The driver includes two parsing methods: parse_text and parse_json.  The former
+is deprecated, and although many other formats have been added to rtl_433, only
+the json format is supported (and encouraged) in this driver.
+
+There have been other changes as well, such as the syntax for specifying the
+time - it went from "-M utc" to "-M time:iso".  At some point we might want to
+use "-M time:unix" so that we don't have to do the pattern match for time
+strings.  Or not.
+
+I've tried to maintain backward compatibility, but the early days had so many
+variations of sensor output and rtl_433 output, so that is not really feasible.
