@@ -1271,7 +1271,18 @@ class CalibeurRF104Packet(Packet):
 
 
 class Cotech367959Packet(Packet):
+    # Cotech 36-7959 weather station
+    # Also: SwitchDoc Labs Weather FT020T.
+    # Also: Sainlogic Weather Station WS019T
+    # Also: Sainlogic Weather Station FT0300
+    # Also: Sainlogic Weather Station WS0310 (all current Sainlogic models ?)
+    # Also: Ragova WiFi Weather Station FT-0310
+    # Also: NicetyMeter Weather Station 0366 (without Lux or UV index)
+    #
+    # thanks to user gremlin205
+
     #{"time" : "2022-03-01 14:11:42", "model" : "Cotech-367959", "id" : 24, "battery_ok" : 1, "temperature_F" : 46.900, "humidity" : 62, "rain_mm" : 18.600, "wind_dir_deg" : 16, "wind_avg_m_s" : 0.600, "wind_max_m_s" : 0.700, "mic" : "CRC"}
+
     IDENTIFIER = "Cotech-367959"
 
     @staticmethod
@@ -1280,7 +1291,7 @@ class Cotech367959Packet(Packet):
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['usUnits'] = weewx.METRIC
         sensor_id = obj.get('id')
-        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['battery'] = Packet.get_battery(obj)
         pkt['temperature'] = to_C(Packet.get_float(obj, 'temperature_F'))
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_m_s')
