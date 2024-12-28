@@ -2583,6 +2583,8 @@ class OSBTHR968Packet(Packet):
     # {"time" : "2017-01-18 14:56:03", "brand" : "OS", "model" :"BHTR968", "id" : 111, "channel" : 0, "battery" : "OK", "temperature_C" : 27.200, "temperature_F" : 80.960,  "humidity" : 46, "pressure" : 1013}
     # by 06mar2019
     # {"time" : "2019-03-06 13:27:23", "brand" : "OS", "model" : "BHTR968", "id" : 179, "channel" : 0, "battery" : "LOW", "temperature_C" : 19.800, "humidity" : 54, "pressure_hPa" : 974.000}
+    # by 03mar2022
+    # out:['{"time" : "2022-03-03 15:44:25", "model" : "Oregon-BHTR968", "id" : 219, "channel" : 0, "battery_ok" : 1, "temperature_C" : 21.700, "humidity" : 40, "pressure_hPa" : 990.000}
 
     @staticmethod
     def parse_json(obj):
@@ -2591,7 +2593,7 @@ class OSBTHR968Packet(Packet):
         pkt['usUnits'] = weewx.METRIC
         pkt['house_code'] = obj.get('id')
         pkt['channel'] = obj.get('channel')
-        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         if 'pressure' in obj:
@@ -2789,6 +2791,8 @@ class OSUV800Packet(Packet):
         return OS.insert_ids(pkt, OSUV800Packet.__name__)
 
     # {"time" : "2017-01-30 22:19:40", "brand" : "OS", "model" : "UV800", "id" : 207, "channel" : 1, "battery" : "OK", "uv" : 0}
+    # on 03mar2022
+    # {"time" : "2022-03-03 15:51:53", "model" : "Oregon-UV800", "id" : 255, "channel" : 1, "battery_ok" : 1, "uv" : 0}
 
     @staticmethod
     def parse_json(obj):
@@ -2797,7 +2801,7 @@ class OSUV800Packet(Packet):
         pkt['usUnits'] = weewx.METRIC
         pkt['house_code'] = obj.get('id')
         pkt['channel'] = obj.get('channel')
-        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
         pkt['uv_index'] = Packet.get_float(obj, 'uv')
         return OS.insert_ids(pkt, OSUV800Packet.__name__)
 
