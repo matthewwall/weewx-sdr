@@ -1190,29 +1190,6 @@ class AmbientWH31BPacket(Packet):
         pkt = Packet.add_identifiers(pkt, station_id, AmbientWH31BPacket.__name__)
         return pkt
 
-class FineOffsetWH32Packet(Packet):
-
-    # {'time': '2024-03-04 17:41:55', 'model': 'Fineoffset-WH32', 'id': 35, 'battery_ok': 1, 'temperature_C': 3.2, 'humidity': 91, 'mic': 'CRC'}
-
-    IDENTIFIER = "Fineoffset-WH32"
-
-    @staticmethod
-    def parse_json(obj):
-        pkt = dict()
-        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['usUnits'] = weewx.METRICWX
-        pkt['station_id'] = obj.get('id')
-        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
-        pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        pkt['battery'] = 0 if Packet.get_int(obj, 'battery_ok') == 1 else 1
-        pkt['channel'] = Packet.get_int(obj, 'channel')
-        return FineOffsetWH32Packet.insert_ids(pkt)
-
-    @staticmethod
-    def insert_ids(pkt):
-        station_id = pkt.pop('station_id', '0000')
-        pkt = Packet.add_identifiers(pkt, station_id, FineOffsetWH32Packet.__name__)
-        return pkt
 
 class CalibeurRF104Packet(Packet):
     # 2016-11-01 01:25:28 :Calibeur RF-104
@@ -1464,6 +1441,72 @@ class FOWH3080Packet(Packet):
         return Packet.add_identifiers(pkt, station_id, FOWH3080Packet.__name__)
 
 
+class FOWH2Packet(Packet):
+    # {"time" : "2018-08-29 17:08:33", "model" : "Fine Offset Electronics, WH2 Temperature/Humidity sensor", "id" : 129, "temperature_C" : 24.200, "mic" : "CRC"}
+
+    IDENTIFIER = "Fine Offset Electronics, WH2"
+    PARSEINFO = {
+        'ID': ['station_id', None, lambda x: int(x)],
+        'Temperature':
+            ['temperature', re.compile('([\d.-]+) C'), lambda x: float(x)]
+        }
+
+    @staticmethod
+    def parse_text(ts, payload, lines):
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRIC
+        pkt.update(Packet.parse_lines(lines, FOWH2Packet.PARSEINFO))
+        return FOWH2Packet.insert_ids(pkt)
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['station_id'] = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        return FOWH2Packet.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        return Packet.add_identifiers(pkt, station_id, FOWH2Packet.__name__)
+
+
+class FOWH5Packet(Packet):
+    # {"time" : "2019-10-27 14:51:21", "model" : "Fine Offset WH5 sensor", "id" : 48, "temperature_C" : 11.700, "humidity" : 62, "mic" : "CRC"}
+
+    IDENTIFIER = "Fine Offset WH5 sensor"
+    PARSEINFO = {
+        'ID': ['station_id', None, lambda x: int(x)],
+        'Temperature': ['temperature', re.compile('([\d.-]+) C'), lambda x: float(x)]
+    }
+
+    @staticmethod
+    def parse_text(ts, payload, lines):
+        pkt = dict()
+        pkt['dateTime'] = ts
+        pkt['usUnits'] = weewx.METRIC
+        pkt.update(Packet.parse_lines(lines, FOWH5Packet.PARSEINFO))
+        return FOWH5Packet.insert_ids(pkt)
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        pkt['station_id'] = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        return FOWH5Packet.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        return Packet.add_identifiers(pkt, station_id, FOWH5Packet.__name__)
+
+
 class FOWH24Packet(Packet):
     # This is for a WH24 which is the sensor array for several station models
 
@@ -1495,10 +1538,8 @@ class FOWH24Packet(Packet):
         return Packet.add_identifiers(pkt, station_id, FOWH24Packet.__name__)
 
 
-
 class FOWH24BPacket(Packet):
-    # This is for another WH24 (probably the EU-model or some kind of clone?)
-    # IDENTIFIER is *almost* the same and some of the keys are named slightly different
+    # different mappings for the WH24 sensor
 
     # {"time" : "2020-08-01 14:03:52", "model" : "Fineoffset-WH24", "id" : 247, "battery_ok" : 1, "temperature_C" : 30.600, "humidity" : 45, "wind_dir_deg" : 149, "wind_avg_m_s" : 0.000, "wind_max_m_s" : 0.000, "rain_mm" : 6.600, "uv" : 783, "uvi" : 1, "light_lux" : 28025.000, "mic" : "CRC"}
 
@@ -1547,6 +1588,7 @@ class FOWH25Packet(Packet):
     # {"time" : "2020-10-13 23:29:35", "model" : "Fineoffset-WH25", "id" : 170, "battery_ok" : 0, "temperature_C" : 26.200, "humidity" : 36, "pressure_hPa" : 1009.900, "mic" : "CRC"}
 
     # {"time" : "2021-04-08 18:11:01", "model" : "Fineoffset-WH25", "id" : 121, "battery_ok" : 1, "temperature_C" : 20.000, "humidity" : 48, "pressure_hPa" : 979.100, "mic" : "CRC"}
+    # {"time" : "2020-08-01 14:03:16", "model" : "Fineoffset-WH25", "id" : 19, "battery_ok" : 1, "temperature_C" : 26.100, "humidity" : 49, "pressure_hPa" : 987.800, "mic" : "CRC"}
 
     IDENTIFIER = "Fineoffset-WH25"
 
@@ -1584,79 +1626,29 @@ class FOWH25Packet(Packet):
         return Packet.add_identifiers(pkt, station_id, FOWH25Packet.__name__)
 
 
-class FOWH25BPacket(Packet):
-    # This is for another WH25 (probably the EU-model or some kind of clone?)
-    # IDENTIFIER is *almost* the same and some of the keys are named slightly different
-    
-    # {"time" : "2020-08-01 14:03:16", "model" : "Fineoffset-WH25", "id" : 19, "battery_ok" : 1, "temperature_C" : 26.100, "humidity" : 49, "pressure_hPa" : 987.800, "mic" : "CRC"}
-    
-    IDENTIFIER = "Fineoffset-WH25"
-    
-    PARSEINFO = {
-        'ID': ['station_id', None, lambda x: int(x)],
-        'Temperature':
-            ['temperature', re.compile('([\d.-]+) C'), lambda x: float(x)],
-        'Humidity': ['humidity', re.compile('([\d.]+) %'), lambda x: float(x)],
-        'Pressure':
-            ['pressure', re.compile('([\d.-]+) hPa'), lambda x: float(x)]}
+class FOWH32Packet(Packet):
 
-    @staticmethod
-    def parse_text(ts, payload, lines):
-        pkt = dict()
-        pkt['dateTime'] = ts
-        pkt['usUnits'] = weewx.METRIC
-        pkt.update(Packet.parse_lines(lines, FOWH25BPacket.PARSEINFO))
-        return FOWH25BPacket.insert_ids(pkt)
+    # {'time': '2024-03-04 17:41:55', 'model': 'Fineoffset-WH32', 'id': 35, 'battery_ok': 1, 'temperature_C': 3.2, 'humidity': 91, 'mic': 'CRC'}
+
+    IDENTIFIER = "Fineoffset-WH32"
 
     @staticmethod
     def parse_json(obj):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['usUnits'] = weewx.METRIC
+        pkt['usUnits'] = weewx.METRICWX
         pkt['station_id'] = obj.get('id')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        pkt['pressure'] = Packet.get_float(obj, 'pressure_hPa')
-        pkt['battery'] = 0 if Packet.get_float(obj, 'battery_ok') == 1 else 1
-        return FOWH25BPacket.insert_ids(pkt)
+        pkt['battery'] = 0 if Packet.get_int(obj, 'battery_ok') == 1 else 1
+        pkt['channel'] = Packet.get_int(obj, 'channel')
+        return FOWH32Packet.insert_ids(pkt)
 
     @staticmethod
     def insert_ids(pkt):
         station_id = pkt.pop('station_id', '0000')
-        return Packet.add_identifiers(pkt, station_id, FOWH25BPacket.__name__)
-
-
-class FOWH2Packet(Packet):
-    # {"time" : "2018-08-29 17:08:33", "model" : "Fine Offset Electronics, WH2 Temperature/Humidity sensor", "id" : 129, "temperature_C" : 24.200, "mic" : "CRC"}
-
-    IDENTIFIER = "Fine Offset Electronics, WH2"
-    PARSEINFO = {
-        'ID': ['station_id', None, lambda x: int(x)],
-        'Temperature':
-            ['temperature', re.compile('([\d.-]+) C'), lambda x: float(x)]
-        }
-
-    @staticmethod
-    def parse_text(ts, payload, lines):
-        pkt = dict()
-        pkt['dateTime'] = ts
-        pkt['usUnits'] = weewx.METRIC
-        pkt.update(Packet.parse_lines(lines, FOWH2Packet.PARSEINFO))
-        return FOWH2Packet.insert_ids(pkt)
-
-    @staticmethod
-    def parse_json(obj):
-        pkt = dict()
-        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['usUnits'] = weewx.METRIC
-        pkt['station_id'] = obj.get('id')
-        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
-        return FOWH2Packet.insert_ids(pkt)
-
-    @staticmethod
-    def insert_ids(pkt):
-        station_id = pkt.pop('station_id', '0000')
-        return Packet.add_identifiers(pkt, station_id, FOWH2Packet.__name__)
+        pkt = Packet.add_identifiers(pkt, station_id, FOWH32Packet.__name__)
+        return pkt
 
 
 class FOWH32BPacket(Packet):
@@ -1694,37 +1686,31 @@ class FOWH32BPacket(Packet):
         return Packet.add_identifiers(pkt, station_id, FOWH32BPacket.__name__)
 
 
-class FOWH5Packet(Packet):
-    # {"time" : "2019-10-27 14:51:21", "model" : "Fine Offset WH5 sensor", "id" : 48, "temperature_C" : 11.700, "humidity" : 62, "mic" : "CRC"}
+class FOWH45Packet(Packet):
+    # This is for a WH45 Air Quality Monitor
 
-    IDENTIFIER = "Fine Offset WH5 sensor"
-    PARSEINFO = {
-        'ID': ['station_id', None, lambda x: int(x)],
-        'Temperature': ['temperature', re.compile('([\d.-]+) C'), lambda x: float(x)]
-    }
+    #{"time" : "2023-07-08 13:06:14", "model" : "Fineoffset-WH45", "id" : 18034, "battery_ok" : 1.000, "temperature_C" : 20.400, "humidity" : 84, "pm2_5_ug_m3" : 1.800, "pm10_ug_m3" : 1.800, "co2_ppm" : 718, "ext_power" : 1, "mic" : "CRC"}
 
-    @staticmethod
-    def parse_text(ts, payload, lines):
-        pkt = dict()
-        pkt['dateTime'] = ts
-        pkt['usUnits'] = weewx.METRIC
-        pkt.update(Packet.parse_lines(lines, FOWH5Packet.PARSEINFO))
-        return FOWH5Packet.insert_ids(pkt)
+    IDENTIFIER = "Fineoffset-WH45"
 
     @staticmethod
     def parse_json(obj):
         pkt = dict()
-        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['usUnits'] = weewx.METRIC
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
         pkt['station_id'] = obj.get('id')
+        pkt['co2_atm'] = Packet.get_float(obj, 'co2_ppm')
+        pkt['pm2_5_atm'] = Packet.get_float(obj, 'pm2_5_ug_m3')
+        pkt['pm10_0_atm'] = Packet.get_float(obj, 'pm10_ug_m3')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        return FOWH5Packet.insert_ids(pkt)
+        return FOWH45Packet.insert_ids(pkt)
 
     @staticmethod
     def insert_ids(pkt):
         station_id = pkt.pop('station_id', '0000')
-        return Packet.add_identifiers(pkt, station_id, FOWH5Packet.__name__)
+        return Packet.add_identifiers(pkt, station_id, FOWH45Packet.__name__)
 
 
 class FOWH51Packet(Packet):
@@ -1934,12 +1920,66 @@ class FOWS80Packet(Packet):
         return Packet.add_identifiers(pkt, station_id, FOWS80Packet.__name__)
 
 
+class FOWS90Packet(Packet):
+    # time : 2020-04-26 23:21:42
+    # model : Fineoffset-WS90
+    # id : 16
+    # temperature_C : 15.400
+    # humidity : 51
+    # wind_dir_deg : 323
+    # wind_avg_m_s : 1.020
+    # wind_max_m_s : 2.040
+    # rain_mm : 76.453
+    # uvi : 2
+    # light_lux : 14616.000
+    # supercap_V: 3.200
+    # battery_ok: OK
+    # battery_mV: 3280
+    # mic : CRC
+
+    # {"time" : "2023-03-08 22:00:38", "model" : "Fineoffset-WS90", "id" : 13355, "battery_ok" : 1.0, "battery_mV" : 3280, "temperature_C" : 5.700, "humidity" : 75, "wind_dir_deg" : 87, "wind_avg_m_s" : 1.300, "wind_max_m_s" : 1.600, "uvi" : 0.000, "light_lux" : 55300.000, "flags" : 129, "rain_mm" : 12.800, "supercap_V" : 3.200, "data" : "01c00000192000fe7ff0ff0082", "mic" : "CRC", "mod" : "FSK", "freq1" : 914.945, "freq2" : 915.039, "rssi" : -0.123, "snr" : 32.990, "noise" : -33.113}
+
+    IDENTIFIER = "Fineoffset-WS90"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRICWX
+        pkt['station_id'] = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+        pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_m_s')
+        pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_m_s')
+        pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
+        pkt['uv_index'] = Packet.get_float(obj, 'uvi')
+        pkt['light'] = Packet.get_float(obj, 'light_lux') # superfluous?
+        pkt['battery'] = 0 if Packet.get_int(obj, 'battery_ok') > 0.1 else 1
+        v = Packet.get_float(obj, 'battery_mV')
+        v = round( v * .001, 2 )
+        pkt['supplyVoltage'] = v
+        pkt['referenceVoltage'] = Packet.get_float(obj, 'supercap_V')
+        pkt['freq1'] = Packet.get_float(obj, 'freq1')
+        pkt['freq2'] = Packet.get_float(obj, 'freq2')
+        pkt['rssi'] = Packet.get_float(obj, 'rssi')
+        pkt['snr'] = Packet.get_float(obj, 'snr')
+        pkt['noise'] = Packet.get_float(obj, 'noise')
+        return FOWS90Packet.insert_ids(pkt)
+
+    @staticmethod
+    def insert_ids(pkt):
+        station_id = pkt.pop('station_id', '0000')
+        return Packet.add_identifiers(pkt, station_id, FOWS90Packet.__name__)
+
+
 class AuriolHG02832Packet(Packet):
-    IDENTIFIER = "Auriol-HG02832"
 
     # {"time" : "2017-09-14 20:24:43", "model" : "Auriol-HG02832", "id" : 1, "channel" : 2, "battery" : "OK", "temperature_C" : 25.090, "humidity" : 49}
     # {"time" : "2017-09-14 20:24:44", "model" : "Auriol-HG02832", "id" : 1, "channel" : 2, "battery" : "OK", "temperature_C" : 25.110, "humidity" : 49}
     # {"time" : "2017-09-14 20:24:44", "model" : "Auriol-HG02832", "id" : 1, "channel" : 2, "battery" : "OK", "temperature_C" : 25.120, "humidity" : 49}
+
+    IDENTIFIER = "Auriol-HG02832"
 
     @staticmethod
     def parse_json(obj):
