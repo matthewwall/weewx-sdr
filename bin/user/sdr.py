@@ -1165,6 +1165,25 @@ class AmbientF007THPacket(Packet):
         return pkt
 
 
+class AmbientTX8300Packet(Packet):
+
+    # {"time" : "2021-06-14 21:38:43", "model" : "AmbientWeather-TX8300", "id" : 116, "channel" : 1, "battery" : 2, "temperature_C" : 28.500, "mic" : "CHECKSUM"}
+
+    IDENTIFIER = "AmbientWeather-TX8300"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        station_id = obj.get('id')
+        pkt['channel'] = Packet.get_int(obj, 'channel')
+        pkt['battery'] = Packet.get_battery(obj)
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt = Packet.add_identifiers(pkt, station_id, AmbientTX8300Packet.__name__)
+        return pkt
+
+
 class AmbientWH31EPacket(Packet):
 
     # {"time" : "2019-02-14 17:24:41.259441", "protocol" : 113, "model" : "AmbientWeather-WH31E", "id" : 24, "channel" : 1, "battery" : "OK", "temperature_C" : 6.000, "humidity" : 42, "data" :"2f00000000", "mic" : "CRC", "mod" : "FSK", "freq1" : 914.984, "freq2" : 914.906, "rssi" : -13.328, "snr" : 13.197, "noise" : -26.525}
