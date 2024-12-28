@@ -1,5 +1,5 @@
 weewx-sdr
-Copyright 2016-2022 Matthew Wall
+Copyright 2016-2024 Matthew Wall
 Distributed under terms of the GPLv3
 
 This is a driver for weewx that captures data from software-defined radio.
@@ -30,51 +30,67 @@ Installation
 
 0) install pre-requisites
 
-a) install weewx
-    http://weewx.com/docs.html
-b) install rtl-sdr
-    http://sdr.osmocom.org/trac/wiki/rtl-sdr
-c) install rtl_433
-    https://github.com/merbanan/rtl_433
+  a) install weewx
+      http://weewx.com/docs
+  b) install rtl-sdr
+      http://sdr.osmocom.org/trac/wiki/rtl-sdr
+  c) install rtl_433
+      https://github.com/merbanan/rtl_433
 
-1) download the driver
+1) install the driver
 
-wget -O weewx-sdr.zip https://github.com/matthewwall/weewx-sdr/archive/master.zip
+weectl extension install https://github.com/matthewwall/weewx-sdr/archive/master.zip
 
-2) install the driver
+2) configure the driver
 
-sudo wee_extension --install weewx-sdr.zip
+weectl station reconfigure --driver=user.sdr --no-prompt
 
-3) configure the driver
+3) run the driver directly to identify the packets you want to capture
 
-sudo wee_config --reconfigure --driver=user.sdr --no-prompt
+export WEEWX_BINDIR=/usr/share/weewx
+export WEEWX_USRDIR=/etc/weewx/bin/user
+PYTHONPATH=$WEEWX_BINDIR python3 $WEEWX_USRDIR/sdr.py --cmd="rtl_433 -M utc -F json"
 
-4) run the driver directly to identify the packets you want to capture
-
-cd /home/weewx
-sudo PYTHONPATH=bin python bin/user/sdr.py --cmd="rtl_433 -M utc -F json"
-
-5) modify the [SDR] section of weewx.conf using a text editor
+4) modify the [SDR] section of weewx.conf using a text editor
 
 - create a [[sensor_map]] for the data you want to capture
 - possibly modify the 'cmd' parameter
 
-6) start weewx
+5) start weewx
 
-sudo /etc/init.d/weewx start
+sudo systemctl start weewx
 
 
 ===============================================================================
 How to run the driver directly
 
-Run the driver directly for testing and diagnostics.  For example, if weewx
-was installed using setup.py:
+You can run the driver directly for testing, diagnostics, and development.  In
+fact, you can run the driver without installing it - just invoke python on it!
+In the examples elsewhere in this file, you will see this illustrated with the
+generic form, which is:
 
-sudo PYTHONPATH=/home/weewx/bin python /home/weewx/bin/user/sdr.py --help
+python3 sdr.py
 
-If weewx was installed from deb or rpm:
+However, in most cases you must specify the location of the WeeWX modules using
+PYTHONPATH.  So that generic form will become something like this:
 
-sudo PYTHONPATH=/usr/share/weewx python /usr/share/weewx/user/sdr.py --help
+PYTHONPATH=/path/to/weewx/modules python3 sdr.py
+
+For example, a deb/rpm installation would look like this:
+
+export WEEWX_BINDIR=/usr/share/weewx
+export WEEWX_USRDIR=/etc/weewx/bin/user
+PYTHONPATH=$WEEWX_BINDIR python3 $WEEWX_USRDIR/sdr.py
+
+A pip/venv installation would look something like this:
+
+export WEEWX_BINDIR=~/weewx-venv
+export WEEWX_USRDIR=~/weewx-data/bin/user
+PYTHONPATH=$WEEWX_BINDIR python3 $WEEWX_USRDIR/sdr.py
+
+Note:
+You might have use 'sudo' if the user does not have permission to read/write
+the USB SDR device.
 
 
 ===============================================================================
@@ -183,7 +199,7 @@ sudo rtl_433 -M utc -F json -R 9 -R 31
 Once that is working, run the driver directly to be sure that it is collecting
 data from the rtl_433 application.
 
-sudo PYTHONPATH=/home/weewx/bin python /home/weewx/bin/user/sdr.py
+python3 sdr.py --cmd="rtl_433 -M utc -F json"
 
 Make note of the sensor identifiers.  Each identifier is a three-part string
 consisting of the observation, sensor id, and rf packet type, separated by
@@ -210,7 +226,7 @@ sensors are captured, recognized, and parsed.
 Once you are satisfied with the output when running weewx directly, run weewx
 as a daemon and configure rc script or systemd to run weewx at system startup.
 
-sudo /etc/init.d/weewx start
+sudo systemctl start weewx
 
 
 ===============================================================================
@@ -271,7 +287,7 @@ First, shut down weewx so that you can talk to the SDR directly.
 Then run the SDR driver directly, but tell it to print out information only
 about sensors that you have not yet added to your weewx configuration:
 
-PYTHONPATH=/home/weewx/bin python /home/weewx/bin/user/sdr.py --config /home/weewx/weewx.conf --hide=out,parsed,mapped
+python3 sdr.py --config weewx.conf --hide=out,parsed,mapped
 
 As always, unless the sensor identifier is marked on the sensor itself, you
 should turn on sensors one at a time, marking the outside of the sensor with
@@ -286,7 +302,7 @@ Support for new sensor types
 To add support for new sensors, capture the output from rtl_433.  To capture
 output, run the driver directly and hide known packets:
 
-PYTHONPATH=/home/weewx/bin python /home/weewx/bin/user/sdr.py --cmd "rtl_433 -M utc -F json" --hide parsed,out,empty
+python3 sdr.py --cmd="rtl_433 -M utc -F json" --hide parsed,out,empty
 
 This should emit a line for each unparsed type.  For example:
 
