@@ -14,6 +14,7 @@
 * added freq, rssi, snr, noise to WS90, WH32B, WH40 packets (thanks jpochmara)
 * added RubicsonTempPacketV2 (#175)
 * added WS68 packet, but fields are not confirmed (issue #167)
+* added support for EsperanzaEWS, thanks to Sar6e (issue #158)
 
 0.95 28dec2024
 * update AlectoV1 signatures, fields, and units
