@@ -10,6 +10,7 @@
 * fix rain_total/total_rain confusion in Cotech367959
 * fix rain_total/total_rain confusion in EM3551H
 * fix rain_total/total_rain confusion in OSRGR968
+* fix sensor_id in TFA packets
 
 0.95 28dec2024
 * update AlectoV1 signatures, fields, and units

@@ -3373,6 +3373,7 @@ class SpringfieldTMPacket(Packet):
         pkt = Packet.add_identifiers(pkt, sensor_id, SpringfieldTMPacket.__name__)
         return pkt
 
+
 class TFADropPacket(Packet):
     # {"time" : "2024-08-24 13:51:38", "model" : "TFA-Drop", "id" : 899964, "battery_ok" : 1, "rain_mm" : 17.780, "mic" : "CHECKSUM"}
 
@@ -3380,14 +3381,15 @@ class TFADropPacket(Packet):
 
     @staticmethod
     def parse_json(obj):
+        sensor_id = obj.get('id', '0000')
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['usUnits'] = weewx.METRICWX
         pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
         pkt['battery'] = 1 if Packet.get_int(obj, 'battery_ok') == 0 else 0
-        station_id = pkt.pop('id', '0000')
-        pkt = Packet.add_identifiers(pkt, station_id, TFADropPacket.__name__)
+        pkt = Packet.add_identifiers(pkt, sensor_id, TFADropPacket.__name__)
         return pkt
+
 
 class TFATwinPlus303049Packet(Packet):
     # 2019-09-25 17:15:12 :   TFA-Twin-Plus-30.3049
@@ -3400,7 +3402,6 @@ class TFATwinPlus303049Packet(Packet):
 
     IDENTIFIER = "TFA-Twin-Plus-30.3049"
     PARSEINFO = {
-        'Rolling Code': ['rolling_code', None, lambda x: int(x)],
         'Channel': ['channel', None, lambda x: int(x)],
         'Battery': ['battery', None, lambda x: 0 if x == 'OK' else 1],
         'Temperature': [
@@ -3409,23 +3410,24 @@ class TFATwinPlus303049Packet(Packet):
 
     @staticmethod
     def parse_text(ts, payload, lines):
+        sensor_id = '0000' # FIXME - no id in text output?
         pkt = dict()
         pkt['dateTime'] = ts
         pkt['usUnits'] = weewx.METRIC
         pkt.update(Packet.parse_lines(lines, TFATwinPlus303049Packet.PARSEINFO))
-        return Hideki.insert_ids(pkt, TFATwinPlus303049Packet.__name__)
+        return Packet.add_identifiers(pkt, sensor_id, TFATwinPlus303049Packet.__name__)
 
     @staticmethod
     def parse_json(obj):
+        sensor_id = obj.get('id', '0000')
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['usUnits'] = weewx.METRIC
-        pkt['rolling_code'] = obj.get('rc')
         pkt['channel'] = obj.get('channel')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
-        return Hideki.insert_ids(pkt, TFATwinPlus303049Packet.__name__)
+        pkt['battery'] = Packet.get_battery(obj)
+        return Packet.add_identifiers(pkt, sensor_id, TFATwinPlus303049Packet.__name__)
 
 
 class TFADropPacket(Packet):
@@ -3436,12 +3438,12 @@ class TFADropPacket(Packet):
 
     @staticmethod
     def parse_json(obj):
+        sensor_id = obj.get('id', '0000')
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
         pkt['usUnits'] = weewx.METRICWX
         pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
-        sensor_id = pkt.pop('id', '0000')
         pkt = Packet.add_identifiers(pkt, sensor_id, TFADropPacket.__name__)
         return pkt
 
@@ -3457,6 +3459,7 @@ class TSFT002Packet(Packet):
 
     @staticmethod
     def parse_json(obj):
+        sensor_id = obj.get('id', '0000')
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['usUnits'] = weewx.METRIC
@@ -3464,7 +3467,6 @@ class TSFT002Packet(Packet):
         pkt['depth'] = Packet.get_float(obj, 'depth_cm')
         pkt['transmit'] = Packet.get_float(obj, 'transmit_s')
         pkt['flags'] = Packet.get_int(obj, 'flags')
-        sensor_id = pkt.pop('id', '0000')
         pkt = Packet.add_identifiers(pkt, sensor_id, TSFT002Packet.__name__)
         return pkt
 
