@@ -2565,6 +2565,24 @@ class RubicsonTempPacket(Packet):
         return Packet.add_identifiers(pkt, sensor_id, RubicsonTempPacket.__name__)
 
 
+class RubicsonTempPacketV2(Packet):
+    # {"time" : "2023-04-04 19:57:28", "protocol" : 2, "model" : "Rubicson-Temperature", "id" : 183, "channel" : 3, "battery_ok" : 1, "temperature_C" : 21.700, "mic" : "CRC"}
+
+    IDENTIFIER = "Rubicson-Temperature"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRIC
+        channel = obj.get('channel', 0)
+        code = obj.get('id', 0)
+        sensor_id = "%s:%s" % (channel, code)
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['battery'] = Packet.get_battery(obj)
+        return Packet.add_identifiers(pkt, sensor_id, RubicsonTempPacketV2.__name__)
+
+
 class OS(object):
     @staticmethod
     def insert_ids(pkt, pkt_type):
