@@ -1321,6 +1321,13 @@ class EcoWittWH40Packet(Packet):
         pkt['usUnits'] = weewx.METRICWX
         pkt['station_id'] = obj.get('id')
         pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
+        pkt['battery'] = 0 if Packet.get_int(obj, 'battery_ok') > 0.10 else 1
+        pkt['supplyVoltage'] = Packet.get_float(obj, 'battery_V')
+        pkt['freq1'] = Packet.get_float(obj, 'freq1')
+        pkt['freq2'] = Packet.get_float(obj, 'freq2')
+        pkt['rssi'] = Packet.get_float(obj, 'rssi')
+        pkt['snr'] = Packet.get_float(obj, 'snr')
+        pkt['noise'] = Packet.get_float(obj, 'noise')
         return EcoWittWH40Packet.insert_ids(pkt)
 
     @staticmethod
@@ -1770,10 +1777,12 @@ class FOWH32BPacket(Packet):
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         pkt['pressure'] = Packet.get_float(obj, 'pressure_hPa')
-        if 'battery' in obj:
-            pkt['battery'] = 0 if obj.get('battery') == 'OK' else 1
-        if 'battery_ok' in obj:
-            pkt['battery'] = 0 if obj.get('battery_ok') == 1 else 1
+        pkt['battery'] = Packet.get_battery(obj)
+        pkt['freq1'] = Packet.get_float(obj, 'freq1')
+        pkt['freq2'] = Packet.get_float(obj, 'freq2')
+        pkt['rssi'] = Packet.get_float(obj, 'rssi')
+        pkt['snr'] = Packet.get_float(obj, 'snr')
+        pkt['noise'] = Packet.get_float(obj, 'noise')
         return FOWH32BPacket.insert_ids(pkt)
 
     @staticmethod

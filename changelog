@@ -11,6 +11,7 @@
 * fix rain_total/total_rain confusion in EM3551H
 * fix rain_total/total_rain confusion in OSRGR968
 * fix sensor_id in TFA packets
+* added freq, rssi, snr, noise to WS90, WH32B, WH40 packets (thanks jpochmara)
 
 0.95 28dec2024
 * update AlectoV1 signatures, fields, and units
