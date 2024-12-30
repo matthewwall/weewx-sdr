@@ -4,6 +4,12 @@
 * fixed battery status for oregon scientific sensors (#190)
 * added support for AmbientTX8300 (#189 mrneutron42)
 * note compatibility for Cotech 36-7959 detection
+* fix units and rain in Cotech 36-7959
+* fix rain_total/total_rain confusion in Vevor7in1
+* fix rain_total/total_rain confusion in WS2032
+* fix rain_total/total_rain confusion in Cotech367959
+* fix rain_total/total_rain confusion in EM3551H
+* fix rain_total/total_rain confusion in OSRGR968
 
 0.95 28dec2024
 * update AlectoV1 signatures, fields, and units

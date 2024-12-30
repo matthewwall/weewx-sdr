@@ -172,6 +172,32 @@ identifiers used by weewx, and the sensors actually recognized by weewx.
 
 By default the logging options are False.
 
+Some sensors report a current value, e.g., temperature or humidity, whereas
+other report a cumulative total, e.g., rain.  The 'deltas' section indicates
+how to map a cumulative total to a per-period amount.
+
+The default deltas knows about rain and lightning strikes, and it assumes that
+the 'rain_total' and 'strikes_total' are total counts that must be mapped to
+the per-period variables 'rain' and 'strikes'.  It is specified as follows:
+
+[SDR]
+    ...
+    [[sensor_map]]
+        rain_total = rain_total.0026.FOWH1080Packet
+        ...
+    [[deltas]]
+        rain = rain_total
+        strikes = strikes_total
+
+What is going on here?  Let's say that rtl_433 reports sensor output for rain
+as 'rain_mm', a cumulative count of rainfall.  The sensor map puts the value
+from 'rain_mm' into 'rain_total', then a function _calculate_deltas uses the
+definition in [[deltas]] to break rain_total down to only the amount since the
+last rain_total was reported.
+
+This is all to keep WeeWX happy - it expects an observation 'rain' that is the
+amount of rainfall in the current period, whether that is loop or archive.
+
 
 ===============================================================================
 How to diagnose problems
