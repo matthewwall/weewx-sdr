@@ -15,6 +15,7 @@
 * added RubicsonTempPacketV2 (#175)
 * added WS68 packet, but fields are not confirmed (issue #167)
 * added support for EsperanzaEWS, thanks to Sar6e (issue #158)
+* use lightning_strike_count as default delta so it matches the weewx schema
 
 0.95 28dec2024
 * update AlectoV1 signatures, fields, and units
