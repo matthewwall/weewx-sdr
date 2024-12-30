@@ -3377,6 +3377,8 @@ class SpringfieldTMPacket(Packet):
 
 
 class TFADropPacket(Packet):
+
+    # {"time" : "2022-06-19 09:18:57", "model" : "TFA-Drop", "id" : 549565, "battery_ok" : 1, "rain_mm" : 0.000, "mic" : "CHECKSUM"} 
     # {"time" : "2024-08-24 13:51:38", "model" : "TFA-Drop", "id" : 899964, "battery_ok" : 1, "rain_mm" : 17.780, "mic" : "CHECKSUM"}
 
     IDENTIFIER = "TFA-Drop"
@@ -3430,24 +3432,6 @@ class TFATwinPlus303049Packet(Packet):
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         pkt['battery'] = Packet.get_battery(obj)
         return Packet.add_identifiers(pkt, sensor_id, TFATwinPlus303049Packet.__name__)
-
-
-class TFADropPacket(Packet):
-
-    # {"time" : "2022-06-19 09:18:57", "model" : "TFA-Drop", "id" : 549565, "battery_ok" : 1, "rain_mm" : 0.000, "mic" : "CHECKSUM"} 
-
-    IDENTIFIER = "TFA-Drop"
-
-    @staticmethod
-    def parse_json(obj):
-        sensor_id = obj.get('id', '0000')
-        pkt = dict()
-        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
-        pkt['usUnits'] = weewx.METRICWX
-        pkt['battery'] = Packet.get_battery(obj)
-        pkt = Packet.add_identifiers(pkt, sensor_id, TFADropPacket.__name__)
-        return pkt
 
 
 class TSFT002Packet(Packet):
