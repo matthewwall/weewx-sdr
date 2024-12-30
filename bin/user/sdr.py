@@ -1289,15 +1289,20 @@ class Cotech367959Packet(Packet):
     def parse_json(obj):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
-        pkt['usUnits'] = weewx.METRIC
+        pkt['usUnits'] = weewx.METRICWX
         sensor_id = obj.get('id')
         pkt['battery'] = Packet.get_battery(obj)
-        pkt['temperature'] = to_C(Packet.get_float(obj, 'temperature_F'))
+        if 'temperature_F' in obj:
+            pkt['temperature'] = to_C(Packet.get_float(obj, 'temperature_F'))
+        elif 'temperature_C' in obj:
+            pkt['temperature'] = Packet.get_float(obj, 'temperature_F')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_m_s')
         pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_m_s')
         pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
-        pkt['total_rain'] = Packet.get_float(obj, 'rain_mm')
+        pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
+        pkt['uv_index'] = Packet.get_float(obj, 'uv')
+        pkt['luminosity'] = Packet.get_float(obj, 'light_lux')
         pkt = Packet.add_identifiers(pkt, sensor_id, Cotech367959Packet.__name__)
         return pkt
 
@@ -1343,7 +1348,7 @@ class EM3551HPacket(Packet):
         pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_km_h')
         pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
         pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
-        pkt['total_rain'] = Packet.get_float(obj, 'rain_mm')
+        pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
         pkt = Packet.add_identifiers(pkt, sensor_id, EM3551HPacket.__name__)
         return pkt
 
@@ -3085,7 +3090,7 @@ class OSRGR968Packet(Packet):
         pkt['channel'] = Packet.get_int(obj, 'channel')
         pkt['battery'] = Packet.get_battery(obj)
         pkt['rain_rate'] = Packet.get_float(obj, 'rain_rate')
-        pkt['total_rain'] = Packet.get_float(obj, 'total_rain')
+        pkt['rain_total'] = Packet.get_float(obj, 'total_rain')
         return OS.insert_ids(pkt, OSRGR968Packet.__name__)
 
 
@@ -3484,7 +3489,7 @@ class Vevor7in1Packet(Packet):
         pkt['wind_gust'] = kmh_to_mps(Packet.get_float(obj, 'wind_max_km_h'))
         pkt['wind_speed'] = kmh_to_mps(Packet.get_float(obj, 'wind_avg_km_h'))
         pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
-        pkt['total_rain'] = Packet.get_float(obj, 'rain_mm')
+        pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
         pkt['light_lux'] = Packet.get_int(obj, 'light_lux')
         pkt['uv'] = Packet.get_float(obj, 'uv')
         pkt = Packet.add_identifiers(pkt, station_id, Vevor7in1Packet.__name__)
@@ -3507,7 +3512,7 @@ class WS2032Packet(Packet):
         pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_km_h')
         pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_km_h')
         pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
-        pkt['total_rain'] = Packet.get_float(obj, 'maybe_rain')
+        pkt['rain_total'] = Packet.get_float(obj, 'maybe_rain')
         pkt = Packet.add_identifiers(pkt, sensor_id, WS2032Packet.__name__)
         return pkt
 
