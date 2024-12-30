@@ -90,26 +90,23 @@ the USB SDR device.
 
 
 ===============================================================================
-Configuration
+Configuration - the sensor_map
 
 Use the [SDR] section of the weewx configuration file (nominally weewx.conf) to
 adjust the driver configuration.
-
-The default configuration uses this command:
-
-rtl_433 -M utc -F json
-
-Specify different options using the cmd parameter.  For example:
-
-[SDR]
-    driver = user.sdr
-    cmd = rtl_433 -M utc -F json -R 17 -R 44 -R 50
 
 The rtl_433 executable emits data for many different types of sensors, some of
 which have similar output.  Use the sensor_map to distinguish between sensors
 and map the output from rtl_433 to the database fields in weewx.
 
-Here are some examples:
+To identify sensors, run the driver directly.  If you do not yet have a sensor
+map, then use the default invocation so that you can see all of the sensors
+that rtl_433 recognizes.  From this output you will choose the sensors and
+their identifiers to create your sensor_map.
+
+  python3 sdr.py
+
+Here are some sensor_map examples:
 
 # collect data from Acurite 5n1 sensor 0BFA and t/h sensor 24A4
 [SDR]
@@ -160,17 +157,40 @@ Here are some examples:
         outHumidity = humidity.0026.FOWH1080Packet
         outTemp = temperature.0026.FOWH1080Packet
 
-To figure out the sensor identifiers, run the driver directly, possibly with
-the --debug option.  Another option is to run weewx with the logging options
-for [SDR] enabled to display the sensors found by rtl_433, the sensor
-identifiers used by weewx, and the sensors actually recognized by weewx.
+
+===============================================================================
+Configuration - options to rtl_433
+
+The default configuration uses this command:
+
+rtl_433 -M utc -F json
+
+Specify different options using the cmd parameter.  For example:
 
 [SDR]
     driver = user.sdr
-    log_unknown_sensors = True
-    log_unmapped_sensors = True
+    cmd = rtl_433 -M utc -F json -R 17 -R 44 -R 50
 
-By default the logging options are False.
+
+===============================================================================
+Configuration - logging
+
+If you turn on debug=1, you will see a bewildering output from the SDR driver.
+Although this is really helpful when debugging and diagnosing problems, often
+you want far less information.  There are a few logging options to help you
+control this beast.
+
+[SDR]
+    driver = user.sdr
+    log_lines = (True | False)
+    log_unknown_sensors = (True | False)
+    log_unmapped_sensors = (True | False)
+    log_packets = (True | False)             # only applies with debug=1
+    log_duplicate_readings = (True | False)  # only applies with debug=1
+
+
+===============================================================================
+Configuration - cumulative observations - the 'deltas' section
 
 Some sensors report a current value, e.g., temperature or humidity, whereas
 other report a cumulative total, e.g., rain.  The 'deltas' section indicates
@@ -183,7 +203,7 @@ the per-period variables 'rain' and 'strikes'.  It is specified as follows:
 [SDR]
     ...
     [[sensor_map]]
-        rain_total = rain_total.0026.FOWH1080Packet
+        rain_total = rain_mm.0026.FOWH1080Packet
         ...
     [[deltas]]
         rain = rain_total
@@ -195,8 +215,31 @@ from 'rain_mm' into 'rain_total', then a function _calculate_deltas uses the
 definition in [[deltas]] to break rain_total down to only the amount since the
 last rain_total was reported.
 
-This is all to keep WeeWX happy - it expects an observation 'rain' that is the
+All of this keeps WeeWX happy - it expects an observation 'rain' that is the
 amount of rainfall in the current period, whether that is loop or archive.
+
+
+===============================================================================
+Configuration - detecting new sensors
+
+After you have run for awhile, you might want to add new sensors to your
+system.  If you have more than two or three sensors, it can be quite a
+challenge to pick through all of the output when you run the driver directly.
+This shows how to display only sensors that are detected but not yet part of
+your weewx configuration.
+
+First, shut down weewx so that you can talk to the SDR directly.
+
+Then run the SDR driver directly, but tell it to print out information only
+about sensors that you have not yet added to your weewx configuration:
+
+  python3 sdr.py --config weewx.conf --hide=out,parsed,mapped
+
+As always, unless the sensor identifier is marked on the sensor itself, you
+should turn on sensors one at a time, marking the outside of the sensor with
+its identifier.  Then you can turn on all the sensors and place them, using
+the identifier on the sensor to distinguish which sensor is which when you
+map them to database fields in your weewx configuration.
 
 
 ===============================================================================
@@ -296,35 +339,12 @@ Using a more recent version of libusb (e.g., 1.0.20) seems to clear things up.
 
 
 ===============================================================================
-Detecting new sensors
-
-After you have run for awhile, you might want to add new sensors to your
-system.  If you have more than two or three sensors, it can be quite a
-challenge to pick through all of the output when you run the driver directly.
-This shows how to display only sensors that are detected but not yet part of
-your weewx configuration.
-
-First, shut down weewx so that you can talk to the SDR directly.
-
-Then run the SDR driver directly, but tell it to print out information only
-about sensors that you have not yet added to your weewx configuration:
-
-python3 sdr.py --config weewx.conf --hide=out,parsed,mapped
-
-As always, unless the sensor identifier is marked on the sensor itself, you
-should turn on sensors one at a time, marking the outside of the sensor with
-its identifier.  Then you can turn on all the sensors and place them, using
-the identifier on the sensor to distinguish which sensor is which when you
-map them to database fields in your weewx configuration.
-
-
-===============================================================================
 Support for new sensor types
 
 To add support for new sensors, capture the output from rtl_433.  To capture
 output, run the driver directly and hide known packets:
 
-python3 sdr.py --cmd="rtl_433 -M utc -F json" --hide parsed,out,empty
+  python3 sdr.py --cmd="rtl_433 -M utc -F json" --hide parsed,out,empty
 
 This should emit a line for each unparsed type.  For example:
 
