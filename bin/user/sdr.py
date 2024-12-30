@@ -1772,7 +1772,7 @@ class FOWH32Packet(Packet):
         pkt['station_id'] = obj.get('id')
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        pkt['battery'] = 0 if Packet.get_int(obj, 'battery_ok') == 1 else 1
+        pkt['battery'] = Packet.get_battery(obj)
         pkt['channel'] = Packet.get_int(obj, 'channel')
         return FOWH32Packet.insert_ids(pkt)
 
