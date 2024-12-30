@@ -198,7 +198,8 @@ how to map a cumulative total to a per-period amount.
 
 The default deltas knows about rain and lightning strikes, and it assumes that
 the 'rain_total' and 'strikes_total' are total counts that must be mapped to
-the per-period variables 'rain' and 'strikes'.  It is specified as follows:
+the per-period variables 'rain' and 'lightning_strike_count'.  It is specified
+as follows:
 
 [SDR]
     ...
@@ -207,7 +208,7 @@ the per-period variables 'rain' and 'strikes'.  It is specified as follows:
         ...
     [[deltas]]
         rain = rain_total
-        strikes = strikes_total
+        lightning_strike_count = strikes_total
 
 What is going on here?  Let's say that rtl_433 reports sensor output for rain
 as 'rain_mm', a cumulative count of rainfall.  The sensor map puts the value
