@@ -830,7 +830,7 @@ class Acurite606TXPacket(Packet):
         pkt = Packet.add_identifiers(pkt, sensor_id, Acurite606TXPacket.__name__)
         return pkt
 
-     
+
 class Acurite606TXPacketV2(Packet):
     # 2021-02-23: Acurite 606TX Temperature Sensor
     # {"time" : "2021-02-23 16:24:07", "model" : "Acurite-606TX", "id" : 153, "battery_ok" : 1, "temperature_C" : 18.800, "mic" : "CHECKSUM"}
