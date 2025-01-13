@@ -186,7 +186,7 @@ def to_F(v):
 
 def to_C(v):
     if v is not None:
-        v  = 5 / 9 * (v - 32) 
+        v  = 5 / 9 * (v - 32)
     return v
 
 def to_mph(v):
@@ -1708,8 +1708,8 @@ class FOWHx080Packet(Packet):
         pkt['usUnits'] = weewx.METRIC
         msg_type = obj.get('subtype')
         pkt['msg_type'] = msg_type
-        
-        if msg_type == 0: 
+
+        if msg_type == 0:
             pkt['station_id'] = obj.get('id')
             pkt['battery'] = Packet.get_battery(obj)
             pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
@@ -1721,7 +1721,7 @@ class FOWHx080Packet(Packet):
             if rain_total is not None:
                 pkt['rain_total'] = rain_total / 10.0 # convert to cm
 
-        if msg_type == 2: 
+        if msg_type == 2:
             pkt['station_id'] = obj.get('uv_sensor_id')
             pkt['uv_status'] = 0 if obj.get('uv_status') == 'OK' else 1
             pkt['uv_index'] = Packet.get_float(obj, 'uv_index')
@@ -2148,7 +2148,7 @@ class FOWH0290Packet(Packet):
     # This is for a WH0290 Air Quality Monitor (Ambient Weather PM25)
 
     #{"time" : "@0.084044s", "model" : "Fine Offset Electronics, WH0290", "id" : 204, "pm2_5_ug_m3" : 9, "pm10_0_ug_m3" : 10, "mic" : "CHECKSUM"}
-    #{"time": "2022-09-08 19:48:38", "model": "Endoffset-WH0290", " id ": 142," battery_ok ": 0.800," pm2_5_ug_m3 ": 2," estimated_pm10_0_ug_m3 ": 2," family ": 65," unknown1 ": 0," mic ":" CRC "} 
+    #{"time": "2022-09-08 19:48:38", "model": "Endoffset-WH0290", " id ": 142," battery_ok ": 0.800," pm2_5_ug_m3 ": 2," estimated_pm10_0_ug_m3 ": 2," family ": 65," unknown1 ": 0," mic ":" CRC "}
 
     IDENTIFIER = "Fineoffset-WH0290"
 
@@ -2188,7 +2188,7 @@ class FOWH31LPacket(Packet):
 
 
 class FOWS80Packet(Packet):
-    # This is for a Fine Offset Electronics WS80 weather station 
+    # This is for a Fine Offset Electronics WS80 weather station
 
     #{"time" : "2022-07-06 21:06:18", "model" : "Fineoffset-WS80", "id" : 589862, "battery_ok" : 1.170, "battery_mV" : 3280, "temperature_C" : 17.700, "humidity" : 67, "wind_dir_deg" : 268, "wind_avg_m_s" : 1.300, "wind_max_m_s" : 1.800, "uvi" : 0.000, "light_lux" : 0.000, "flags" : 170, "mic" : "CRC"}
 
