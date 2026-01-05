@@ -223,10 +223,23 @@ class AsyncReader(threading.Thread):
     def run(self):
         logdbg("start async reader for %s" % self.getName())
         self._running = True
-        for line in iter(self._fd.readline, ''):
-            if line:
+
+        # Defensive read loop: exit on EOF or any read error
+        while self._running:
+            try:
+                line = self._fd.readline()
+            except Exception:
+                # FD closed or invalid; exit the thread quietly
+                break
+
+            if not line:
+                # EOF; exit cleanly
+                break
+
+            try:
                 self._queue.put(line)
-            if not self._running:
+            except Exception:
+                # Queue is shut or other runtime issue; exit
                 break
 
     def stop_running(self):
@@ -269,26 +282,53 @@ class ProcManager(object):
 
     def shutdown(self):
         loginf('shutdown process %s' % self._cmd)
-        self._process.kill()
+
+        # 1) Signal reader threads to stop and join them
+        if self.stdout_reader:
+            logdbg('shutdown %s' % self.stdout_reader.getName())
+            self.stdout_reader.stop_running()
+        if self.stderr_reader:
+            logdbg('shutdown %s' % self.stderr_reader.getName())
+            self.stderr_reader.stop_running()
+
+        # Give them time to exit their read loops
+        if self.stdout_reader:
+            self.stdout_reader.join(0.5)
+        if self.stderr_reader:
+            self.stderr_reader.join(0.5)
+
+        # 2) Close pipes (ignore errors if already closed)
         logdbg("close stdout")
-        self._process.stdout.close()
+        try:
+            self._process.stdout.close()
+        except Exception:
+            pass
+
         logdbg("close stderr")
-        self._process.stderr.close()
-        logdbg('shutdown %s' % self.stdout_reader.getName())
-        self.stdout_reader.stop_running()
-        self.stdout_reader.join(0.5)
-        logdbg('shutdown %s' % self.stderr_reader.getName())
-        self.stderr_reader.stop_running()
-        self.stderr_reader.join(0.5)
+        try:
+            self._process.stderr.close()
+        except Exception:
+            pass
+
+        # 3) Terminate the process
+        try:
+            self._process.kill()
+        except Exception:
+            pass
+
         if self._process.poll() is None:
             logerr('process did not respond to kill, shutting down anyway')
+
+        # 4) Cleanup
         self._process = None
-        if self.stdout_reader.is_alive():
+        if self.stdout_reader and self.stdout_reader.is_alive():
             loginf('timed out waiting for %s' % self.stdout_reader.getName())
         self.stdout_reader = None
-        if self.stderr_reader.is_alive():
+
+        if self.stderr_reader and self.stderr_reader.is_alive():
             loginf('timed out waiting for %s' % self.stderr_reader.getName())
         self.stderr_reader = None
+
         loginf('shutdown complete')
 
     def running(self):
@@ -1962,6 +2002,11 @@ class FOWH32Packet(Packet):
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         pkt['battery'] = Packet.get_battery(obj)
+        pkt['freq1'] = Packet.get_float(obj, 'freq1')
+        pkt['freq2'] = Packet.get_float(obj, 'freq2')
+        pkt['rssi'] = Packet.get_float(obj, 'rssi')
+        pkt['snr'] = Packet.get_float(obj, 'snr')
+        pkt['noise'] = Packet.get_float(obj, 'noise')
         pkt['channel'] = Packet.get_int(obj, 'channel')
         pkt = Packet.add_identifiers(pkt, sensor_id, FOWH32Packet.__name__)
         return pkt
@@ -2140,6 +2185,8 @@ class FOWH65BAltPacket(Packet):
         pkt['rssi'] = Packet.get_float(obj, 'rssi')
         pkt['snr'] = Packet.get_float(obj, 'snr')
         pkt['noise'] = Packet.get_float(obj, 'noise')
+        pkt['freq1'] = Packet.get_float(obj, 'freq1')
+        pkt['freq2'] = Packet.get_float(obj, 'freq2')
         pkt = Packet.add_identifiers(pkt, sensor_id, FOWH65BAltPacket.__name__)
         return pkt
 
@@ -3698,6 +3745,8 @@ class SDRDriver(weewx.drivers.AbstractDevice):
                                     logdbg("packet=%s" % pkt)
                                 self._last_pkt = pkt
                                 self._calculate_deltas(pkt)
+                                # >>> Add INFO log here
+                                loginf("SDR: LOOP packet updated:  %s" % pkt)
                                 yield pkt
                             else:
                                 if self._log_dups:
