@@ -1,3 +1,7 @@
+0.98 06feb2026
+* add support for soil moisture to Bresser-6in1 (#200 thanks zagamuffin)
+* add support for air quality to Bresser-7in1 (#200 thanks zagamuffin)
+
 0.96b1
 * added support for EMAX EM3551H sensors - raddy station (#192 alpha-sg31)
 * added support for Vivor7in1 - thanks to ivan

@@ -153,7 +153,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.96b1'
+DRIVER_VERSION = '0.98'
 
 # The default command requests json output from every decoder
 # Use the -R option to indicate specific decoders
@@ -1339,6 +1339,9 @@ class Bresser6in1Packet(Packet):
     # "wind_speed" : 2.900, "wind_dir_deg" : 315.000, "rain_mm" : 10.800,
     # "data" : "e7897fd71fd6ef9bff78f7feff18768028e02910640087080100",
     # "mic" : "CHECKSUM"}#012
+    # {"time" : "2026-02-04 20:37:37", "model" : "Bresser-6in1", "id" : 1646544136,
+    # "channel" : 7, "battery_ok" : 1, "temperature_C" : 23.200, "sensor_type" : 4,
+    # "moisture" : 0, "flags" : 0, "mic" : "CRC"}
 
     IDENTIFIER = "Bresser-6in1"
 
@@ -1363,6 +1366,8 @@ class Bresser6in1Packet(Packet):
             pkt['uv'] = Packet.get_float(obj, 'uv')
         if 'uv_index' in obj:
             pkt['uv_index'] = Packet.get_float(obj, 'uvi')
+        if 'moisture' in obj:
+            pkt['soil_moisture_raw'] = Packet.get_float(obj, 'moisture')
         # deal with different labels from rtl_433
         for dst, src in [('wind_speed', 'wind_speed_ms'),
                      ('gust_speed', 'gust_speed_ms'),
@@ -1382,6 +1387,9 @@ class Bresser7in1Packet(Packet):
     #  "wind_avg_m_s" : 0.000, "wind_dir_deg" : 102, "rain_mm" : 3.500,
     #  "light_klx" : 8.592, "light_lux" : 8592.000, "uv" : 1.000,
     #  "battery_ok" : 1, "mic " : "CRC"}
+    # {"time" : "2026-02-04 20:24:27", "model" : "Bresser-7in1", "id" : 48330,
+    # "channel" : 3, "battery_ok" : 1, "pm_2_5_ug_m3" : 5, "pm_10_ug_m3" : 8,
+    # "mic" : "CRC"}
 
     IDENTIFIER = "Bresser-7in1"
 
@@ -1391,14 +1399,26 @@ class Bresser7in1Packet(Packet):
         pkt = dict()
         pkt['dateTime'] = Packet.parse_time(obj.get('time'))
         pkt['usUnits'] = weewx.METRICWX
-        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
-        pkt['humidity'] = Packet.get_float(obj, 'humidity')
-        pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_m_s')
-        pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_m_s')
-        pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
-        pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
-        pkt['lux'] = Packet.get_int(obj, 'light_lux')
-        pkt['uv'] = Packet.get_float(obj, 'uv')
+        if 'temperature_C' in obj:
+            pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        if 'humidity' in obj:
+            pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        if 'wind_max_m_s' in obj:
+            pkt['wind_gust'] = Packet.get_float(obj, 'wind_max_m_s')
+        if 'wind_avg_m_s' in obj:
+            pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_m_s')
+        if 'wind_dir_deg' in obj:
+            pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
+        if 'rain_mm' in obj:
+            pkt['rain_total'] = Packet.get_float(obj, 'rain_mm')
+        if 'light_lux' in obj:
+            pkt['lux'] = Packet.get_int(obj, 'light_lux')
+        if 'uv' in obj:
+            pkt['uv'] = Packet.get_float(obj, 'uv')
+        if 'pm_2_5_ug_m3' in obj:
+            pkt['pm2_5_atm'] = Packet.get_float(obj, 'pm_2_5_ug_m3')
+        if 'pm_10_ug_m3' in obj:
+            pkt['pm10_0_atm'] = Packet.get_float(obj, 'pm_10_ug_m3')
         pkt['battery'] = Packet.get_battery(obj)
         pkt = Packet.add_identifiers(pkt, station_id, Bresser7in1Packet.__name__)
         return pkt
