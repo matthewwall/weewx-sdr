@@ -153,7 +153,7 @@ except ImportError:
         logmsg(syslog.LOG_ERR, msg)
 
 DRIVER_NAME = 'SDR'
-DRIVER_VERSION = '0.96b1'
+DRIVER_VERSION = '0.97'
 
 # The default command requests json output from every decoder
 # Use the -R option to indicate specific decoders
@@ -2024,6 +2024,31 @@ class FOWH45Packet(Packet):
         pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
         pkt['humidity'] = Packet.get_float(obj, 'humidity')
         pkt = Packet.add_identifiers(pkt, sensor_id, FOWH45Packet.__name__)
+        return pkt
+
+
+class FOWH46Packet(Packet):
+    # This is for a WH46 Air Quality Monitor
+
+    #{"time" : "2025-02-04 13:09:57", "model" : "Fineoffset-WH46", "id" : 10514, "battery_ok" : 1.000, "temperature_C" : 22.500, "humidity" : 35, "pm1_ug_m3" : 2.300, "pm2_5_ug_m3" : 2.400, "pm4_ug_m3" : 2.400, "pm10_ug_m3" : 2.400, "co2_ppm" : 541, "unknown" : 400, "ext_power" : 1, "mic" : "CRC"}
+
+    IDENTIFIER = "Fineoffset-WH46"
+
+    @staticmethod
+    def parse_json(obj):
+        sensor_id = obj.get('id')
+        pkt = dict()
+        pkt['usUnits'] = weewx.METRIC
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['battery'] = Packet.get_battery(obj)
+        pkt['co2_atm'] = Packet.get_float(obj, 'co2_ppm')
+        pkt['pm1_0_atm'] = Packet.get_float(obj, 'pm1_ug_m3')
+        pkt['pm2_5_atm'] = Packet.get_float(obj, 'pm2_5_ug_m3')
+        pkt['pm4_0_atm'] = Packet.get_float(obj, 'pm4_ug_m3')
+        pkt['pm10_0_atm'] = Packet.get_float(obj, 'pm10_ug_m3')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt = Packet.add_identifiers(pkt, sensor_id, FOWH46Packet.__name__)
         return pkt
 
 

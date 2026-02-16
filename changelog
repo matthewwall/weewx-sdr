@@ -1,3 +1,6 @@
+0.97 05feb2025
+* added support for Fineoffset-WH46 (#193 thanks ChrisM510)
+
 0.96b1
 * added support for EMAX EM3551H sensors - raddy station (#192 alpha-sg31)
 * added support for Vivor7in1 - thanks to ivan
