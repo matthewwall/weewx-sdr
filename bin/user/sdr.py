@@ -674,6 +674,7 @@ class Acurite5n1PacketV2(Packet):
     # {"time" : "2020-02-05 02:20:54", "model" : "Acurite-5n1", "subtype" : 56, "id" : 956, "channel" : "A", "sequence_num" : 2, "battery_ok" : 1, "wind_avg_km_h" : 3.483, "temperature_F" : 31.300, "humidity" : 66}
     # {"time" : "2020-10-26 22:09:12", "model" : "Acurite-5n1", "message_type" : 49, "id" : 2662, "channel" : "A", "sequence_num" : 0, "battery_ok" : 1, "wind_avg_km_h" : 15.900, "wind_dir_deg" : 337.500, "rain_in" : 7.290, "mic" : "CHECKSUM"}
     # {"time" : "2020-10-26 22:08:54", "model" : "Acurite-5n1", "message_type" : 56, "id" : 2662, "channel" : "A", "sequence_num" : 2, "battery_ok" : 1, "wind_avg_km_h" : 9.278, "temperature_F" : 76.100, "humidity" : 15, "mic" : "CHECKSUM"}
+    # {"time" : "2026-06-10 18:48:47", "model" : "Acurite-5n1", "message_type" : 56, "id" : 858, "channel" : "B", "sequence_num" : 0, "battery_ok" : 1, "wind_avg_mi_h" : 1.650, "temperature_F" : 87.800, "humidity" : 62, "mic" : "CHECKSUM"}
 
     IDENTIFIER = "Acurite-5n1"
 
@@ -703,7 +704,9 @@ class Acurite5n1PacketV2(Packet):
         # depending on the rtl_433 configuration, so be ready for anything.
         #   49 has wind_speed, wind_dir, and rain
         #   56 has wind_speed, temperature, humidity
-        if 'wind_avg_km_h' in obj:
+        if 'wind_avg_mi_h' in obj:
+            pkt['wind_speed'] = Packet.get_float(obj, 'wind_avg_mi_h')
+        elif 'wind_avg_km_h' in obj:
             pkt['wind_speed'] = to_mph(Packet.get_float(obj, 'wind_avg_km_h'))
         if 'wind_dir_deg' in obj:
             pkt['wind_dir'] = Packet.get_float(obj, 'wind_dir_deg')
