@@ -1,4 +1,5 @@
-weewx-sdr
+# weewx-sdr
+
 Copyright 2016-2024 Matthew Wall
 Distributed under terms of the GPLv3
 
@@ -9,105 +10,114 @@ These devices cost about 20$US and are capable of receiving radio signals from
 weather stations, energy monitors, doorbells, and many other devices that use
 unlicensed spectrum such as 433MHz, 838MHz, and 900MHz frequencies.
 
+## Hardware
 
-===============================================================================
-Hardware
-
-Tested with the Realtek RTL2838UHIDIR.  Should work with any software-defined
-radio that is compatible with the rtl-sdr software.  Uses the modules in
+Tested with the Realtek RTL2838UHIDIR. Should work with any software-defined
+radio that is compatible with the rtl-sdr software. Uses the modules in
 rtl_433 to recognize packets.
 
-Output from many different sensors is supported.  To see the list of supported
+Output from many different sensors is supported. To see the list of supported
 sensors, run the driver directly with the list-supported action.
 
 If a sensor is supported by rtl_433 but not by weewx-sdr, it is a fairly simple
-matter of writing a parser for that sensor within weewx-sdr.  Things are a bit
+matter of writing a parser for that sensor within weewx-sdr. Things are a bit
 more complicated if a sensor is not supported by rtl_433.
 
+## Installation
 
-===============================================================================
-Installation
+0. install pre-requisites
+   1. install weewx: http://weewx.com/docs
+   2. install rtl-sdr: http://sdr.osmocom.org/trac/wiki/rtl-sdr
+   3. install rtl_433: https://github.com/merbanan/rtl_433
 
-0) install pre-requisites
+1. install the driver
 
-  a) install weewx
-      http://weewx.com/docs
-  b) install rtl-sdr
-      http://sdr.osmocom.org/trac/wiki/rtl-sdr
-  c) install rtl_433
-      https://github.com/merbanan/rtl_433
-
-1) install the driver
-
+```
 weectl extension install https://github.com/matthewwall/weewx-sdr/archive/master.zip
+```
 
-2) configure the driver
+2. configure the driver
 
+```
 weectl station reconfigure --driver=user.sdr --no-prompt
+```
 
-3) run the driver directly to identify the packets you want to capture
+3. run the driver directly to identify the packets you want to capture
 
+```
 export WEEWX_BINDIR=/usr/share/weewx
 export WEEWX_USRDIR=/etc/weewx/bin/user
 PYTHONPATH=$WEEWX_BINDIR python3 $WEEWX_USRDIR/sdr.py --cmd="rtl_433 -M utc -F json"
+```
 
-4) modify the [SDR] section of weewx.conf using a text editor
+4. modify the `[SDR]` section of weewx.conf using a text editor
 
-- create a [[sensor_map]] for the data you want to capture
-- possibly modify the 'cmd' parameter
+- create a `[[sensor_map]]` for the data you want to capture
+- possibly modify the `cmd` parameter
 
-5) start weewx
+5. start weewx
 
+```
 sudo systemctl start weewx
+```
 
+## How to run the driver directly
 
-===============================================================================
-How to run the driver directly
-
-You can run the driver directly for testing, diagnostics, and development.  In
+You can run the driver directly for testing, diagnostics, and development. In
 fact, you can run the driver without installing it - just invoke python on it!
 In the examples elsewhere in this file, you will see this illustrated with the
 generic form, which is:
 
-  python3 sdr.py
+```
+python3 sdr.py
+```
 
 However, in most cases you must specify the location of the WeeWX modules using
-PYTHONPATH.  So that generic form will become something like this:
+PYTHONPATH. So that generic form will become something like this:
 
-  PYTHONPATH=/path/to/weewx/modules python3 sdr.py
+```
+PYTHONPATH=/path/to/weewx/modules python3 sdr.py
+```
 
 For example, a deb/rpm installation would look like this:
 
-  PYTHONPATH=/usr/share/weewx python3 /etc/weewx/bin/user/sdr.py
+```
+PYTHONPATH=/usr/share/weewx python3 /etc/weewx/bin/user/sdr.py
+```
 
 A pip/venv installation would look something like this:
 
-  PYTHONPATH=~/weewx-env python3 ~/weewx-data/bin/user/sdr.py
+```
+PYTHONPATH=~/weewx-env python3 ~/weewx-data/bin/user/sdr.py
+```
 
 Note:
 You might have use 'sudo' if the user does not have permission to read/write
 the USB SDR device.
 
+## Configuration
 
-===============================================================================
-Configuration - the sensor_map
+### The sensor_map
 
-Use the [SDR] section of the weewx configuration file (nominally weewx.conf) to
+Use the `[SDR]` section of the weewx configuration file (nominally weewx.conf) to
 adjust the driver configuration.
 
 The rtl_433 executable emits data for many different types of sensors, some of
-which have similar output.  Use the sensor_map to distinguish between sensors
+which have similar output. Use the sensor_map to distinguish between sensors
 and map the output from rtl_433 to the database fields in weewx.
 
-To identify sensors, run the driver directly.  If you do not yet have a sensor
+To identify sensors, run the driver directly. If you do not yet have a sensor
 map, then use the default invocation so that you can see all of the sensors
-that rtl_433 recognizes.  From this output you will choose the sensors and
+that rtl_433 recognizes. From this output you will choose the sensors and
 their identifiers to create your sensor_map.
 
-  python3 sdr.py
+```
+python3 sdr.py
+```
 
 Here are some sensor_map examples:
 
+```
 # collect data from Acurite 5n1 sensor 0BFA and t/h sensor 24A4
 [SDR]
     driver = user.sdr
@@ -156,30 +166,32 @@ Here are some sensor_map examples:
         windDir = wind_dir.0026.FOWH1080Packet
         outHumidity = humidity.0026.FOWH1080Packet
         outTemp = temperature.0026.FOWH1080Packet
+```
 
-
-===============================================================================
-Configuration - options to rtl_433
+### Options to rtl_433
 
 The default configuration uses this command:
 
+```
 rtl_433 -M utc -F json
+```
 
-Specify different options using the cmd parameter.  For example:
+Specify different options using the cmd parameter. For example:
 
+```
 [SDR]
     driver = user.sdr
     cmd = rtl_433 -M utc -F json -R 17 -R 44 -R 50
+```
 
-
-===============================================================================
-Configuration - logging
+### Logging
 
 If you turn on debug=1, you will see a bewildering output from the SDR driver.
 Although this is really helpful when debugging and diagnosing problems, often
-you want far less information.  There are a few logging options to help you
+you want far less information. There are a few logging options to help you
 control this beast.
 
+```
 [SDR]
     driver = user.sdr
     log_lines = (True | False)
@@ -187,20 +199,20 @@ control this beast.
     log_unmapped_sensors = (True | False)
     log_packets = (True | False)             # only applies with debug=1
     log_duplicate_readings = (True | False)  # only applies with debug=1
+```
 
-
-===============================================================================
-Configuration - cumulative observations - the 'deltas' section
+### Cumulative observations - the 'deltas' section
 
 Some sensors report a current value, e.g., temperature or humidity, whereas
-other report a cumulative total, e.g., rain.  The 'deltas' section indicates
+other report a cumulative total, e.g., rain. The 'deltas' section indicates
 how to map a cumulative total to a per-period amount.
 
 The default deltas knows about rain and lightning strikes, and it assumes that
 the 'rain_total' and 'strikes_total' are total counts that must be mapped to
-the per-period variables 'rain' and 'lightning_strike_count'.  It is specified
+the per-period variables 'rain' and 'lightning_strike_count'. It is specified
 as follows:
 
+```
 [SDR]
     ...
     [[sensor_map]]
@@ -209,22 +221,21 @@ as follows:
     [[deltas]]
         rain = rain_total
         lightning_strike_count = strikes_total
+```
 
-What is going on here?  Let's say that rtl_433 reports sensor output for rain
-as 'rain_mm', a cumulative count of rainfall.  The sensor map puts the value
-from 'rain_mm' into 'rain_total', then a function _calculate_deltas uses the
+What is going on here? Let's say that rtl_433 reports sensor output for rain
+as 'rain_mm', a cumulative count of rainfall. The sensor map puts the value
+from 'rain_mm' into 'rain_total', then a function \_calculate_deltas uses the
 definition in [[deltas]] to break rain_total down to only the amount since the
 last rain_total was reported.
 
 All of this keeps WeeWX happy - it expects an observation 'rain' that is the
 amount of rainfall in the current period, whether that is loop or archive.
 
-
-===============================================================================
-Configuration - detecting new sensors
+### Detecting new sensors
 
 After you have run for awhile, you might want to add new sensors to your
-system.  If you have more than two or three sensors, it can be quite a
+system. If you have more than two or three sensors, it can be quite a
 challenge to pick through all of the output when you run the driver directly.
 This shows how to display only sensors that are detected but not yet part of
 your weewx configuration.
@@ -234,69 +245,82 @@ First, shut down weewx so that you can talk to the SDR directly.
 Then run the SDR driver directly, but tell it to print out information only
 about sensors that you have not yet added to your weewx configuration:
 
-  python3 sdr.py --config weewx.conf --hide=out,parsed,mapped
+```
+python3 sdr.py --config weewx.conf --hide=out,parsed,mapped
+```
 
 As always, unless the sensor identifier is marked on the sensor itself, you
 should turn on sensors one at a time, marking the outside of the sensor with
-its identifier.  Then you can turn on all the sensors and place them, using
+its identifier. Then you can turn on all the sensors and place them, using
 the identifier on the sensor to distinguish which sensor is which when you
 map them to database fields in your weewx configuration.
 
-
-===============================================================================
-How to diagnose problems
+## How to diagnose problems
 
 First try running the rtl_433 application to be sure that it works properly:
 
+```
 sudo rtl_433
+```
 
-Be sure that you are capturing data from the sensors you care about.  To do
-this, you might want to experiment with some of the options to rtl_433.  For
+Be sure that you are capturing data from the sensors you care about. To do
+this, you might want to experiment with some of the options to rtl_433. For
 example, this will eliminate extraneous output (-q), and use UTC for timestamps
 (-M utc):
 
+```
 sudo rtl_433 -M utc -F json
+```
 
 If you know exactly which sensors you want to monitor, try the -R option to
-reduce the clutter.  For example,
+reduce the clutter. For example,
 
+```
 sudo rtl_433 -M utc -F json -R 9 -R 31
+```
 
 Once that is working, run the driver directly to be sure that it is collecting
 data from the rtl_433 application.
 
+```
 python3 sdr.py --cmd="rtl_433 -M utc -F json"
+```
 
-Make note of the sensor identifiers.  Each identifier is a three-part string
+Make note of the sensor identifiers. Each identifier is a three-part string
 consisting of the observation, sensor id, and rf packet type, separated by
-periods.  You need these in the sensor map to tell weewx the association
+periods. You need these in the sensor map to tell weewx the association
 between sensors and database fields.
 
 In the weewx configuration file, enter the rtl_433 options (if necessary) and
-the sensor map.  Then run weewx directly in one shell while you monitor the
+the sensor map. Then run weewx directly in one shell while you monitor the
 weewx log in a separate shell:
 
 in shell 1:
+
+````sh
 cd /home/weewx
 sudo ./bin/weewxd weewx.conf
 
 in shell 2:
+
+```sh
 tail -f /var/log/syslog
+````
 
 At this point, verify that the mapping you made in the weewx configuration file
-is working as you intend.  You should see data from your sensors in the weewx
-LOOP and REC output.  If not, check the log file.  Use the logging options in
+is working as you intend. You should see data from your sensors in the weewx
+LOOP and REC output. If not, check the log file. Use the logging options in
 the [SDR] section of the weewx configuration file to help figure out which
 sensors are captured, recognized, and parsed.
 
 Once you are satisfied with the output when running weewx directly, run weewx
 as a daemon and configure rc script or systemd to run weewx at system startup.
 
+```
 sudo systemctl start weewx
+```
 
-
-===============================================================================
-Environment
+## Environment
 
 The driver invokes the rtl_433 executable, so the path to that executable and
 any shared library linkage must be defined in the environment in which weewx
@@ -304,21 +328,26 @@ runs.
 
 For example, with rtl_433 and rtl-sdr installed like this:
 
+```
 /opt/rtl-433/
 /opt/rtl-sdr/
+```
 
 one would set the path like this:
 
+```
 export PATH=/opt/rtl-433/bin:${PATH}
 export LD_LIBRARY_PATH=/opt/rtl-sdr/lib
+```
 
-Typically this would be done in the rc script that starts weewx.  If rtl_433
+Typically this would be done in the rc script that starts weewx. If rtl_433
 and rtl-sdr are install to /usr/local or /usr, then there should be no need
 to set the PATH or LD_LIBRARY_PATH before invoking weewx.
 
 If you cannot control the environment in which weewx runs, then you can specify
-the LD_LIBRARY_PATH and PATH in the weewx-sdr driver itself.  For example:
+the LD_LIBRARY_PATH and PATH in the weewx-sdr driver itself. For example:
 
+```
 [SDR]
     driver = user.sdr
     cmd = rlt_433 -M utc -F json
@@ -326,57 +355,115 @@ the LD_LIBRARY_PATH and PATH in the weewx-sdr driver itself.  For example:
     ld_library_path = /opt/libusb-1.0.20/lib:/opt/rtl-sdr/lib
     [[sensor_map]]
         ...
+```
 
+## libusb
 
-===============================================================================
-libusb
-
-I have had problems running rtl-sdr on systems with libusb 1.0.11.  The rtl_433
+I have had problems running rtl-sdr on systems with libusb 1.0.11. The rtl_433
 command craps out with a segmentation fault, and the rtl_test command sometimes
 leaves the dongle in a weird state that can be cleared only by unplugging then
 replugging the dongle.
 
 Using a more recent version of libusb (e.g., 1.0.20) seems to clear things up.
 
+## Support for new sensor types
 
-===============================================================================
-Support for new sensor types
-
-To add support for new sensors, capture the output from rtl_433.  To capture
+To add support for new sensors, capture the output from rtl_433. To capture
 output, run the driver directly and hide known packets:
 
-  python3 sdr.py --cmd="rtl_433 -M utc -F json" --hide parsed,out,empty
+```
+python3 sdr.py --cmd="rtl_433 -M utc -F json" --hide parsed,out,empty
+```
 
-This should emit a line for each unparsed type.  For example:
+This should emit a line for each unparsed type. For example:
 
+```
 unparsed: ['{"time" : "2017-01-16 15:44:51", "temperature" : 54.140, "humidity" : 34, "id" : 221, "model" : "LaCrosse TX141TH-Bv2 sensor", "battery" : "OK", "test" : "Yes"}\n']
+```
 
 If there is no json ouput, remove the '-F json' option to see the (deprecated)
 non-json output:
 
+```
 unparsed: ['2016-11-04 16:12:39 :\tFine Offset Electronics, WH2 Temperature/Humidity sensor\n', '\tID:\t 38\n', '\tTemperature:\t 54.4 C\n', '\tHumidity:\t 55 %\n']
+```
+
+If you are comfortable writing Python, you can write your own parser by adding a
+new `Packet` subclass following example of the existing ones in the `bin/usr/brands/` folder. Add the JSON output you captured to `EXAMPLES` for your parser and then
+add a test case in `tests/test_examples.py` to verify.
 
 If you are not comfortable writing your own parser, post the output to the
 issues section of the weewx-sdr repository and some helpful person might write
 the parser for you.
 
+## Development
 
-===============================================================================
-Historical notes
+The pyproject.toml file that specifies the development/testing environment. If you have a Python [project manager like `uv`](https://docs.astral.sh/uv/getting-started/installation/) or similar installed you can run the tests with
+
+```bash
+make test
+```
+
+or
+
+```bash
+uv run nox
+```
+
+to verify against a range of Python and WeeWx versions using [nox.](https://nox.thea.codes/en/stable/index.html)
+
+You can check your code for style issues with
+
+```bash
+make lint
+```
+
+and fix them with
+
+```bash
+make format
+```
+
+The version is stated in three places - `pyproject.toml`, `install.py` and
+`bin/user/core.py` - and `tests/test_install.py` checks that they agree. Bump all
+three at once with
+
+```bash
+make bump VERSION=0.96b3
+```
+
+and add the version to the changelog by hand.
+
+To build the archive that a user installs, run
+
+```bash
+make zip
+```
+
+which writes `dist/weewx-sdr-<version>.zip`. The archive puts relevant files
+inside a `weewx-sdr-<version>/` directory, because the weewx
+installer expects one common top-level directory and looks for `install.py`
+at the root of it. Install it the same way a user would:
+
+```bash
+weectl extension install dist/weewx-sdr-0.96b2.zip
+```
+
+## Historical notes
 
 When this driver was first created, most of the output from rtl_433 was only
 available as multi-line plain text, often but not always with some structure.
 JSON output was soon introduced, but there were many inconsistencies between
-sensors and rtl_433 releases.  Thankfully this stabilized over time.
+sensors and rtl_433 releases. Thankfully this stabilized over time.
 
-The driver includes two parsing methods: parse_text and parse_json.  The former
+The driver includes two parsing methods: parse_text and parse_json. The former
 is deprecated, and although many other formats have been added to rtl_433, only
 the json format is supported (and encouraged) in this driver.
 
 There have been other changes as well, such as the syntax for specifying the
-time - it went from "-M utc" to "-M time:iso".  At some point we might want to
-use "-M time:unix" so that we don't have to do the pattern match for time
-strings.  Or not.
+time - it went from `-M utc` to `-M time:iso`. At some point we might want to
+use `-M time:unix` so that we don't have to do the pattern match for time
+strings. Or not.
 
 I've tried to maintain backward compatibility, but the early days had so many
 variations of sensor output and rtl_433 output, so that is not really feasible.

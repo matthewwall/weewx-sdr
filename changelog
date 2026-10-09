@@ -1,3 +1,9 @@
+0.96b2 unreleased
+- Bugfix: Use r'' raw strings for regular expressions.
+- Bugfix: Safety checks in AsyncReader and ProcManager
+- Major refactor: split sdp.py into multiple modules.
+- Adds tests and linting with github actions CI pipeline.
+
 0.96b1
 * added support for EMAX EM3551H sensors - raddy station (#192 alpha-sg31)
 * added support for Vivor7in1 - thanks to ivan

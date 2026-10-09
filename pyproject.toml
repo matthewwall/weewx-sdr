@@ -1,0 +1,48 @@
+[project]
+name = "weewx-sdr"
+version = "0.96b2"
+description = "Weewx extension that captures data from software-defined radios."
+authors = [{ name = "Matthew Wall" }]
+readme = "README.md"
+requires-python = ">=3.11"
+license = "GPL-3.0-only"
+license-files = ["license"]
+classifiers = [
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dependencies = []
+
+[dependency-groups]
+test = [
+    "pytest>=9.1.1",
+    "pytest-subprocess>=1.6.0",
+    "weewx>=5.5.2",
+]
+dev = [
+    { include-group = "test" },
+    "nox>=2026.8.17",
+    "ruff>=0.16.10",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+# The driver lives in bin/user/... and pytest puts bin on sys.path (see
+# pythonpath below).  Without this ruff reads `user.core` and `user.brands`
+# as third-party imports.
+src = ["bin", "."]
+extend-exclude = [".venv", ".env"]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["bin"]

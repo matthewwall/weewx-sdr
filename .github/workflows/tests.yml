@@ -1,0 +1,31 @@
+name: tests
+
+on:
+  pull_request:
+
+# This workflow only needs to read the repository.
+permissions:
+  contents: read
+
+# Cancel superseded runs for the same pull request.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nox:
+    name: nox
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # Actions are pinned to commit SHAs; the trailing comment names the
+      # release each SHA belongs to.  Keep them current with Dependabot:
+      # https://docs.github.com/code-security/dependabot/working-with-dependabot
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+
+      - name: Run the full nox suite
+        run: uv run nox
