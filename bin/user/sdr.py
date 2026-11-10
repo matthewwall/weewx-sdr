@@ -2615,6 +2615,24 @@ class LaCrosseTX141THBv2Packet(Packet):
         pkt = Packet.add_identifiers(pkt, sensor_id, LaCrosseTX141THBv2Packet.__name__)
         return pkt
 
+class LaCrosseTX141WPacket(Packet):
+
+    # {"time" : "2017-01-16 15:24:43", "temperature" : 54.140, "humidity" : 34, "id" : 221, "model" : "LaCrosse LaCrosse-TX141W sensor", "battery" : "OK", "test" : "Yes"}
+    # {"time" : "2020-10-28 00:22:25", "model" : "LaCrosse-TX141W", "id" : 50, "channel" : 0, "battery_ok" : 1, "temperature_C" : -0.600, "humidity" : 60, "test" : "No"}
+    IDENTIFIER = "LaCrosse-TX141W"
+
+    @staticmethod
+    def parse_json(obj):
+        pkt = dict()
+        pkt['dateTime'] = Packet.parse_time(obj.get('time'))
+        pkt['usUnits'] = weewx.METRICWX
+        sensor_id = obj.get('id')
+        pkt['temperature'] = Packet.get_float(obj, 'temperature_C')
+        pkt['humidity'] = Packet.get_float(obj, 'humidity')
+        pkt['windSpeed'] = Packet.get_float(obj, 'wind_avg_km_h')
+        pkt['battery'] = Packet.get_battery(obj)
+        pkt = Packet.add_identifiers(pkt, sensor_id, LaCrosseTX141WPacket.__name__)
+        return pkt
 
 class LaCrosseTXPacket(Packet):
     # {"time" : "2017-07-30 21:11:19", "model" : "LaCrosse TX Sensor", "id" : 127, "humidity" : 34.000}
